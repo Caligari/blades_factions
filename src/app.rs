@@ -1,0 +1,221 @@
+use std::{fmt::Display, fs::{self, OpenOptions}, io::{BufReader, BufWriter, Write}, path::Path, sync::Arc};
+
+use eframe::{egui::{menu, Align, Button, CentralPanel, Color32, Context, FontData, FontDefinitions, FontFamily, Layout, RichText, Separator, TextStyle, TopBottomPanel, Ui, ViewportCommand}, CreationContext, Frame};
+use log::info;
+use serde::{de::DeserializeOwned, Serialize};
+
+use crate::{app_data::AppData, APP_NAME};
+
+
+
+
+const ZOOM: f32 = 1.0;
+const UI_PADDING: f32 = 8.0;
+
+const HELP_TEXT: &[&str] = &[
+    "created by Liam Routt",
+    "for use with Blades in the Dark",
+    "",
+    "This utility allows you to track the various factions in your game.", "",
+];
+
+const CHANGE_NOTES: &[&str] = &[
+    "0.1.0 - initial version",
+];
+
+const FONT_NOTES: &[&str] = &[
+    "Using the Manrope font, by Michael Sharanda, covered under the SIL Open Font License (http://scripts.sil.org/OFL)"
+];
+
+
+
+#[allow(dead_code)]
+#[derive(Debug, Default)]
+pub struct  App {
+    status: AppStatus,
+    message: Option<String>,
+}
+
+impl App {
+    pub fn new ( cc: &CreationContext<'_> ) -> Self {
+        configure_fonts(cc, ZOOM);
+        App::default()
+    }
+
+    fn show_top ( &mut self, ctx: &Context, _frame: &mut Frame ) {
+        TopBottomPanel::top("top").show(ctx, |ui| {
+            menu::bar(ui, |ui| {
+                ui.with_layout(Layout::left_to_right(Align::Center), |ui| {
+                    ui.menu_button("Menu", |ui| {
+                        if ui.button("Restart").clicked() {
+                            self.status = AppStatus::Starting;
+                            self.message = None;
+                            info!("Requested Restart");
+                            ui.close_menu();
+                        }
+                        ui.add(Separator::default().spacing(2.));
+                        if ui.add_enabled(false, Button::new("Settings")).clicked() {
+                            // TODO: show/change settings
+                            // ignore certain data
+                            // find data location
+                            // default to open particular league
+                            info!("Requested Settings");
+                        }
+                        ui.add(Separator::default().spacing(2.));
+                        if ui.button("Exit").clicked() {
+                            info!("Requested Exit");
+                            ctx.send_viewport_cmd(ViewportCommand::Close);
+                        }
+
+                    });
+                    ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                        if ui.button("About").clicked() {
+                            self.status = if matches!(self.status, AppStatus::About) {
+                                AppStatus::Starting
+                            } else { AppStatus::About };  // todo: switching to About loses all data
+                            info!("Requested About");
+                        }
+                    });
+                });
+            });
+        });
+    }
+
+    fn show_footer ( &self, ctx: &Context ) {
+        TopBottomPanel::bottom("footer").show(ctx, |ui| {
+            ui.add_space(5.);
+            ui.horizontal(|ui| {
+                ui.label(self.status.to_string());
+                if let Some(message) = &self.message {
+                    let error_message = RichText::new(format!("Error: {}", message))
+                        .background_color(Color32::RED)
+                        .color(Color32::WHITE);
+                    ui.label(error_message);
+                    // do we need an "OK" button to clear the message?
+                }
+            });
+        });
+    }
+}
+
+// ---------------------------
+impl eframe::App for App {
+    fn update ( &mut self, ctx: &Context, frame: &mut Frame ) {
+        use AppStatus::*;
+
+        // ctx.set_visuals(Theme::Dark.egui_visuals());
+
+        self.show_top(ctx, frame);
+        self.show_footer(ctx);
+
+        if let Some(new_status) = CentralPanel::default().show(ctx,  |ui: &mut Ui| {
+            match self.status {
+                About => {  // TODO: this should be in a window, instead
+                    if show_about(ui) {
+                        info!("Closing About");
+                        Some(Starting)
+                    } else { None }
+                },
+
+                _ => { None }
+            }
+        }).inner {
+            self.status = new_status;
+        }
+    }
+
+
+}
+
+// ===========================
+// AppStatus
+
+#[allow(dead_code)]
+#[derive(Debug, Default)]
+enum AppStatus {
+    #[default]
+    Starting,
+    Ready { data: AppData },
+    About,
+}
+
+impl Display for AppStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use AppStatus::*;
+
+        write!(f, "{}", match self {
+            Starting => "Starting",
+            Ready {..} => "Ready",
+            About => "About",
+        })
+    }
+}
+
+
+// ===========================
+// Additional functions
+
+fn configure_fonts ( ctx: &CreationContext, zoom: f32 ) {
+	let mut fonts = FontDefinitions::default();
+	fonts.font_data.insert("manrope".to_string(), Arc::new(FontData::from_static(include_bytes!("../manrope_regular.otf"))));
+	fonts.families.get_mut(&FontFamily::Proportional).unwrap().insert(0, "manrope".to_owned());
+	ctx.egui_ctx.set_fonts(fonts);
+    ctx.egui_ctx.set_zoom_factor(zoom);
+}
+
+/// returns whether Continue button has been pressed
+// TODO: put this in a window, instead
+fn show_about ( ui: &mut Ui ) -> bool {
+    ui.with_layout(Layout::top_down(Align::Center), |ui| {
+        const HELP_WIDTH: f32 = 0.75;
+        let all_width = ui.available_width();
+        ui.set_max_width(all_width * HELP_WIDTH);
+
+        ui.add_space(UI_PADDING * 3.5);
+        let app_name = RichText::new(APP_NAME).heading();
+        ui.label(app_name);
+        ui.label(format!("version {}", env!("CARGO_PKG_VERSION")));
+        ui.add_space(UI_PADDING);
+        ui.label(HELP_TEXT.join("\n"));
+        ui.add_space(UI_PADDING * 1.15);
+        ui.label(RichText::new("Change Notes").underline());
+        ui.label(CHANGE_NOTES.join("\n"));
+        ui.add_space(UI_PADDING * 1.15);
+        ui.separator();
+        ui.label(FONT_NOTES.join("\n"));
+        ui.add_space(UI_PADDING * 2.);
+        let continue_text = RichText::new("Continue").text_style(TextStyle::Button).color(Color32::GREEN);
+        ui.button(continue_text).clicked()
+    }).inner
+}
+
+// ---------------------------
+// Load and Save to POT files
+
+#[allow(dead_code)]
+pub fn save_to_pot<T> ( file_path: &Path, data: &T ) -> anyhow::Result<()>
+    where T: Serialize {
+    if file_path.exists() {
+        fs::remove_file(file_path)?;
+    }
+    let file_handler = OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(file_path)?;
+
+    let buf= pot::to_vec(data)?;
+    let mut buf_writer = BufWriter::new(&file_handler);
+    buf_writer.write_all(buf.as_slice())?;
+    Ok(())
+}
+
+#[allow(dead_code)]
+pub fn load_from_pot<T> ( file_path: &Path ) -> anyhow::Result<T>
+    where T: DeserializeOwned {
+        let file_handler = OpenOptions::new()
+        .read(true)
+        .open(file_path)?;
+    let buf_reader = BufReader::new(&file_handler);
+    let data : T = pot::from_reader(buf_reader)?;
+    Ok(data)
+}
