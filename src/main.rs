@@ -7,6 +7,7 @@ use app::App;
 
 mod app;
 mod app_data;
+mod child_windows;
 
 const APP_NAME: &str = "Blades Factions";
 

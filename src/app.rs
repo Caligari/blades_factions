@@ -1,39 +1,40 @@
 use std::{fmt::Display, fs::{self, OpenOptions}, io::{BufReader, BufWriter, Write}, path::Path, sync::Arc};
 
-use eframe::{egui::{menu, Align, Button, CentralPanel, Color32, Context, FontData, FontDefinitions, FontFamily, Layout, RichText, Separator, TextStyle, TopBottomPanel, Ui, ViewportCommand}, CreationContext, Frame};
+use eframe::{egui::{menu, Align, Button, CentralPanel, Color32, Context, FontData, FontDefinitions, FontFamily, Layout, RichText, Separator, TopBottomPanel, Ui, ViewportCommand}, CreationContext, Frame};
 use log::info;
 use serde::{de::DeserializeOwned, Serialize};
 
-use crate::{app_data::AppData, APP_NAME};
+use crate::{app_data::AppData, child_windows::ChildWindows};
 
 
 
 
 const ZOOM: f32 = 1.0;
-const UI_PADDING: f32 = 8.0;
+pub const UI_PADDING: f32 = 8.0;
 
-const HELP_TEXT: &[&str] = &[
+pub const HELP_TEXT: &[&str] = &[
     "created by Liam Routt",
     "for use with Blades in the Dark",
     "",
     "This utility allows you to track the various factions in your game.", "",
 ];
 
-const CHANGE_NOTES: &[&str] = &[
+pub const CHANGE_NOTES: &[&str] = &[
     "0.1.0 - initial version",
 ];
 
-const FONT_NOTES: &[&str] = &[
+pub const FONT_NOTES: &[&str] = &[
     "Using the Manrope font, by Michael Sharanda, covered under the SIL Open Font License (http://scripts.sil.org/OFL)"
 ];
 
 
 
 #[allow(dead_code)]
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct  App {
     status: AppStatus,
     message: Option<String>,
+    child_windows: ChildWindows,
 }
 
 impl App {
@@ -70,9 +71,7 @@ impl App {
                     });
                     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                         if ui.button("About").clicked() {
-                            self.status = if matches!(self.status, AppStatus::About) {
-                                AppStatus::Starting
-                            } else { AppStatus::About };  // todo: switching to About loses all data
+                            self.child_windows.toggle_about();
                             info!("Requested About");
                         }
                     });
@@ -99,6 +98,8 @@ impl App {
 }
 
 // ---------------------------
+#[allow(clippy::match_single_binding)]
+#[allow(unused_imports)]
 impl eframe::App for App {
     fn update ( &mut self, ctx: &Context, frame: &mut Frame ) {
         use AppStatus::*;
@@ -108,20 +109,15 @@ impl eframe::App for App {
         self.show_top(ctx, frame);
         self.show_footer(ctx);
 
-        if let Some(new_status) = CentralPanel::default().show(ctx,  |ui: &mut Ui| {
+        if let Some(new_status) = CentralPanel::default().show(ctx,  |_ui: &mut Ui| {
             match self.status {
-                About => {  // TODO: this should be in a window, instead
-                    if show_about(ui) {
-                        info!("Closing About");
-                        Some(Starting)
-                    } else { None }
-                },
-
                 _ => { None }
             }
         }).inner {
             self.status = new_status;
         }
+
+        self.child_windows.show_windows(ctx);
     }
 
 
@@ -136,7 +132,6 @@ enum AppStatus {
     #[default]
     Starting,
     Ready { data: AppData },
-    About,
 }
 
 impl Display for AppStatus {
@@ -146,7 +141,6 @@ impl Display for AppStatus {
         write!(f, "{}", match self {
             Starting => "Starting",
             Ready {..} => "Ready",
-            About => "About",
         })
     }
 }
@@ -163,31 +157,6 @@ fn configure_fonts ( ctx: &CreationContext, zoom: f32 ) {
     ctx.egui_ctx.set_zoom_factor(zoom);
 }
 
-/// returns whether Continue button has been pressed
-// TODO: put this in a window, instead
-fn show_about ( ui: &mut Ui ) -> bool {
-    ui.with_layout(Layout::top_down(Align::Center), |ui| {
-        const HELP_WIDTH: f32 = 0.75;
-        let all_width = ui.available_width();
-        ui.set_max_width(all_width * HELP_WIDTH);
-
-        ui.add_space(UI_PADDING * 3.5);
-        let app_name = RichText::new(APP_NAME).heading();
-        ui.label(app_name);
-        ui.label(format!("version {}", env!("CARGO_PKG_VERSION")));
-        ui.add_space(UI_PADDING);
-        ui.label(HELP_TEXT.join("\n"));
-        ui.add_space(UI_PADDING * 1.15);
-        ui.label(RichText::new("Change Notes").underline());
-        ui.label(CHANGE_NOTES.join("\n"));
-        ui.add_space(UI_PADDING * 1.15);
-        ui.separator();
-        ui.label(FONT_NOTES.join("\n"));
-        ui.add_space(UI_PADDING * 2.);
-        let continue_text = RichText::new("Continue").text_style(TextStyle::Button).color(Color32::GREEN);
-        ui.button(continue_text).clicked()
-    }).inner
-}
 
 // ---------------------------
 // Load and Save to POT files
