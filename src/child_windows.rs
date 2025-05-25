@@ -5,6 +5,7 @@ use log::debug;
 
 use crate::{app::{CHANGE_NOTES, FONT_NOTES, HELP_TEXT, UI_PADDING}, APP_NAME};
 
+// TODO: add settings panel?
 
 #[derive(Default)]
 pub struct ChildWindows {

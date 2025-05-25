@@ -1,5 +1,6 @@
 use std::fs;
 
+use app_settings::AppSettings;
 use eframe::{egui::{Vec2, ViewportBuilder}, run_native, NativeOptions};
 use log::{info, LevelFilter};
 
@@ -7,6 +8,7 @@ use app::App;
 
 mod app;
 mod app_data;
+mod app_settings;
 mod child_windows;
 
 const APP_NAME: &str = "Blades Factions";
@@ -14,6 +16,9 @@ const APP_NAME: &str = "Blades Factions";
 fn main() {
     setup_logger().expect("log did not start");
     info!("Starting");
+
+    // TODO: load settings
+    let settings = AppSettings::default();
 
     let app_name = format!("{} (version {})", APP_NAME, env!("CARGO_PKG_VERSION"));
     let initial_window_size = Vec2::new(1200., 720.);
@@ -31,7 +36,8 @@ fn main() {
         ..Default::default()
     };
 
-    let _res = run_native(&app_name, win_option, Box::new(|cc| Ok(Box::new(App::new(cc)))));
+    // todo: pass settings to App
+    let _res = run_native(&app_name, win_option, Box::new(|cc| Ok(Box::new(App::new(settings, cc)))));
 }
 
 

@@ -8,7 +8,8 @@ use crate::app::load_from_pot;
 
 
 
-#[derive(Debug)]
+// Default should be empty
+#[derive(Debug, Default)]
 pub struct AppData {
 
 }
@@ -58,8 +59,8 @@ impl From<SaveData1> for AppData {
     }
 }
 
-impl From<AppData> for SaveData1 {
-    fn from(_value: AppData) -> Self {
+impl From<&AppData> for SaveData1 {
+    fn from(_value: &AppData) -> Self {
         SaveData1 {
             save_version: SAVE1_VERSION,
         }

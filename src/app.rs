@@ -4,7 +4,7 @@ use eframe::{egui::{menu, Align, Button, CentralPanel, Color32, Context, FontDat
 use log::info;
 use serde::{de::DeserializeOwned, Serialize};
 
-use crate::{app_data::AppData, child_windows::ChildWindows};
+use crate::{app_data::AppData, app_settings::AppSettings, child_windows::ChildWindows};
 
 
 
@@ -33,14 +33,19 @@ pub const FONT_NOTES: &[&str] = &[
 #[derive(Default)]
 pub struct  App {
     status: AppStatus,
+    settings: AppSettings,
+    data: AppData,
     message: Option<String>,
     child_windows: ChildWindows,
 }
 
 impl App {
-    pub fn new ( cc: &CreationContext<'_> ) -> Self {
+    pub fn new ( settings: AppSettings, cc: &CreationContext<'_> ) -> Self {
         configure_fonts(cc, ZOOM);
-        App::default()
+        App {
+            settings,
+            ..Default::default()
+        }
     }
 
     fn show_top ( &mut self, ctx: &Context, _frame: &mut Frame ) {
@@ -57,9 +62,7 @@ impl App {
                         ui.add(Separator::default().spacing(2.));
                         if ui.add_enabled(false, Button::new("Settings")).clicked() {
                             // TODO: show/change settings
-                            // ignore certain data
-                            // find data location
-                            // default to open particular league
+                            // should that be window or full panel?
                             info!("Requested Settings");
                         }
                         ui.add(Separator::default().spacing(2.));
@@ -104,13 +107,22 @@ impl eframe::App for App {
     fn update ( &mut self, ctx: &Context, frame: &mut Frame ) {
         use AppStatus::*;
 
-        // ctx.set_visuals(Theme::Dark.egui_visuals());
+        ctx.set_visuals(self.settings.theme().default_visuals());
 
         self.show_top(ctx, frame);
         self.show_footer(ctx);
 
         if let Some(new_status) = CentralPanel::default().show(ctx,  |_ui: &mut Ui| {
             match self.status {
+                Starting => {
+                    // if not already starting, kick things off
+                    // info!("Starting")
+                    // if completed
+                    info!("Starting => Ready");
+                    Some(Ready)
+                    // otherwise, keep doing start
+                    // None
+                }
                 _ => { None }
             }
         }).inner {
@@ -131,7 +143,7 @@ impl eframe::App for App {
 enum AppStatus {
     #[default]
     Starting,
-    Ready { data: AppData },
+    Ready,
 }
 
 impl Display for AppStatus {
@@ -140,7 +152,7 @@ impl Display for AppStatus {
 
         write!(f, "{}", match self {
             Starting => "Starting",
-            Ready {..} => "Ready",
+            Ready => "Ready",
         })
     }
 }

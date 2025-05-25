@@ -11,6 +11,6 @@ serde = { version = "1.0", features = ["derive"] }
 directories-next = "2.0.0"
 log = "0.4"
 fern = "0.7"
-rmp_fs = "1.0"
+# rmp_fs = "1.0"
 pot = "3.0"
-binrw = "0.15"
+# binrw = "0.15"
