@@ -1,5 +1,6 @@
-use std::{fmt::Display, fs::{self, OpenOptions}, io::{BufReader, BufWriter, Write}, path::Path, sync::Arc};
+use std::{fmt::Display, fs::{self, create_dir_all, OpenOptions}, io::{BufReader, BufWriter, Write}, path::Path, sync::Arc};
 
+use directories_next::ProjectDirs;
 use eframe::{egui::{menu, Align, Button, CentralPanel, Color32, Context, FontData, FontDefinitions, FontFamily, Layout, RichText, Separator, TopBottomPanel, Ui, ViewportCommand}, CreationContext, Frame};
 use log::info;
 use serde::{de::DeserializeOwned, Serialize};
@@ -30,21 +31,25 @@ pub const FONT_NOTES: &[&str] = &[
 
 
 #[allow(dead_code)]
-#[derive(Default)]
 pub struct  App {
     status: AppStatus,
     settings: AppSettings,
+    project_directories: ProjectDirs,
     data: AppData,
     message: Option<String>,
     child_windows: ChildWindows,
 }
 
 impl App {
-    pub fn new ( settings: AppSettings, cc: &CreationContext<'_> ) -> Self {
+    pub fn new ( settings: AppSettings, project_directories: ProjectDirs, cc: &CreationContext<'_> ) -> Self {
         configure_fonts(cc, ZOOM);
         App {
             settings,
-            ..Default::default()
+            project_directories,
+            status: AppStatus::default(),
+            data: AppData::default(),
+            message: None,
+            child_windows: ChildWindows::default(),
         }
     }
 
@@ -176,9 +181,15 @@ fn configure_fonts ( ctx: &CreationContext, zoom: f32 ) {
 #[allow(dead_code)]
 pub fn save_to_pot<T> ( file_path: &Path, data: &T ) -> anyhow::Result<()>
     where T: Serialize {
+
+    if let Some(dir_path) = file_path.parent() {
+        create_dir_all(dir_path)?
+    }
+
     if file_path.exists() {
         fs::remove_file(file_path)?;
     }
+
     let file_handler = OpenOptions::new()
         .write(true)
         .create_new(true)

@@ -1,9 +1,13 @@
 use std::path::Path;
 
 use anyhow::{Result, Ok, anyhow};
+use log::info;
 use serde::{Deserialize, Serialize};
 
-use crate::app::load_from_pot;
+use crate::app::{load_from_pot, save_to_pot};
+
+const SETTINGS_NAME: &str = "settings";
+const SETTINGS_EXTENSION: &str = "pot";
 
 
 // TODO: Should include settings panel
@@ -19,13 +23,18 @@ impl AppSettings {
         self.theme
     }
 
-    pub fn save_to_file ( &self ) {
-        let _settings: SaveSettings1 = self.into();
-        // todo
+    pub fn save_to_file ( &self, config_path: &Path ) -> anyhow::Result<()> {
+        let file_path = config_path.with_file_name(SETTINGS_NAME).with_extension(SETTINGS_EXTENSION);
+        let settings: SaveSettings1 = self.into();
+        info!("Saving settings to file in {}", config_path.display());
+        save_to_pot(&file_path, &settings)
     }
 
-    pub fn load_from_file ( file_path: &Path ) -> Result<AppSettings> {
-        load_settings(file_path)
+    // Create settings by loading from the settings file in the passed config directory
+    pub fn load_from_file ( config_path: &Path ) -> Result<AppSettings> {
+        let file_path = config_path.with_file_name(SETTINGS_NAME).with_extension(SETTINGS_EXTENSION);
+        info!("Attempting to load settings from {}", file_path.display());
+        load_settings(&file_path)
     }
 }
 

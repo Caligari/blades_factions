@@ -1,8 +1,9 @@
-use std::fs;
+use std::{env::current_exe, fs};
 
 use app_settings::AppSettings;
+use directories_next::ProjectDirs;
 use eframe::{egui::{Vec2, ViewportBuilder}, run_native, NativeOptions};
-use log::{info, LevelFilter};
+use log::{error, info, warn, LevelFilter};
 
 use app::App;
 
@@ -12,13 +13,36 @@ mod app_settings;
 mod child_windows;
 
 const APP_NAME: &str = "Blades Factions";
+const COMPANY_DOMAIN: &str = "org";
+const COMPANY_NAME: &str = "Darcsyde";
+
 
 fn main() {
     setup_logger().expect("log did not start");
     info!("Starting");
 
-    // TODO: load settings
-    let settings = AppSettings::default();
+    let Ok(exe_path) = current_exe()
+    else { panic!("Unable to find exe path"); };
+
+    let Some(exe_name) = exe_path.file_stem()
+    else { panic!("Unable to find exe name in {}", exe_path.display()); };
+
+    let base_name = exe_name.to_string_lossy();
+
+    let Some(base_dir) = ProjectDirs::from(COMPANY_DOMAIN, COMPANY_NAME, &base_name)
+    else { panic!("Unable to find project directory for {}, {}, {}", COMPANY_DOMAIN, COMPANY_NAME, base_name); };
+
+    let settings = match AppSettings::load_from_file(base_dir.config_dir()) {
+        Ok(settings) => settings,
+        Err(err) => {
+            warn!("Unable to load settings from {}: {}", base_dir.config_dir().display(), err);
+            let settings = AppSettings::default();
+            if let Err(err) = settings.save_to_file(base_dir.config_dir()) {
+                error!("Unable to save settings to {}: {}", base_dir.config_dir().display(), err);
+            }
+            settings
+        }
+    };
 
     let app_name = format!("{} (version {})", APP_NAME, env!("CARGO_PKG_VERSION"));
     let initial_window_size = Vec2::new(1200., 720.);
@@ -36,8 +60,10 @@ fn main() {
         ..Default::default()
     };
 
-    // todo: pass settings to App
-    let _res = run_native(&app_name, win_option, Box::new(|cc| Ok(Box::new(App::new(settings, cc)))));
+    let _res = run_native(&app_name,
+        win_option,
+        Box::new(|cc| Ok(Box::new(App::new(settings, base_dir, cc))))
+    );
 }
 
 

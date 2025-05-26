@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::app::load_from_pot;
 
-
+const DATA_EXTENSION: &str = "pot";
 
 
 // Default should be empty
@@ -21,7 +21,7 @@ impl AppData {
     }
 
     pub fn load_from_file ( file_path: &Path ) -> Result<AppData> {
-        load_save_data(file_path)
+        load_save_data(&file_path.with_extension(DATA_EXTENSION))
     }
 }
 
