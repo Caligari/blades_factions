@@ -11,6 +11,11 @@ mod app;
 mod app_data;
 mod app_settings;
 mod child_windows;
+mod faction;
+mod person;
+mod district;
+mod clock;
+mod tier;
 
 const APP_NAME: &str = "Blades Factions";
 const COMPANY_DOMAIN: &str = "org";
