@@ -2,6 +2,8 @@ use std::{collections::BTreeMap, rc::Rc};
 
 use serde::{Deserialize, Serialize};
 
+use crate::app_data::DataIndex;
+
 
 
 
@@ -15,6 +17,8 @@ pub struct Person {
     // connections?
 }
 
+pub type PersonRef = Rc<PersonIndex>;
+
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct PersonIndex {
@@ -24,8 +28,8 @@ pub struct PersonIndex {
 
 #[allow(dead_code)]
 impl PersonIndex {
-    pub fn index ( &self ) -> usize {
-        self.index
+    pub fn index ( &self ) -> DataIndex {
+        DataIndex::PersonIndex(self.index)
     }
 }
 

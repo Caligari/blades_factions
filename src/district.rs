@@ -1,5 +1,7 @@
 use std::{collections::BTreeMap, rc::Rc};
 
+use crate::app_data::DataIndex;
+
 
 
 #[allow(dead_code)]
@@ -22,6 +24,8 @@ impl District {
     }
 }
 
+pub type DistrictRef = Rc<DistrictIndex>;
+
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct DistrictIndex {
@@ -31,8 +35,8 @@ pub struct DistrictIndex {
 
 #[allow(dead_code)]
 impl DistrictIndex {
-    pub fn index ( &self ) -> usize {
-        self.index
+    pub fn index ( &self ) -> DataIndex {
+        DataIndex::DistrictIndex(self.index)
     }
 }
 

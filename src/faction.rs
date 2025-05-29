@@ -2,27 +2,28 @@ use std::{collections::BTreeMap, rc::Rc};
 
 use serde::{Deserialize, Serialize};
 
-use crate::{district::DistrictIndex, person::PersonIndex, tier::Tier};
+use crate::{app_data::DataIndex, clock::Clock, district::DistrictRef, person::PersonRef, tier::Tier};
 
-
-// todo: this needs a serializeable form, where we process the Indexes into index numbers
 #[allow(dead_code)]
 #[derive(Debug, Default, Clone)]
 pub struct Faction {
     name: String,
     description: String,
     tier: Tier,
-    hq: Option<Rc<DistrictIndex>>,
-    // turf districts
-    leader: Option<Rc<PersonIndex>>,
-    // notable persons
+    hq: Option<DistrictRef>,
+    turf: Vec<DistrictRef>,
+    leader: Option<PersonRef>,
+    notable: Vec<PersonRef>,
     assets: String,
     notes: String,
-    // allies factions
-    // enemies factions
+    allies: Vec<FactionRef>,
+    enemies: Vec<FactionRef>,
     general: String,
-    // clocks
+    clocks: Vec<Clock>,
 }
+
+#[allow(dead_code)]
+pub type FactionRef = Rc<FactionIndex>;
 
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
@@ -33,8 +34,8 @@ pub struct FactionIndex {
 
 #[allow(dead_code)]
 impl FactionIndex {
-    pub fn index ( &self ) -> usize {
-        self.index
+    pub fn index ( &self ) -> DataIndex {
+        DataIndex::FactionIndex(self.index)
     }
 }
 
@@ -51,29 +52,34 @@ pub struct FactionStore {
     name: String,
     description: String,
     tier: Tier,
-    hq: Option<usize>,  // district index
-    // turf districts
-    leader: Option<usize>,  // person index
-    // notable persons
+    hq: DataIndex,  // district index
+    turf: Vec<DataIndex>,  // districts
+    leader: DataIndex,  // person index
+    notable: Vec<DataIndex>,  // people
     assets: String,
     notes: String,
-    // allies factions
-    // enemies factions
+    allies: Vec<DataIndex>,  // fations
+    enemies: Vec<DataIndex>,  // factions
     general: String,
-    // clocks
+    clocks: Vec<Clock>,
 }
 
-impl From<Faction> for FactionStore {
-    fn from(value: Faction) -> Self {
+impl From<&Faction> for FactionStore {
+    fn from(from_faction: &Faction) -> Self {
         FactionStore {
-            name: value.name,
-            description: value.description,
-            tier: value.tier,
-            hq: value.hq.map(|i| i.index()),
-            leader: value.leader.map(|i| i.index()),
-            assets: value.assets,
-            notes: value.notes,
-            general: value.general,
+            name: from_faction.name.clone(),
+            description: from_faction.description.clone(),
+            tier: from_faction.tier,
+            hq: from_faction.hq.as_ref().map_or(DataIndex::Nothing, |i| i.index()),
+            turf: from_faction.turf.iter().map(|i| i.index()).collect(),
+            leader: from_faction.leader.as_ref().map_or(DataIndex::Nothing, |i| i.index()),
+            notable: from_faction.notable.iter().map(|i| i.index()).collect(),
+            assets: from_faction.assets.clone(),
+            notes: from_faction.notes.clone(),
+            allies: from_faction.allies.iter().map(|i| i.index()).collect(),
+            enemies: from_faction.enemies.iter().map(|i| i.index()).collect(),
+            general: from_faction.general.clone(),
+            clocks: from_faction.clocks.clone(),
         }
     }
 }

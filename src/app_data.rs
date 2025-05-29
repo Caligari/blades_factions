@@ -66,3 +66,14 @@ impl From<&AppData> for SaveData1 {
         }
     }
 }
+
+
+// ----------------------------------------
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub enum DataIndex {
+    Nothing,
+    FactionIndex(usize),
+    PersonIndex(usize),
+    DistrictIndex(usize),
+}
