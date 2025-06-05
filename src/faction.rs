@@ -27,7 +27,11 @@ impl Named for Faction {
     fn name ( &self ) -> &str {
         &self.name
     }
-}
+
+    #[allow(dead_code)]
+    fn make_data_index ( index: usize ) -> DataIndex {
+        DataIndex::FactionIndex(index)
+    }}
 
 #[allow(dead_code)]
 pub type FactionRef = Arc<RwLock<FactionIndex>>;

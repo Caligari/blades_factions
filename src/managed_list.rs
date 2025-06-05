@@ -23,7 +23,8 @@ pub type DistrictRef = Arc<RwLock<NamedIndex<District>>>;
 #[derive(Debug, Clone)]
 pub struct NamedIndex<T: Clone + Named> {
     name: String,
-    index: usize,
+    // index: usize,
+    index: DataIndex,
     typ: PhantomData<T>,
 }
 
@@ -32,26 +33,9 @@ impl<T: Clone + Named> NamedIndex<T> {
     pub fn name ( &self ) -> &str {
         &self.name
     }
-}
 
-#[allow(dead_code)]
-impl NamedIndex<Faction> {
     pub fn index ( &self ) -> DataIndex {
-        DataIndex::FactionIndex(self.index)
-    }
-}
-
-#[allow(dead_code)]
-impl NamedIndex<Person> {
-    pub fn index ( &self ) -> DataIndex {
-        DataIndex::PersonIndex(self.index)
-    }
-}
-
-#[allow(dead_code)]
-impl NamedIndex<District> {
-    pub fn index ( &self ) -> DataIndex {
-        DataIndex::DistrictIndex(self.index)
+        self.index
     }
 }
 
@@ -67,13 +51,14 @@ impl<T: Clone + Named> ManagedList<T> {
     pub fn add ( &mut self, item: &T ) -> Result<Arc<RwLock<NamedIndex<T>>>> {
         if !self.list_index.contains_key(item.name()) {
             let name = item.name().to_string();
-            let index = self.list.len();
+            let index = T::make_data_index(self.list.len());
             self.list.push(item.clone());
             let named_index = Arc::new(RwLock::new(NamedIndex { name: name.clone(), index, typ: PhantomData }));
             self.list_index.insert(name, named_index.clone());
             Ok(named_index)
         } else { Err(anyhow!("key already present in list")) }
     }
+
 }
 
 
@@ -82,4 +67,5 @@ impl<T: Clone + Named> ManagedList<T> {
 
 pub trait Named {
     fn name ( &self ) -> &str;
+    fn make_data_index ( index: usize ) -> DataIndex;
 }

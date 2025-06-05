@@ -26,6 +26,10 @@ impl Named for District {
     fn name ( &self ) -> &str {
         &self.name
     }
+
+    fn make_data_index ( index: usize ) -> DataIndex {
+        DataIndex::DistrictIndex(index)
+    }
 }
 
 
