@@ -1,4 +1,6 @@
-use std::{collections::BTreeMap, rc::Rc};
+use std::{collections::BTreeMap, sync::Arc};
+
+use eframe::egui::mutex::RwLock;
 
 use crate::app_data::DataIndex;
 
@@ -24,7 +26,7 @@ impl District {
     }
 }
 
-pub type DistrictRef = Rc<DistrictIndex>;
+pub type DistrictRef = Arc<RwLock<DistrictIndex>>;
 
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
@@ -41,8 +43,8 @@ impl DistrictIndex {
 }
 
 #[allow(dead_code)]
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct DistrictList {
     factions: Vec<District>,  // ?maybe something that only grows?
-    factions_index: BTreeMap<String, Rc<DistrictIndex>>,
+    factions_index: BTreeMap<String, DistrictRef>,
 }

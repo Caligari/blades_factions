@@ -1,5 +1,6 @@
-use std::{collections::BTreeMap, rc::Rc};
+use std::{collections::BTreeMap, sync::Arc};
 
+use eframe::egui::mutex::RwLock;
 use serde::{Deserialize, Serialize};
 
 use crate::app_data::DataIndex;
@@ -17,7 +18,7 @@ pub struct Person {
     // connections?
 }
 
-pub type PersonRef = Rc<PersonIndex>;
+pub type PersonRef = Arc<RwLock<PersonIndex>>;
 
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
@@ -34,9 +35,9 @@ impl PersonIndex {
 }
 
 #[allow(dead_code)]
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct PersonList {
     factions: Vec<Person>,  // ?maybe something that only grows?
-    factions_index: BTreeMap<String, Rc<PersonIndex>>,
+    factions_index: BTreeMap<String, PersonRef>,
 }
 
