@@ -16,6 +16,7 @@ mod person;
 mod district;
 mod clock;
 mod tier;
+mod managed_list;
 
 const APP_NAME: &str = "Blades Factions";
 const COMPANY_DOMAIN: &str = "org";

@@ -3,7 +3,7 @@ use std::{collections::BTreeMap, sync::Arc};
 use eframe::egui::mutex::RwLock;
 use serde::{Deserialize, Serialize};
 
-use crate::{app_data::DataIndex, clock::Clock, district::DistrictRef, person::PersonRef, tier::Tier};
+use crate::{app_data::DataIndex, clock::Clock, district::DistrictRef, managed_list::Named, person::PersonRef, tier::Tier};
 
 #[allow(dead_code)]
 #[derive(Default, Clone)]
@@ -21,6 +21,12 @@ pub struct Faction {
     enemies: Vec<FactionRef>,
     general: String,
     clocks: Vec<Clock>,
+}
+
+impl Named for Faction {
+    fn name ( &self ) -> &str {
+        &self.name
+    }
 }
 
 #[allow(dead_code)]

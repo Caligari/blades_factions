@@ -3,15 +3,18 @@ use std::path::Path;
 use anyhow::{Result, Ok, anyhow};
 use serde::{Deserialize, Serialize};
 
-use crate::app::load_from_pot;
+use crate::{app::load_from_pot, district::District, faction::Faction, managed_list::ManagedList, person::Person};
 
 const DATA_EXTENSION: &str = "pot";
 
 
+#[allow(dead_code)]
 // Default should be empty
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct AppData {
-
+    people: ManagedList<Person>,
+    districts: ManagedList<District>,
+    factions: ManagedList<Faction>,
 }
 
 #[allow(dead_code)]
@@ -55,6 +58,9 @@ impl SaveData1 {
 impl From<SaveData1> for AppData {
     fn from(_value: SaveData1) -> Self {
         AppData {
+            people: ManagedList::<Person>::default(),  // todo
+            districts: ManagedList::<District>::default(),  // todo
+            factions: ManagedList::<Faction>::default(),  // todo
         }
     }
 }

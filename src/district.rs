@@ -2,7 +2,7 @@ use std::{collections::BTreeMap, sync::Arc};
 
 use eframe::egui::mutex::RwLock;
 
-use crate::app_data::DataIndex;
+use crate::{app_data::DataIndex, managed_list::Named};
 
 
 
@@ -20,11 +20,15 @@ impl District {
             name: name.to_string(),
         }
     }
+}
 
-    pub fn name ( &self ) -> &str {
+impl Named for District {
+    fn name ( &self ) -> &str {
         &self.name
     }
 }
+
+
 
 pub type DistrictRef = Arc<RwLock<DistrictIndex>>;
 
