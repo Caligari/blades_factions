@@ -113,9 +113,9 @@ impl<T: Clone + Named> ManagedList<T> {
 
     // todo - replace
 
-    // todo - fetch
-    pub fn fetch ( &self, _index: &GenericRef<T> ) -> Result<Option<T>> {
-        Ok(None)
+    pub fn fetch ( &self, index: &GenericRef<T> ) -> Option<&T> {
+        let index = index.index()?;
+        self.list.get(index)
     }
 }
 
@@ -146,10 +146,14 @@ mod tests {
         let mut m_list = ManagedList::<District>::default();
 
         let item1 = District::new("Test1");
-        if let Err(e) = m_list.add(&item1) {
-            println!("add_managed_list: error on add item1 - {e}");  // do we need this log message?
-            panic!("error on add item1: {e}");
-        }
+        let item1_ref = match m_list.add(&item1) {
+            Err(e) => {
+                println!("add_managed_list: error on add item1 - {e}");  // do we need this log message?
+                panic!("error on add item1: {e}");
+            },
+
+            Ok(ret) => ret
+        };
         assert_eq!(m_list.len(), 1);
 
         let item2 = District::new("Test2");
@@ -158,6 +162,10 @@ mod tests {
             panic!("error on add item2: {e}");
         }
         assert_eq!(m_list.len(), 2);
+
+        let found1 = m_list.fetch(&item1_ref);
+        assert!(found1.is_some(), "found item 1 is empty");
+        assert_eq!(found1.unwrap().name(), "Test1");
     }
 
     #[test]
@@ -166,7 +174,7 @@ mod tests {
         let mut m_list = ManagedList::<District>::default();
 
         let item1 = District::new("Test1");
-        let _item1_ref = match m_list.add(&item1) {
+        let item1_ref = match m_list.add(&item1) {
             Err(e) => {
                 println!("remove_managed_list: error on add item1 - {e}");  // do we need this log message?
                 panic!("error on add item1: {e}");
@@ -188,7 +196,7 @@ mod tests {
         assert_eq!(m_list.len(), 2);
 
         let item3 = District::new("Test3");
-        let _item3_ref = match m_list.add(&item3) {
+        let item3_ref = match m_list.add(&item3) {
             Err(e) => {
                 println!("remove_managed_list: error on add item3 - {e}");  // do we need this log message?
                 panic!("error on add item3: {e}");
@@ -220,6 +228,17 @@ mod tests {
         };
         assert!(remove2.is_none());
         assert_eq!(m_list.len(), 2);
+
+        let found1 = m_list.fetch(&item1_ref);
+        assert!(found1.is_some(), "found item 1 is empty");
+        assert_eq!(found1.unwrap().name(), "Test1");
+
+        let found2 = m_list.fetch(&item2_ref);
+        assert!(found2.is_none(), "found item 2 is not empty");
+
+        let found3 = m_list.fetch(&item3_ref);
+        assert!(found3.is_some(), "found item 3 is empty");
+        assert_eq!(found3.unwrap().name(), "Test3");
     }
 
 
