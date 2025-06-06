@@ -116,13 +116,16 @@ impl<T: Clone + Named> ManagedList<T> {
     }
 
     /// Returns the old item, if something was replaced
+    /// Note: the reference name is updated as well
     pub fn replace ( &mut self, index: &GenericRef<T>, new_item: T ) -> Option<T> {
         if index.has_index() {
-            let Some(index) = index.index()
+            let Some(ind) = index.index()
                 else { panic!("asked to remove incorrect index from managed list"); };
-            let old = self.list.get(index).cloned();  // technically this should always return Some
+            let old = self.list.get(ind).cloned();  // technically this should always return Some
             assert!(old.is_some());
-            self.list[index] = new_item;
+            let new_name = new_item.name().to_owned();
+            self.list[ind] = new_item;
+            index.0.write().name = new_name;
             old
         } else {
             warn!("asked to replace an empty item");  // should this do an add using the old reference?
