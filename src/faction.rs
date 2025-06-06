@@ -31,7 +31,15 @@ impl Named for Faction {
     #[allow(dead_code)]
     fn make_data_index ( index: usize ) -> DataIndex {
         DataIndex::FactionIndex(index)
-    }}
+    }
+
+    fn fetch_data_index ( index: DataIndex ) -> Option<usize> {
+        match index {
+            DataIndex::FactionIndex( ind ) => Some(ind),
+            _ => None,
+        }
+    }
+}
 
 #[allow(dead_code)]
 pub type FactionRef = Arc<RwLock<FactionIndex>>;

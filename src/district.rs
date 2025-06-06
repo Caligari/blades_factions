@@ -30,6 +30,13 @@ impl Named for District {
     fn make_data_index ( index: usize ) -> DataIndex {
         DataIndex::DistrictIndex(index)
     }
+
+    fn fetch_data_index ( index: DataIndex ) -> Option<usize> {
+        match index {
+            DataIndex::DistrictIndex( ind ) => Some(ind),
+            _ => None,
+        }
+    }
 }
 
 

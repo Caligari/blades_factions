@@ -83,3 +83,15 @@ pub enum DataIndex {
     PersonIndex(usize),
     DistrictIndex(usize),
 }
+
+impl DataIndex {
+    pub fn index ( &self ) -> Option<usize> {
+        match self {
+            DataIndex::DistrictIndex(i) |
+            DataIndex::FactionIndex(i) |
+            DataIndex::PersonIndex(i) => Some(*i),
+
+            _ => None
+        }
+    }
+}

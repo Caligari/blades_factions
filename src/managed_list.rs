@@ -2,6 +2,7 @@ use std::{collections::BTreeMap, marker::PhantomData, sync::Arc};
 
 use anyhow::{Result, Ok, anyhow};
 use eframe::egui::mutex::RwLock;
+use log::{info, warn};
 
 use crate::{app_data::DataIndex, district::District, faction::Faction, person::Person};
 
@@ -48,6 +49,10 @@ pub struct ManagedList<T: Clone + Named> {
 
 #[allow(dead_code)]
 impl<T: Clone + Named> ManagedList<T> {
+    pub fn len ( &self ) -> usize {
+        self.list.len()
+    }
+
     pub fn add ( &mut self, item: &T ) -> Result<Arc<RwLock<NamedIndex<T>>>> {
         if !self.list_index.contains_key(item.name()) {
             let name = item.name().to_string();
@@ -59,8 +64,49 @@ impl<T: Clone + Named> ManagedList<T> {
         } else { Err(anyhow!("key already present in list")) }
     }
 
+    // Should the list have a lock on it??
+    /// Make sure the DataIndex you pass here isn't holding a lock on that index
+    pub fn remove ( &mut self, index: DataIndex ) -> Result<Option<T>> {
+        if !matches!(index, DataIndex::Nothing) {
+            let Some(index) = T::fetch_data_index(index)
+                else { return Err(anyhow!("asked to remove incorrect index from managed list")); };
+
+            // process the list index, changing the indexes for the entries after this one
+            for (s, i) in self.list_index.iter() {
+                info!("looking at [{s}]");
+                let mut ind = i.write();
+                if let Some(cur_i) = ind.index.index() {
+                    info!("processing index for {cur_i}");
+                    if cur_i > index {
+                        info!("decrementing");
+                        ind.index = T::make_data_index(cur_i - 1);
+                    } else if cur_i == index {
+                        info!("will remove");
+                        ind.index = DataIndex::Nothing;
+                    } else { info!("ignoring"); }  // else it will not need to change
+                }  // else we do not need to change somethning which points to no data
+            }
+
+            // remove the element
+            info!("removing now");
+            let ret = self.list.remove(index);
+            // return the removed element
+            Ok(Some(ret))
+        } else {
+            warn!("asked to remove empty index");
+            Ok(None)
+        }
+    }
+
+    // todo - replace
+
+    // todo - fetch
+    pub fn fetch ( &self, index: DataIndex ) -> Result<Option<T>> {
+        Ok(None)
+    }
 }
 
+// todo: tests?
 
 // -------------------------------
 // Named
@@ -68,4 +114,125 @@ impl<T: Clone + Named> ManagedList<T> {
 pub trait Named {
     fn name ( &self ) -> &str;
     fn make_data_index ( index: usize ) -> DataIndex;
+    fn fetch_data_index ( index: DataIndex ) -> Option<usize>;
+}
+
+#[cfg(test)]
+mod tests {
+
+    use std::fs;
+
+    use log::LevelFilter;
+
+    use crate::{district::District, managed_list::{ManagedList, Named}};
+
+
+    #[test]
+    fn add_managed_list () {
+        setup_logger().expect("log did not start");
+        let mut m_list = ManagedList::<District>::default();
+
+        let item1 = District::new("Test1");
+        if let Err(e) = m_list.add(&item1) {
+            println!("add_managed_list: error on add item1 - {e}");  // do we need this log message?
+            panic!("error on add item1: {e}");
+        }
+        assert_eq!(m_list.len(), 1);
+
+        let item2 = District::new("Test2");
+        if let Err(e) = m_list.add(&item2) {
+            println!("add_managed_list: error on add item2 - {e}");  // do we need this log message?
+            panic!("error on add item2: {e}");
+        }
+        assert_eq!(m_list.len(), 2);
+    }
+
+    #[test]
+    fn remove_managed_list () {
+        setup_logger().expect("log did not start");
+        let mut m_list = ManagedList::<District>::default();
+
+        let item1 = District::new("Test1");
+        let item1_ref = match m_list.add(&item1) {
+            Err(e) => {
+                println!("remove_managed_list: error on add item1 - {e}");  // do we need this log message?
+                panic!("error on add item1: {e}");
+            },
+
+            Ok(ret) => ret
+        };
+        assert_eq!(m_list.len(), 1);
+
+        let item2 = District::new("Test2");
+        let item2_ref = match m_list.add(&item2) {
+            Err(e) => {
+                println!("remove_managed_list: error on add item2 - {e}");  // do we need this log message?
+                panic!("error on add item2: {e}");
+            },
+
+            Ok(ret) => ret
+        };
+        assert_eq!(m_list.len(), 2);
+
+        let item3 = District::new("Test3");
+        let item3_ref = match m_list.add(&item3) {
+            Err(e) => {
+                println!("remove_managed_list: error on add item3 - {e}");  // do we need this log message?
+                panic!("error on add item3: {e}");
+            },
+
+            Ok(ret) => ret
+        };
+        assert_eq!(m_list.len(), 3);
+
+        let remove_this = item2_ref.read().index();
+        let remove1 = match m_list.remove(remove_this) {
+            Err(e) => {
+                println!("remove_managed_list: error on remove item2 - {e}");  // do we need this log message?
+                panic!("error on remove item2: {e}");
+            },
+
+            Ok(ret) => ret
+        };
+        assert!(remove1.is_some());
+        assert_eq!(remove1.unwrap().name(), "Test2");
+        assert_eq!(m_list.len(), 2);
+
+        let remove_this = item2_ref.read().index();
+        let remove2 = match m_list.remove(remove_this) {
+            Err(e) => {
+                println!("remove_managed_list: error on remove item2 again - {e}");  // do we need this log message?
+                panic!("error on remove item2 again: {e}");
+            },
+
+            Ok(ret) => ret
+        };
+        assert!(remove2.is_none());
+        assert_eq!(m_list.len(), 2);
+    }
+
+
+    fn setup_logger ( ) -> Result<(), fern::InitError> {
+        const LOG_FILE: &str = "factions_test_output.log";
+        let _ = fs::remove_file(LOG_FILE);  // !! ignoring possible real errors
+        fern::Dispatch::new()
+            .format(|out, message, record| {
+                out.finish(format_args!(
+                    "[{:.5}][{}]: {}",
+                    // "[{}][{}] {}",
+                        // "[{}]:[{}][{}] {}",
+                        // humantime::format_rfc3339_seconds(SystemTime::now()),
+                    record.level(),
+                    record.target(),
+                    message
+                ))
+            })
+            .level(LevelFilter::Debug)
+            .level_for(module_path!(), LevelFilter::Debug)
+            .chain(std::io::stdout())
+            .chain(fern::log_file(LOG_FILE)?)
+            .apply()?;
+        Ok(())
+    }
+
 }

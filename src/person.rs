@@ -26,6 +26,13 @@ impl Named for Person {
     fn make_data_index ( index: usize ) -> DataIndex {
         DataIndex::PersonIndex(index)
     }
+
+    fn fetch_data_index ( index: DataIndex ) -> Option<usize> {
+        match index {
+            DataIndex::PersonIndex( ind ) => Some(ind),
+            _ => None,
+        }
+    }
 }
 
 
