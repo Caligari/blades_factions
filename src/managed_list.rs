@@ -24,7 +24,6 @@ pub type DistrictRef = Arc<RwLock<NamedIndex<District>>>;
 #[derive(Debug, Clone)]
 pub struct NamedIndex<T: Clone + Named> {
     name: String,
-    // index: usize,
     index: DataIndex,
     typ: PhantomData<T>,
 }
@@ -65,10 +64,9 @@ impl<T: Clone + Named> ManagedList<T> {
     }
 
     // Should the list have a lock on it??
-    /// Make sure the DataIndex you pass here isn't holding a lock on that index
-    pub fn remove ( &mut self, index: DataIndex ) -> Result<Option<T>> {
-        if !matches!(index, DataIndex::Nothing) {
-            let Some(index) = T::fetch_data_index(index)
+    pub fn remove ( &mut self, named_index: &Arc<RwLock<NamedIndex<T>>> ) -> Result<Option<T>> {
+        if !matches!(named_index.read().index, DataIndex::Nothing) {
+            let Some(index) = named_index.read().index.index()
                 else { return Err(anyhow!("asked to remove incorrect index from managed list")); };
 
             // process the list index, changing the indexes for the entries after this one
@@ -101,7 +99,7 @@ impl<T: Clone + Named> ManagedList<T> {
     // todo - replace
 
     // todo - fetch
-    pub fn fetch ( &self, index: DataIndex ) -> Result<Option<T>> {
+    pub fn fetch ( &self, _index: &Arc<RwLock<NamedIndex<T>>> ) -> Result<Option<T>> {
         Ok(None)
     }
 }
@@ -111,6 +109,7 @@ impl<T: Clone + Named> ManagedList<T> {
 // -------------------------------
 // Named
 
+#[allow(dead_code)]
 pub trait Named {
     fn name ( &self ) -> &str;
     fn make_data_index ( index: usize ) -> DataIndex;
@@ -129,7 +128,7 @@ mod tests {
 
     #[test]
     fn add_managed_list () {
-        setup_logger().expect("log did not start");
+        // setup_logger().expect("log did not start");
         let mut m_list = ManagedList::<District>::default();
 
         let item1 = District::new("Test1");
@@ -149,11 +148,11 @@ mod tests {
 
     #[test]
     fn remove_managed_list () {
-        setup_logger().expect("log did not start");
+        // setup_logger().expect("log did not start");
         let mut m_list = ManagedList::<District>::default();
 
         let item1 = District::new("Test1");
-        let item1_ref = match m_list.add(&item1) {
+        let _item1_ref = match m_list.add(&item1) {
             Err(e) => {
                 println!("remove_managed_list: error on add item1 - {e}");  // do we need this log message?
                 panic!("error on add item1: {e}");
@@ -175,7 +174,7 @@ mod tests {
         assert_eq!(m_list.len(), 2);
 
         let item3 = District::new("Test3");
-        let item3_ref = match m_list.add(&item3) {
+        let _item3_ref = match m_list.add(&item3) {
             Err(e) => {
                 println!("remove_managed_list: error on add item3 - {e}");  // do we need this log message?
                 panic!("error on add item3: {e}");
@@ -185,8 +184,7 @@ mod tests {
         };
         assert_eq!(m_list.len(), 3);
 
-        let remove_this = item2_ref.read().index();
-        let remove1 = match m_list.remove(remove_this) {
+        let remove1 = match m_list.remove(&item2_ref) {
             Err(e) => {
                 println!("remove_managed_list: error on remove item2 - {e}");  // do we need this log message?
                 panic!("error on remove item2: {e}");
@@ -198,8 +196,7 @@ mod tests {
         assert_eq!(remove1.unwrap().name(), "Test2");
         assert_eq!(m_list.len(), 2);
 
-        let remove_this = item2_ref.read().index();
-        let remove2 = match m_list.remove(remove_this) {
+        let remove2 = match m_list.remove(&item2_ref) {
             Err(e) => {
                 println!("remove_managed_list: error on remove item2 again - {e}");  // do we need this log message?
                 panic!("error on remove item2 again: {e}");
