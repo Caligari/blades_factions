@@ -10,14 +10,27 @@ use crate::{app_data::DataIndex, district::District, faction::Faction, person::P
 
 
 
-#[allow(dead_code)]
-pub type FactionRef = Arc<RwLock<NamedIndex<Faction>>>;
+#[derive(Clone)]
+pub struct GenericRef<T: Clone + Named> ( Arc<RwLock<NamedIndex<T>>> );
+
+impl<T: Clone + Named> GenericRef<T> {
+    pub fn has_index ( &self ) -> bool {
+        !matches!(self.0.read().index, DataIndex::Nothing)
+    }
+
+    pub fn index ( &self ) -> Option<usize> {
+        self.0.read().index.index()
+    }
+}
 
 #[allow(dead_code)]
-pub type PersonRef = Arc<RwLock<NamedIndex<Person>>>;
+pub type FactionRef = GenericRef<Faction>;
 
 #[allow(dead_code)]
-pub type DistrictRef = Arc<RwLock<NamedIndex<District>>>;
+pub type PersonRef = GenericRef<Person>;
+
+#[allow(dead_code)]
+pub type DistrictRef = GenericRef<District>;
 
 
 #[allow(dead_code)]
@@ -43,7 +56,7 @@ impl<T: Clone + Named> NamedIndex<T> {
 #[derive(Clone, Default)]
 pub struct ManagedList<T: Clone + Named> {
     list: Vec<T>,
-    list_index: BTreeMap<String, Arc<RwLock<NamedIndex<T>>>>,
+    list_index: BTreeMap<String, GenericRef<T>>,
 }
 
 #[allow(dead_code)]
@@ -52,27 +65,29 @@ impl<T: Clone + Named> ManagedList<T> {
         self.list.len()
     }
 
-    pub fn add ( &mut self, item: &T ) -> Result<Arc<RwLock<NamedIndex<T>>>> {
+    pub fn add ( &mut self, item: &T ) -> Result<GenericRef<T>> {
         if !self.list_index.contains_key(item.name()) {
             let name = item.name().to_string();
             let index = T::make_data_index(self.list.len());
             self.list.push(item.clone());
-            let named_index = Arc::new(RwLock::new(NamedIndex { name: name.clone(), index, typ: PhantomData }));
+            let named_index = GenericRef(
+                Arc::new(RwLock::new(NamedIndex { name: name.clone(), index, typ: PhantomData }))
+            );
             self.list_index.insert(name, named_index.clone());
             Ok(named_index)
         } else { Err(anyhow!("key already present in list")) }
     }
 
     // Should the list have a lock on it??
-    pub fn remove ( &mut self, named_index: &Arc<RwLock<NamedIndex<T>>> ) -> Result<Option<T>> {
-        if !matches!(named_index.read().index, DataIndex::Nothing) {
-            let Some(index) = named_index.read().index.index()
+    pub fn remove ( &mut self, named_index: &GenericRef<T> ) -> Result<Option<T>> {
+        if named_index.has_index() {
+            let Some(index) = named_index.index()
                 else { return Err(anyhow!("asked to remove incorrect index from managed list")); };
 
             // process the list index, changing the indexes for the entries after this one
             for (s, i) in self.list_index.iter() {
                 info!("looking at [{s}]");
-                let mut ind = i.write();
+                let mut ind = i.0.write();
                 if let Some(cur_i) = ind.index.index() {
                     info!("processing index for {cur_i}");
                     if cur_i > index {
@@ -99,12 +114,11 @@ impl<T: Clone + Named> ManagedList<T> {
     // todo - replace
 
     // todo - fetch
-    pub fn fetch ( &self, _index: &Arc<RwLock<NamedIndex<T>>> ) -> Result<Option<T>> {
+    pub fn fetch ( &self, _index: &GenericRef<T> ) -> Result<Option<T>> {
         Ok(None)
     }
 }
 
-// todo: tests?
 
 // -------------------------------
 // Named
@@ -209,6 +223,7 @@ mod tests {
     }
 
 
+    #[allow(dead_code)]
     fn setup_logger ( ) -> Result<(), fern::InitError> {
         const LOG_FILE: &str = "factions_test_output.log";
         let _ = fs::remove_file(LOG_FILE);  // !! ignoring possible real errors
