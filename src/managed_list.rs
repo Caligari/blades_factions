@@ -18,7 +18,9 @@ impl<T: Clone + Named> GenericRef<T> {
         !matches!(self.0.read().index, DataIndex::Nothing)
     }
 
-    pub fn index ( &self ) -> Option<usize> {
+    // not public because noone should cache this, even accidentially
+    /// Returns a transient index value that is only valid right now
+    fn index ( &self ) -> Option<usize> {
         self.0.read().index.index()
     }
 }
@@ -47,7 +49,7 @@ impl<T: Clone + Named> NamedIndex<T> {
         &self.name
     }
 
-    pub fn index ( &self ) -> DataIndex {
+    fn index ( &self ) -> DataIndex {
         self.index
     }
 }
@@ -65,6 +67,7 @@ impl<T: Clone + Named> ManagedList<T> {
         self.list.len()
     }
 
+    /// Returns the reference to the new item
     pub fn add ( &mut self, item: &T ) -> Result<GenericRef<T>> {
         if !self.list_index.contains_key(item.name()) {
             let name = item.name().to_string();
@@ -79,10 +82,11 @@ impl<T: Clone + Named> ManagedList<T> {
     }
 
     // Should the list have a lock on it??
-    pub fn remove ( &mut self, named_index: &GenericRef<T> ) -> Result<Option<T>> {
+    /// Returns the old item which was removed, if it was present
+    pub fn remove ( &mut self, named_index: &GenericRef<T> ) -> Option<T> {
         if named_index.has_index() {
             let Some(index) = named_index.index()
-                else { return Err(anyhow!("asked to remove incorrect index from managed list")); };
+                else { panic!("asked to remove incorrect index from managed list"); };
 
             // process the list index, changing the indexes for the entries after this one
             for (s, i) in self.list_index.iter() {
@@ -96,23 +100,42 @@ impl<T: Clone + Named> ManagedList<T> {
                     } else if cur_i == index {
                         info!("will remove");
                         ind.index = DataIndex::Nothing;
+                        ind.name = "<Removed>".to_owned();
                     } else { info!("ignoring"); }  // else it will not need to change
                 }  // else we do not need to change somethning which points to no data
             }
 
             // remove the element
-            info!("removing now");
-            let ret = self.list.remove(index);
             // return the removed element
-            Ok(Some(ret))
+            info!("removing now");
+            Some(self.list.remove(index))
         } else {
             warn!("asked to remove empty index");
-            Ok(None)
+            None
         }
     }
 
-    // todo - replace
+    /// Returns the old item, if something was replaced
+    pub fn replace ( &mut self, index: &GenericRef<T>, new_item: T ) -> Option<T> {
+        if index.has_index() {
+            let Some(index) = index.index()
+                else { panic!("asked to remove incorrect index from managed list"); };
+            let old = self.list.get(index).cloned();  // technically this should always return Some
+            assert!(old.is_some());
+            self.list[index] = new_item;
+            old
+        } else {
+            warn!("asked to replace an empty item");  // should this do an add using the old reference?
+            None
+        }
+    }
 
+    /// Returns the reference to the named item, if it exists
+    pub fn find ( &self, name: &str ) -> Option<GenericRef<T>> {
+        self.list_index.get(name).cloned()
+    }
+
+    /// Returns a reference to the existing item, if it is present
     pub fn fetch ( &self, index: &GenericRef<T> ) -> Option<&T> {
         let index = index.index()?;
         self.list.get(index)
@@ -139,6 +162,7 @@ mod tests {
 
     use crate::{district::District, managed_list::{ManagedList, Named}};
 
+    // TODO: add tests with replace and find
 
     #[test]
     fn add_managed_list () {
@@ -166,6 +190,14 @@ mod tests {
         let found1 = m_list.fetch(&item1_ref);
         assert!(found1.is_some(), "found item 1 is empty");
         assert_eq!(found1.unwrap().name(), "Test1");
+
+        let found2 = m_list.find("Test2");
+        assert!(found2.is_some());
+        if let Some(found2_ref) = found2 {
+            let found2 = m_list.fetch(&found2_ref);
+            assert!(found2.is_some(), "found item 2 is empty");
+            assert_eq!(found2.unwrap().name(), "Test2");
+        }
     }
 
     #[test]
@@ -206,26 +238,12 @@ mod tests {
         };
         assert_eq!(m_list.len(), 3);
 
-        let remove1 = match m_list.remove(&item2_ref) {
-            Err(e) => {
-                println!("remove_managed_list: error on remove item2 - {e}");  // do we need this log message?
-                panic!("error on remove item2: {e}");
-            },
-
-            Ok(ret) => ret
-        };
+        let remove1 = m_list.remove(&item2_ref);
         assert!(remove1.is_some());
         assert_eq!(remove1.unwrap().name(), "Test2");
         assert_eq!(m_list.len(), 2);
 
-        let remove2 = match m_list.remove(&item2_ref) {
-            Err(e) => {
-                println!("remove_managed_list: error on remove item2 again - {e}");  // do we need this log message?
-                panic!("error on remove item2 again: {e}");
-            },
-
-            Ok(ret) => ret
-        };
+        let remove2 = m_list.remove(&item2_ref);
         assert!(remove2.is_none());
         assert_eq!(m_list.len(), 2);
 
