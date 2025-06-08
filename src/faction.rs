@@ -1,9 +1,7 @@
-use std::{collections::BTreeMap, sync::Arc};
 
-use eframe::egui::mutex::RwLock;
 use serde::{Deserialize, Serialize};
 
-use crate::{app_data::DataIndex, clock::Clock, district::DistrictRef, managed_list::Named, person::PersonRef, tier::Tier};
+use crate::{app_data::DataIndex, clock::Clock, managed_list::{DistrictRef, FactionRef, Named, PersonRef}, tier::Tier};
 
 #[allow(dead_code)]
 #[derive(Default, Clone)]
@@ -41,29 +39,8 @@ impl Named for Faction {
     }
 }
 
-#[allow(dead_code)]
-pub type FactionRef = Arc<RwLock<FactionIndex>>;
-
-#[allow(dead_code)]
-#[derive(Debug, Clone)]
-pub struct FactionIndex {
-    name: String,
-    index: usize,
-}
-
-#[allow(dead_code)]
-impl FactionIndex {
-    pub fn index ( &self ) -> DataIndex {
-        DataIndex::FactionIndex(self.index)
-    }
-}
-
-#[allow(dead_code)]
-#[derive(Clone)]
-pub struct FactionList {
-    factions: Vec<Faction>,
-    factions_index: BTreeMap<String, FactionRef>,
-}
+// -----------------------------
+// Stored
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -71,14 +48,14 @@ pub struct FactionStore {
     name: String,
     description: String,
     tier: Tier,
-    hq: DataIndex,  // district index
-    turf: Vec<DataIndex>,  // districts
-    leader: DataIndex,  // person index
-    notable: Vec<DataIndex>,  // people
+    hq: Option<String>,  // district name
+    turf: Vec<String>,  // districts
+    leader: Option<String>,  // person name
+    notable: Vec<String>,  // people
     assets: String,
     notes: String,
-    allies: Vec<DataIndex>,  // fations
-    enemies: Vec<DataIndex>,  // factions
+    allies: Vec<String>,  // fations
+    enemies: Vec<String>,  // factions
     general: String,
     clocks: Vec<Clock>,
 }
@@ -89,32 +66,14 @@ impl From<&Faction> for FactionStore {
             name: from_faction.name.clone(),
             description: from_faction.description.clone(),
             tier: from_faction.tier,
-            hq: from_faction.hq.as_ref().map_or(DataIndex::Nothing, |i| {
-                let index = i.read();
-                index.index()
-            }),
-            turf: from_faction.turf.iter().map(|i| {
-                let index = i.read();
-                index.index()
-            }).collect(),
-            leader: from_faction.leader.as_ref().map_or(DataIndex::Nothing, |i| {
-                let index = i.read();
-                index.index()
-            }),
-            notable: from_faction.notable.iter().map(|i| {
-                let index = i.read();
-                index.index()
-            }).collect(),
+            hq: from_faction.hq.as_ref().and_then(|i| { i.name() }),
+            turf: from_faction.turf.iter().filter_map(|i| { i.name() }).collect(),
+            leader: from_faction.leader.as_ref().and_then(|i| { i.name() }),
+            notable: from_faction.notable.iter().filter_map(|i| { i.name() }).collect(),
             assets: from_faction.assets.clone(),
             notes: from_faction.notes.clone(),
-            allies: from_faction.allies.iter().map(|i| {
-                let index = i.read();
-                index.index()
-            }).collect(),
-            enemies: from_faction.enemies.iter().map(|i| {
-                let index = i.read();
-                index.index()
-            }).collect(),
+            allies: from_faction.allies.iter().filter_map(|i| { i.name() }).collect(),
+            enemies: from_faction.enemies.iter().filter_map(|i| { i.name() }).collect(),
             general: from_faction.general.clone(),
             clocks: from_faction.clocks.clone(),
         }

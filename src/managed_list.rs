@@ -23,6 +23,10 @@ impl<T: Clone + Named> GenericRef<T> {
     fn index ( &self ) -> Option<usize> {
         self.0.read().index.index()
     }
+
+    pub fn name ( &self ) -> Option<String> {
+        self.0.read().name().map(|n| n.to_string())
+    }
 }
 
 #[allow(dead_code)]
@@ -45,8 +49,10 @@ pub struct NamedIndex<T: Clone + Named> {
 
 #[allow(dead_code)]
 impl<T: Clone + Named> NamedIndex<T> {
-    pub fn name ( &self ) -> &str {
-        &self.name
+    pub fn name ( &self ) -> Option<&str> {
+        if !matches!(self.index, DataIndex::Nothing) {
+            Some(&self.name)
+        } else { None }
     }
 
     fn index ( &self ) -> DataIndex {

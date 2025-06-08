@@ -5,7 +5,7 @@ use eframe::{egui::{menu, Align, Button, CentralPanel, Color32, Context, FontDat
 use log::info;
 use serde::{de::DeserializeOwned, Serialize};
 
-use crate::{app_data::AppData, app_settings::AppSettings, child_windows::ChildWindows};
+use crate::{app_data::AppData, app_settings::AppSettings, child_windows::ChildWindows, todo::TodoUndo};
 
 
 
@@ -38,6 +38,7 @@ pub struct  App {
     data: AppData,
     message: Option<String>,
     child_windows: ChildWindows,
+    todo_undo: TodoUndo,
 }
 
 impl App {
@@ -50,6 +51,7 @@ impl App {
             data: AppData::default(),
             message: None,
             child_windows: ChildWindows::default(),
+            todo_undo: TodoUndo::default(),
         }
     }
 

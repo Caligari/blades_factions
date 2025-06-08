@@ -3,7 +3,7 @@ use std::path::Path;
 use anyhow::{Result, Ok, anyhow};
 use serde::{Deserialize, Serialize};
 
-use crate::{app::load_from_pot, district::District, faction::Faction, managed_list::ManagedList, person::Person};
+use crate::{action::{Action, ActionNode}, app::load_from_pot, district::District, faction::Faction, managed_list::ManagedList, person::Person};
 
 const DATA_EXTENSION: &str = "pot";
 
@@ -12,13 +12,81 @@ const DATA_EXTENSION: &str = "pot";
 // Default should be empty
 #[derive(Default)]
 pub struct AppData {
-    people: ManagedList<Person>,
+    persons: ManagedList<Person>,
     districts: ManagedList<District>,
     factions: ManagedList<Faction>,
 }
 
 #[allow(dead_code)]
 impl AppData {
+    /// Takes a node, and creates the node that will reverse the actions taken
+    pub fn do_action ( &mut self, actions: &ActionNode ) -> Result<ActionNode> {
+        use Action::*;
+
+        let mut return_node = ActionNode::default();
+
+        // todo: do we want to explicitly pop so that we dismantle as we go?
+        // what about when we fail?
+        for action in actions {
+            // do action
+            //    can we fail?
+            match action {
+                DistrictAdd( district ) => {
+                    let district_ref = self.districts.add(district)?;  // ! This can fail
+                    return_node.push_back(DistrictRemove(district_ref));
+                }
+
+                DistrictRemove( district_ref ) => {
+                    if let Some(district) = self.districts.remove(district_ref) {
+                        return_node.push_back(DistrictAdd(district));
+                    }  // silently ignore if this wasn't in the list when we removed it
+                }
+
+                DistrictReplace( district_ref, district ) => {
+                    if let Some(old_district) = self.districts.replace(district_ref, district.clone()) {
+                        return_node.push_back(DistrictReplace(district_ref.clone(), old_district));
+                    }  // silently ignore if no replacement was possible?
+                }
+
+                PersonAdd( person ) => {
+                    let person_ref = self.persons.add(person)?;
+                    return_node.push_back(PersonRemove(person_ref));
+                }
+
+                PersonRemove( person_ref ) => {
+                    if let Some(person) = self.persons.remove(person_ref) {
+                        return_node.push_back(PersonAdd(person));
+                    }  // silently ignore if this wasn't in the list when we removed it
+                }
+
+                PersonReplace( person_ref, person ) => {
+                    if let Some(old_person) = self.persons.replace(person_ref, person.clone()) {
+                        return_node.push_back(PersonReplace(person_ref.clone(), old_person));
+                    }  // silently ignore if no replacement was possible?
+                }
+
+                FactionAdd( faction ) => {
+                    let faction_ref = self.factions.add(faction)?;
+                    return_node.push_back(FactionRemove(faction_ref));
+                }
+
+                FactionRemove( faction_ref ) => {
+                    if let Some(faction) = self.factions.remove(faction_ref) {
+                        return_node.push_back(FactionAdd(faction));
+                    }  // silently ignore if this wasn't in the list when we removed it
+                }
+
+                FactionReplace( faction_ref, faction ) => {
+                    if let Some(old_faction) = self.factions.replace(faction_ref, faction.clone()) {
+                        return_node.push_back(FactionReplace(faction_ref.clone(), old_faction));
+                    }  // silently ignore if no replacement was possible?
+                }
+            }
+        }
+        // fill return node
+        Ok(return_node)
+    }
+
     pub fn save_to_file ( &self ) {
 
     }
@@ -58,9 +126,9 @@ impl SaveData1 {
 impl From<SaveData1> for AppData {
     fn from(_value: SaveData1) -> Self {
         AppData {
-            people: ManagedList::<Person>::default(),  // todo
-            districts: ManagedList::<District>::default(),  // todo
-            factions: ManagedList::<Faction>::default(),  // todo
+            persons: ManagedList::<Person>::default(),  // TODO
+            districts: ManagedList::<District>::default(),  // TODO
+            factions: ManagedList::<Faction>::default(),  // TODO
         }
     }
 }
