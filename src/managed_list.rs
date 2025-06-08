@@ -2,7 +2,7 @@ use std::{collections::BTreeMap, marker::PhantomData, sync::Arc};
 
 use anyhow::{Result, Ok, anyhow};
 use eframe::egui::mutex::RwLock;
-use log::{info, warn};
+use log::{error, info, warn};
 
 use crate::{app_data::DataIndex, district::District, faction::Faction, person::Person};
 
@@ -129,10 +129,33 @@ impl<T: Clone + Named> ManagedList<T> {
                 else { panic!("asked to remove incorrect index from managed list"); };
             let old = self.list.get(ind).cloned();  // technically this should always return Some
             assert!(old.is_some());
-            let new_name = new_item.name().to_owned();
-            self.list[ind] = new_item;
-            index.0.write().name = new_name;
-            old
+            let new_name = new_item.name();
+
+            let maybe_name = {
+                let cur_ref = index.0.read();
+                cur_ref.name().map(|n| n.to_string())
+            };
+            let Some(cur_name) = maybe_name
+                else { error!("index item has no name during replace"); return None; };
+
+            let index_done = if new_name != cur_name {
+                assert!(!self.list_index.contains_key(new_name));  // TODO: this will collapse if you try to create a new thing that exist
+                index.0.write().name = new_name.to_owned();
+                // !! can fail if new name is already in the index
+                // insert into btree with new_name and index.clone()
+                if self.list_index.insert(new_name.to_string(), index.clone()).is_some() { // returns an option<ref>
+                    // remove from btree based on index.0.name()
+                    self.list_index.remove(&cur_name);  // returns option<ref>
+                    true
+                } else {
+                    error!("did not add new index to list_index, when it should have worked, did not remove old index");
+                    false
+                }
+            } else { true }; // no change, so all done
+            if index_done {
+                self.list[ind] = new_item;
+                old
+            } else { None }
         } else {
             warn!("asked to replace an empty item");  // should this do an add using the old reference?
             None
