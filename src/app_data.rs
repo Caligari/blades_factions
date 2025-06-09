@@ -32,8 +32,9 @@ impl AppData {
             //    can we fail?
             match action {
                 DistrictAdd( district ) => {
-                    let district_ref = self.districts.add(district)?;  // ! This can fail
-                    return_node.push_back(DistrictRemove(district_ref));
+                    if let Some(district_ref) = self.districts.add(district) {
+                        return_node.push_back(DistrictRemove(district_ref));
+                    }  // silently ignore if can't be added
                 }
 
                 DistrictRemove( district_ref ) => {
@@ -49,8 +50,9 @@ impl AppData {
                 }
 
                 PersonAdd( person ) => {
-                    let person_ref = self.persons.add(person)?;
-                    return_node.push_back(PersonRemove(person_ref));
+                    if let Some(person_ref) = self.persons.add(person) {
+                        return_node.push_back(PersonRemove(person_ref));
+                    }  // silently ignore if can't be added
                 }
 
                 PersonRemove( person_ref ) => {
@@ -66,8 +68,9 @@ impl AppData {
                 }
 
                 FactionAdd( faction ) => {
-                    let faction_ref = self.factions.add(faction)?;
-                    return_node.push_back(FactionRemove(faction_ref));
+                    if let Some(faction_ref) = self.factions.add(faction) {
+                        return_node.push_back(FactionRemove(faction_ref));
+                    }  // silently ignore if can't be added
                 }
 
                 FactionRemove( faction_ref ) => {

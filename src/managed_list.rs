@@ -2,7 +2,7 @@ use std::{collections::BTreeMap, marker::PhantomData, sync::Arc};
 
 use anyhow::{Result, Ok, anyhow};
 use eframe::egui::mutex::RwLock;
-use log::{error, info, warn};
+use log::{debug, info, warn};
 
 use crate::{app_data::DataIndex, district::District, faction::Faction, person::Person};
 
@@ -74,17 +74,20 @@ impl<T: Clone + Named> ManagedList<T> {
     }
 
     /// Returns the reference to the new item
-    pub fn add ( &mut self, item: &T ) -> Result<GenericRef<T>> {
-        if !self.list_index.contains_key(item.name()) {
-            let name = item.name().to_string();
+    pub fn add ( &mut self, item: &T ) -> Option<GenericRef<T>> {
+        let name = item.name().to_string();
+        if !self.list_index.contains_key(&name) {
             let index = T::make_data_index(self.list.len());
             self.list.push(item.clone());
             let named_index = GenericRef(
                 Arc::new(RwLock::new(NamedIndex { name: name.clone(), index, typ: PhantomData }))
             );
             self.list_index.insert(name, named_index.clone());
-            Ok(named_index)
-        } else { Err(anyhow!("key already present in list")) }
+            Some(named_index)
+        } else {
+            warn!("key {name} already present in list, during add");
+            None
+        }
     }
 
     // Should the list have a lock on it??
@@ -126,36 +129,38 @@ impl<T: Clone + Named> ManagedList<T> {
     pub fn replace ( &mut self, index: &GenericRef<T>, new_item: T ) -> Option<T> {
         if index.has_index() {
             let Some(ind) = index.index()
-                else { panic!("asked to remove incorrect index from managed list"); };
-            let old = self.list.get(ind).cloned();  // technically this should always return Some
-            assert!(old.is_some());
+                else { unreachable!("no index found despite having an index (in replace)"); };
+            let Some(old_item) = self.list.get(ind).cloned()  // technically this should always return Some
+                else { unreachable!("unable to find managed_list item with functioning index"); };
             let new_name = new_item.name();
+            let old_name = old_item.name();
+            let same_name = new_name == old_name;
 
-            let maybe_name = {
-                let cur_ref = index.0.read();
-                cur_ref.name().map(|n| n.to_string())
-            };
-            let Some(cur_name) = maybe_name
-                else { error!("index item has no name during replace"); return None; };
+            if !same_name && self.list_index.contains_key(new_name) {
+                warn!("unable to replace {old_name} with {new_name}, as it is alreay present");
+                None
+            } else {
+                if !same_name {
+                    // update name in index
+                    index.0.write().name = new_name.to_owned();
 
-            let index_done = if new_name != cur_name {
-                assert!(!self.list_index.contains_key(new_name));  // TODO: this will collapse if you try to create a new thing that exist
-                index.0.write().name = new_name.to_owned();
-                // !! can fail if new name is already in the index
-                // insert into btree with new_name and index.clone()
-                if self.list_index.insert(new_name.to_string(), index.clone()).is_some() { // returns an option<ref>
-                    // remove from btree based on index.0.name()
-                    self.list_index.remove(&cur_name);  // returns option<ref>
-                    true
-                } else {
-                    error!("did not add new index to list_index, when it should have worked, did not remove old index");
-                    false
+                    debug!("replacing {old_name} with {new_name}");
+
+                    // insert into btree with new_name and index.clone()
+                    if self.list_index.insert(new_name.to_string(), index.clone()).is_none() { // returns an option<ref>
+                        // remove from btree based on index.0.name()
+                        self.list_index.remove(old_name);  // returns option<ref>
+                    } else {
+                        unreachable!("updating list_index returned existing index!");
+                    }
                 }
-            } else { true }; // no change, so all done
-            if index_done {
+
+                // replace content
                 self.list[ind] = new_item;
-                old
-            } else { None }
+
+                // return old item
+                Some(old_item)
+            }
         } else {
             warn!("asked to replace an empty item");  // should this do an add using the old reference?
             None
@@ -197,39 +202,36 @@ mod tests {
     // TODO: add tests with replace and find
 
     #[test]
-    fn add_managed_list () {
+    fn basic_managed_list () {
         // setup_logger().expect("log did not start");
         let mut m_list = ManagedList::<District>::default();
 
         let item1 = District::new("Test1");
-        let item1_ref = match m_list.add(&item1) {
-            Err(e) => {
-                println!("add_managed_list: error on add item1 - {e}");  // do we need this log message?
-                panic!("error on add item1: {e}");
-            },
-
-            Ok(ret) => ret
-        };
+        let Some(item1_ref) = m_list.add(&item1)
+            else { panic!("error on add item1"); };
         assert_eq!(m_list.len(), 1);
 
         let item2 = District::new("Test2");
-        if let Err(e) = m_list.add(&item2) {
-            println!("add_managed_list: error on add item2 - {e}");  // do we need this log message?
-            panic!("error on add item2: {e}");
-        }
+        let Some(_item2_ref) = m_list.add(&item2)
+            else { panic!("error on add item2"); };
         assert_eq!(m_list.len(), 2);
 
         let found1 = m_list.fetch(&item1_ref);
         assert!(found1.is_some(), "found item 1 is empty");
         assert_eq!(found1.unwrap().name(), "Test1");
 
-        let found2 = m_list.find("Test2");
-        assert!(found2.is_some());
-        if let Some(found2_ref) = found2 {
-            let found2 = m_list.fetch(&found2_ref);
-            assert!(found2.is_some(), "found item 2 is empty");
-            assert_eq!(found2.unwrap().name(), "Test2");
-        }
+        let Some(found2_ref) = m_list.find("Test2")
+            else { panic!("unable to find item2 in list"); };
+        let found2 = m_list.fetch(&found2_ref);
+        assert!(found2.is_some(), "found item 2 is empty");
+        assert_eq!(found2.unwrap().name(), "Test2");
+
+        let new_item1 = District::new("New1");
+        let Some(old1) = m_list.replace(&item1_ref, new_item1)
+            else { panic!("unable to replace item 1"); };
+        assert_eq!(old1.name(), "Test1");
+        assert!(m_list.fetch(&item1_ref).is_some());
+        assert_eq!(m_list.fetch(&item1_ref).unwrap().name(), "New1");
     }
 
     #[test]
@@ -238,36 +240,18 @@ mod tests {
         let mut m_list = ManagedList::<District>::default();
 
         let item1 = District::new("Test1");
-        let item1_ref = match m_list.add(&item1) {
-            Err(e) => {
-                println!("remove_managed_list: error on add item1 - {e}");  // do we need this log message?
-                panic!("error on add item1: {e}");
-            },
-
-            Ok(ret) => ret
-        };
+        let Some(item1_ref) = m_list.add(&item1)
+            else { panic!("error on add item1"); };
         assert_eq!(m_list.len(), 1);
 
         let item2 = District::new("Test2");
-        let item2_ref = match m_list.add(&item2) {
-            Err(e) => {
-                println!("remove_managed_list: error on add item2 - {e}");  // do we need this log message?
-                panic!("error on add item2: {e}");
-            },
-
-            Ok(ret) => ret
-        };
+        let Some(item2_ref) = m_list.add(&item2)
+            else { panic!("error on add item2"); };
         assert_eq!(m_list.len(), 2);
 
         let item3 = District::new("Test3");
-        let item3_ref = match m_list.add(&item3) {
-            Err(e) => {
-                println!("remove_managed_list: error on add item3 - {e}");  // do we need this log message?
-                panic!("error on add item3: {e}");
-            },
-
-            Ok(ret) => ret
-        };
+        let Some(item3_ref) = m_list.add(&item3)
+            else { panic!("error on add item3"); };
         assert_eq!(m_list.len(), 3);
 
         let remove1 = m_list.remove(&item2_ref);
