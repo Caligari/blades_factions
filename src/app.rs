@@ -130,6 +130,13 @@ impl eframe::App for App {
                     // otherwise, keep doing start
                     // None
                 }
+
+                Ready => {
+                    // what are we looking at?
+                    // select between views
+                    // ?
+                    None
+                }
                 _ => { None }
             }
         }).inner {
@@ -164,6 +171,29 @@ impl Display for AppStatus {
     }
 }
 
+// ===========================
+// MainView
+
+#[allow(dead_code)]
+#[derive(Debug, Default, Clone, Copy)]
+enum MainView {
+    #[default]
+    Factions,
+    Persons,
+    Districts,
+}
+
+impl Display for MainView {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use MainView::*;
+
+        write!(f, "{}", match self {
+            Factions => "Factions",
+            Persons => "People",
+            Districts => "Districts",
+        })
+    }
+}
 
 // ===========================
 // Additional functions
