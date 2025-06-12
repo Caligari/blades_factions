@@ -3,7 +3,7 @@ use std::sync::Arc;
 use eframe::egui::{mutex::RwLock, Align, CentralPanel, Context, Layout, RichText, ScrollArea, ViewportBuilder, ViewportId};
 use log::debug;
 
-use crate::{app::{CHANGE_NOTES, FONT_NOTES, HELP_TEXT, UI_PADDING}, APP_NAME};
+use crate::{app::{CHANGE_NOTES, FONT_NOTES, HELP_TEXT, UI_PADDING}, localize::fl, APP_NAME};
 
 // TODO: add settings panel?
 
@@ -28,8 +28,8 @@ impl ChildWindows {
     }
 
     fn about ( &self, ctx: &Context ) {
-        const TITLE: &str = "About";
-        let title = format!("{} - {}", APP_NAME, TITLE);  // can we make this a const?
+        let window_title = fl!("about");
+        let title = format!("{} - {}", APP_NAME, window_title);  // can we make this a const?
         let v_id = ViewportId::from_hash_of(&title);
         let show_about = self.show_about.clone();
         ctx.show_viewport_deferred(
@@ -48,11 +48,11 @@ impl ChildWindows {
                         ui.add_space(UI_PADDING * 3.5);
                         let app_name = RichText::new(APP_NAME).heading();
                         ui.label(app_name);
-                        ui.label(format!("version {}", env!("CARGO_PKG_VERSION")));
+                        ui.label(fl!("version_ver", ver = env!("CARGO_PKG_VERSION")));
                         ui.add_space(UI_PADDING);
                         ui.label(HELP_TEXT.join("\n"));
                         ui.add_space(UI_PADDING * 1.15);
-                        ui.label(RichText::new("Change Notes").underline());
+                        ui.label(RichText::new(fl!("changenotes")).underline());
                         ScrollArea::vertical()
                             .max_height(SCROLL_HEIGHT)
                             .show(ui, |ui| {

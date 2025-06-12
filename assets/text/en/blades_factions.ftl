@@ -1,0 +1,13 @@
+main_factions = Factions
+main_persons = People
+main_districts = Districts
+menu = Menu
+menu_restart = Restart
+menu_settings = Settings
+menu_exit = Exit
+about = About
+app_error_err = Error: {$err}
+version_ver = version: {$ver}
+changenotes = Change Notes
+app_starting = Starting
+app_ready = Ready

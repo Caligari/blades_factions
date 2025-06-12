@@ -9,6 +9,7 @@ use app::App;
 
 mod app;
 mod app_data;
+mod localize;
 mod app_settings;
 mod child_windows;
 mod faction;

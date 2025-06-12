@@ -1,11 +1,12 @@
 use std::{fmt::Display, fs::{self, create_dir_all, OpenOptions}, io::{BufReader, BufWriter, Write}, path::Path, sync::Arc};
 
 use directories_next::ProjectDirs;
-use eframe::{egui::{menu, Align, Button, CentralPanel, Color32, Context, FontData, FontDefinitions, FontFamily, Layout, RichText, Separator, TopBottomPanel, Ui, ViewportCommand}, CreationContext, Frame};
+use eframe::{egui::{menu, Align, Button, CentralPanel, Color32, Context, FontData, FontDefinitions, FontFamily, Label, Layout, RichText, Sense, Separator, Theme, TopBottomPanel, Ui, ViewportCommand}, CreationContext, Frame};
+use enum_iterator::{all, cardinality, Sequence};
 use log::info;
 use serde::{de::DeserializeOwned, Serialize};
 
-use crate::{app_data::AppData, app_settings::AppSettings, child_windows::ChildWindows, todo::TodoUndo};
+use crate::{app_data::AppData, app_settings::AppSettings, child_windows::ChildWindows, localize::fl, todo::TodoUndo};
 
 
 
@@ -13,6 +14,9 @@ use crate::{app_data::AppData, app_settings::AppSettings, child_windows::ChildWi
 const ZOOM: f32 = 1.0;
 pub const UI_PADDING: f32 = 8.0;
 
+
+// todo: localize this
+// probably could be one phrase?
 pub const HELP_TEXT: &[&str] = &[
     "created by Liam Routt",
     "for use with Blades in the Dark",
@@ -20,10 +24,12 @@ pub const HELP_TEXT: &[&str] = &[
     "This utility allows you to track the various factions in your game.", "",
 ];
 
+// ? Can these be localized?
 pub const CHANGE_NOTES: &[&str] = &[
     "0.1.0 - initial version",
 ];
 
+// todo: localize this
 pub const FONT_NOTES: &[&str] = &[
     "Using the Manrope font, by Michael Sharanda, covered under the SIL Open Font License (http://scripts.sil.org/OFL)"
 ];
@@ -33,6 +39,7 @@ pub const FONT_NOTES: &[&str] = &[
 #[allow(dead_code)]
 pub struct  App {
     status: AppStatus,
+    main_view: MainView,
     settings: AppSettings,
     project_directories: ProjectDirs,
     data: AppData,
@@ -48,6 +55,7 @@ impl App {
             settings,
             project_directories,
             status: AppStatus::default(),
+            main_view: MainView::default(),
             data: AppData::default(),
             message: None,
             child_windows: ChildWindows::default(),
@@ -59,28 +67,28 @@ impl App {
         TopBottomPanel::top("top").show(ctx, |ui| {
             menu::bar(ui, |ui| {
                 ui.with_layout(Layout::left_to_right(Align::Center), |ui| {
-                    ui.menu_button("Menu", |ui| {
-                        if ui.button("Restart").clicked() {
+                    ui.menu_button(fl!("menu"), |ui| {
+                        if ui.button(fl!("menu_restart")).clicked() {
                             self.status = AppStatus::Starting;
                             self.message = None;
                             info!("Requested Restart");
                             ui.close_menu();
                         }
                         ui.add(Separator::default().spacing(2.));
-                        if ui.add_enabled(false, Button::new("Settings")).clicked() {
+                        if ui.add_enabled(false, Button::new(fl!("menu_settings"))).clicked() {
                             // TODO: show/change settings
                             // should that be window or full panel?
                             info!("Requested Settings");
                         }
                         ui.add(Separator::default().spacing(2.));
-                        if ui.button("Exit").clicked() {
+                        if ui.button(fl!("menu_exit")).clicked() {
                             info!("Requested Exit");
                             ctx.send_viewport_cmd(ViewportCommand::Close);
                         }
 
                     });
                     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                        if ui.button("About").clicked() {
+                        if ui.button(fl!("about")).clicked() {
                             self.child_windows.toggle_about();
                             info!("Requested About");
                         }
@@ -96,7 +104,7 @@ impl App {
             ui.horizontal(|ui| {
                 ui.label(self.status.to_string());
                 if let Some(message) = &self.message {
-                    let error_message = RichText::new(format!("Error: {}", message))
+                    let error_message = RichText::new(fl!("app_error_err", err = message))
                         .background_color(Color32::RED)
                         .color(Color32::WHITE);
                     ui.label(error_message);
@@ -119,7 +127,7 @@ impl eframe::App for App {
         self.show_top(ctx, frame);
         self.show_footer(ctx);
 
-        if let Some(new_status) = CentralPanel::default().show(ctx,  |_ui: &mut Ui| {
+        if let Some(new_status) = CentralPanel::default().show(ctx,  |ui: &mut Ui| {
             match self.status {
                 Starting => {
                     // if not already starting, kick things off
@@ -134,10 +142,11 @@ impl eframe::App for App {
                 Ready => {
                     // what are we looking at?
                     // select between views
+                    let _new_view = self.show_select_views(ui);
                     // ?
                     None
                 }
-                _ => { None }
+                // _ => { None }
             }
         }).inner {
             self.status = new_status;
@@ -145,8 +154,31 @@ impl eframe::App for App {
 
         self.child_windows.show_windows(ctx);
     }
+}
 
+impl App {
 
+    fn show_select_views ( &mut self, ui: &mut Ui ) -> Option<MainView> {
+        let select_color = if self.settings.theme() == Theme::Dark { Color32::LIGHT_GREEN } else { Color32::DARK_GREEN };
+        ui.horizontal(|ui| {
+            for (num, view) in all::<MainView>().enumerate() {
+                let mut v_text = RichText::new(view.to_string()).heading();
+                if self.main_view == view {
+                    v_text = v_text.color(select_color).underline();
+                }
+
+                if ui.add(Label::new(v_text).sense(Sense::click())).clicked() {
+                    info!("selected {}", view);
+                }
+
+                if num != cardinality::<MainView>() {
+                    ui.heading(" | ");
+                }
+            }
+
+        });
+        None
+    }
 }
 
 // ===========================
@@ -165,8 +197,8 @@ impl Display for AppStatus {
         use AppStatus::*;
 
         write!(f, "{}", match self {
-            Starting => "Starting",
-            Ready => "Ready",
+            Starting => fl!("app_starting"),
+            Ready => fl!("app_ready"),
         })
     }
 }
@@ -175,7 +207,7 @@ impl Display for AppStatus {
 // MainView
 
 #[allow(dead_code)]
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy, Sequence, PartialEq)]
 enum MainView {
     #[default]
     Factions,
@@ -188,9 +220,9 @@ impl Display for MainView {
         use MainView::*;
 
         write!(f, "{}", match self {
-            Factions => "Factions",
-            Persons => "People",
-            Districts => "Districts",
+            Factions => fl!("main_factions"),
+            Persons => fl!("main_persons"),
+            Districts => fl!("main_districts"),
         })
     }
 }
