@@ -11,3 +11,5 @@ version_ver = version: {$ver}
 changenotes = Change Notes
 app_starting = Starting
 app_ready = Ready
+name_heading = Name
+tier_heading = Tier

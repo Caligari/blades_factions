@@ -1,7 +1,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::{app_data::DataIndex, clock::Clock, managed_list::{DistrictRef, FactionRef, Named, PersonRef}, tier::Tier};
+use crate::{app_data::DataIndex, clock::Clock, localize::fl, managed_list::{DistrictRef, FactionRef, Named, PersonRef}, tier::Tier};
 
 #[allow(dead_code)]
 #[derive(Default, Clone)]
@@ -36,6 +36,18 @@ impl Named for Faction {
             DataIndex::FactionIndex( ind ) => Some(ind),
             _ => None,
         }
+    }
+
+    fn display_fields ( &self ) -> Vec<String> {
+        vec![
+            self.name.clone(),
+            self.tier.to_string(),
+            //hq loc?
+        ]
+    }
+
+    fn display_headings ( ) -> Vec<String> {
+        vec![fl!("name_heading"), fl!("tier_heading")]
     }
 }
 

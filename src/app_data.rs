@@ -3,7 +3,7 @@ use std::path::Path;
 use anyhow::{Result, Ok, anyhow};
 use serde::{Deserialize, Serialize};
 
-use crate::{action::{Action, ActionNode}, app::load_from_pot, district::District, faction::Faction, managed_list::ManagedList, person::Person};
+use crate::{action::{Action, ActionNode}, app::load_from_pot, app_display::DisplayTable, district::District, faction::Faction, managed_list::ManagedList, person::Person};
 
 const DATA_EXTENSION: &str = "pot";
 
@@ -88,6 +88,21 @@ impl AppData {
         }
         // fill return node
         Ok(return_node)
+    }
+
+    // todo: precalc and cache this?
+    pub fn persons_display_table ( &self ) -> DisplayTable {
+        (&self.persons).into()
+    }
+
+    // todo: precalc and cache this?
+    pub fn districts_display_table ( &self ) -> DisplayTable {
+        (&self.districts).into()
+    }
+
+    // todo: precalc and cache this?
+    pub fn factions_display_table ( &self ) -> DisplayTable {
+        (&self.factions).into()
     }
 
     pub fn save_to_file ( &self ) {

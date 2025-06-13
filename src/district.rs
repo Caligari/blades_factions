@@ -1,7 +1,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::{app_data::DataIndex, managed_list::Named};
+use crate::{app_data::DataIndex, localize::fl, managed_list::Named};
 
 
 
@@ -21,6 +21,7 @@ impl District {
     }
 }
 
+// ---------------------------
 impl Named for District {
     fn name ( &self ) -> &str {
         &self.name
@@ -35,5 +36,13 @@ impl Named for District {
             DataIndex::DistrictIndex( ind ) => Some(ind),
             _ => None,
         }
+    }
+
+    fn display_fields ( &self ) -> Vec<String> {
+        vec![self.name.clone()]
+    }
+
+    fn display_headings ( ) -> Vec<String> {
+        vec![fl!("name_heading")]
     }
 }

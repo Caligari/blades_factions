@@ -20,6 +20,7 @@ mod tier;
 mod managed_list;
 mod action;
 mod todo;
+mod app_display;
 
 const APP_NAME: &str = "Blades Factions";
 const COMPANY_DOMAIN: &str = "org";

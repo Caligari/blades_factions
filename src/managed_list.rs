@@ -23,6 +23,11 @@ impl<T: Clone + Named> GenericRef<T> {
         self.0.read().index.index()
     }
 
+    /// Use extreme caution with the return value, as it can be changed later and you will not know
+    pub fn data_index ( &self ) -> DataIndex {
+        self.0.read().index
+    }
+
     pub fn name ( &self ) -> Option<String> {
         self.0.read().name().map(|n| n.to_string())
     }
@@ -176,6 +181,14 @@ impl<T: Clone + Named> ManagedList<T> {
         let index = index.index()?;
         self.list.get(index)
     }
+
+    pub fn item_ref_list ( &self ) -> Vec<(GenericRef<T>, &T)> {
+        self.list_index.iter().filter_map(|(_st, re)| {
+            if re.has_index() {
+                self.fetch(re).map(|item| (re.clone(), item))
+            } else { None }
+        }).collect()
+    }
 }
 
 
@@ -187,6 +200,8 @@ pub trait Named {
     fn name ( &self ) -> &str;
     fn make_data_index ( index: usize ) -> DataIndex;
     fn fetch_data_index ( index: DataIndex ) -> Option<usize>;
+    fn display_fields ( &self ) -> Vec<String>;
+    fn display_headings ( ) -> Vec<String>;
 }
 
 #[cfg(test)]

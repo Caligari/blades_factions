@@ -1,12 +1,13 @@
 use std::{fmt::Display, fs::{self, create_dir_all, OpenOptions}, io::{BufReader, BufWriter, Write}, path::Path, sync::Arc};
 
 use directories_next::ProjectDirs;
-use eframe::{egui::{menu, Align, Button, CentralPanel, Color32, Context, FontData, FontDefinitions, FontFamily, Label, Layout, RichText, Sense, Separator, Theme, TopBottomPanel, Ui, ViewportCommand}, CreationContext, Frame};
+use eframe::{egui::{menu, Align, Button, CentralPanel, Color32, Context, FontData, FontDefinitions, FontFamily, Label, Layout, Margin, RichText, Sense, Separator, Stroke, Theme, TopBottomPanel, Ui, ViewportCommand}, CreationContext, Frame};
+use egui_extras::TableBuilder;
 use enum_iterator::{all, cardinality, Sequence};
 use log::info;
 use serde::{de::DeserializeOwned, Serialize};
 
-use crate::{app_data::AppData, app_settings::AppSettings, child_windows::ChildWindows, localize::fl, todo::TodoUndo};
+use crate::{app_data::{AppData, DataIndex}, app_settings::AppSettings, child_windows::ChildWindows, localize::fl, managed_list::{GenericRef, Named}, todo::TodoUndo};
 
 
 
@@ -142,7 +143,48 @@ impl eframe::App for App {
                 Ready => {
                     // what are we looking at?
                     // select between views
-                    let _new_view = self.show_select_views(ui);
+                    if let Some(new_view) = self.show_select_views(ui) {
+                        self.main_view = new_view;
+                        // anything else to do?
+                    }
+
+                    // find or build display rows
+                    let _display_table = match &self.main_view {
+                        MainView::Districts => {
+                            self.data.districts_display_table()
+                        }
+
+                        MainView::Persons => {
+                            self.data.persons_display_table()
+                        }
+
+                        MainView::Factions => {
+                            self.data.factions_display_table()
+                        }
+                    };
+
+                    // show table with display rows
+                    const STROKE_WIDTH: f32 = 1.;
+                    const STROKE_COLOR: Color32 = Color32::GRAY;
+                    const INNER_MARGIN: Margin = Margin::same(6);
+                    const OUTER_MARGIN: Margin = Margin::same(1);
+
+                    ui.horizontal_top(|ui| {
+                        ui.with_layout(Layout::top_down_justified(Align::Min), |ui| {
+                        eframe::egui::Frame::default()
+                            .stroke(Stroke::new(STROKE_WIDTH, STROKE_COLOR))
+                            .inner_margin(INNER_MARGIN)
+                            .outer_margin(OUTER_MARGIN)
+                            .show(ui, |ui| {
+                                ui.style_mut().wrap_mode = Some(eframe::egui::TextWrapMode::Extend);
+                                let mut table = TableBuilder::new(ui)
+                                    .striped(true)
+                                    .sense(Sense::click())
+                                    .auto_shrink([false, false]);
+                                // now show display_table headers and data
+                            });
+                        });
+                    });
                     // ?
                     None
                 }
@@ -158,8 +200,9 @@ impl eframe::App for App {
 
 impl App {
 
-    fn show_select_views ( &mut self, ui: &mut Ui ) -> Option<MainView> {
+    fn show_select_views ( &self, ui: &mut Ui ) -> Option<MainView> {
         let select_color = if self.settings.theme() == Theme::Dark { Color32::LIGHT_GREEN } else { Color32::DARK_GREEN };
+        let mut new_view = None;
         ui.horizontal(|ui| {
             for (num, view) in all::<MainView>().enumerate() {
                 let mut v_text = RichText::new(view.to_string()).heading();
@@ -169,6 +212,7 @@ impl App {
 
                 if ui.add(Label::new(v_text).sense(Sense::click())).clicked() {
                     info!("selected {}", view);
+                    new_view = Some(view);
                 }
 
                 if num != cardinality::<MainView>() {
@@ -177,7 +221,7 @@ impl App {
             }
 
         });
-        None
+        new_view
     }
 }
 
