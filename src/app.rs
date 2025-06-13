@@ -7,7 +7,7 @@ use enum_iterator::{all, cardinality, Sequence};
 use log::info;
 use serde::{de::DeserializeOwned, Serialize};
 
-use crate::{app_data::{AppData, DataIndex}, app_settings::AppSettings, child_windows::ChildWindows, localize::fl, managed_list::{GenericRef, Named}, todo::TodoUndo};
+use crate::{app_data::AppData, app_settings::AppSettings, child_windows::ChildWindows, localize::fl, todo::TodoUndo};
 
 
 
@@ -148,7 +148,7 @@ impl eframe::App for App {
                         // anything else to do?
                     }
 
-                    // find or build display rows
+                    // find or build display data table
                     let _display_table = match &self.main_view {
                         MainView::Districts => {
                             self.data.districts_display_table()
@@ -163,8 +163,9 @@ impl eframe::App for App {
                         }
                     };
 
-                    // show table with display rows
+                    // show table with display data
                     const STROKE_WIDTH: f32 = 1.;
+                    // todo: colors will need to change with theme?
                     const STROKE_COLOR: Color32 = Color32::GRAY;
                     const INNER_MARGIN: Margin = Margin::same(6);
                     const OUTER_MARGIN: Margin = Margin::same(1);

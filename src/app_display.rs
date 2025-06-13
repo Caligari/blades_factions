@@ -54,10 +54,13 @@ impl DisplayTable {
 impl<T: Named + Clone> From<&ManagedList<T>> for DisplayTable {
     fn from(list: &ManagedList<T>) -> Self {
         let item_list = list.item_ref_list();
+        let mut lines: Vec<DisplayLine> = item_list.iter().map(|(index, item)| {
+                displayline_from_item_ref(*item, index)
+            }).collect();
+        // todo: better sorting?
+        lines.sort_by(|a, b| a.fields[0].cmp(&b.fields[0]));
         DisplayTable {
-            lines: item_list.iter().map(|(index, item)| {
-                    displayline_from_item_ref(*item, index)
-                }).collect(),
+            lines,
             headings: T::display_headings(),
         }
     }

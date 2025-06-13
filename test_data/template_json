@@ -1,0 +1,29 @@
+{
+  persons: [
+    '{{repeat(45, 67)}}',
+    {
+      name: '{{firstName()}} {{surname()}}',
+      description: '{{lorem(1, "paragraphs")}}',
+      notes: '{{lorem(1, "paragraphs")}}'
+    }
+  ],
+  districts: [
+    '{{repeat(15, 20)}}',
+    {
+      name: '{{lorem(1, "words")}}'
+    }
+  ],
+  factions: [
+    '{{repeat(10, 20)}}',
+    {
+      name: '{{lorem(1, "words")}}',
+      description: '{{lorem(1, "paragraphs")}}',
+      tier: '{{integer(0, 5)}}',
+      assets: '{{lorem(1, "paragraphs")}}',
+      notes: '{{lorem(1, "paragraphs")}}',
+      general: '{{lorem(1, "paragraphs")}}'
+    }
+  ]
+}
+
+https://json-generator.com
