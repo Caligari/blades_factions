@@ -141,22 +141,29 @@ impl AppData {
         debug!("imported {} people, {} districts, {} factions",
                 import.persons.len(), import.districts.len(), import.factions.len());
 
-        // todo: actually add imports
-        let mut district_add = ActionNode::new();
-        for d in import.districts {
-            district_add.push_back(Action::DistrictAdd(d));
-        }
+        let district_add: ActionNode = import.districts.into_iter().map(|d| {
+            Action::DistrictAdd(d)
+        }).collect();
 
-        let mut person_add = ActionNode::new();
-        for p in import.persons {
-            person_add.push_back(Action::PersonAdd(p));
-        }
+        let person_add = import.persons.into_iter().map(|p| {
+            Action::PersonAdd(p)
+        }).collect();
+
+        // does this have to be done after the other two are in place, so we can make the right refs?
+        let faction_add = import.factions.into_iter().map(|f| {
+            Action::FactionAdd(f.into())
+        }).collect();
 
         if let Err(err) = self.do_action(&district_add) {
             error!("unable to add districts: {}", err);
         }
+
         if let Err(err) = self.do_action(&person_add) {
             error!("unable to add persons: {}", err);
+        }
+
+        if let Err(err) = self.do_action(&faction_add) {
+            error!("unable to add factions: {}", err);
         }
 
         Ok(())

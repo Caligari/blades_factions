@@ -1,4 +1,5 @@
 
+use eframe::epaint::Vertex;
 use serde::{Deserialize, Serialize};
 
 use crate::{app_data::DataIndex, clock::Clock, localize::fl, managed_list::{DistrictRef, FactionRef, Named, PersonRef}, tier::Tier};
@@ -88,6 +89,27 @@ impl From<&Faction> for FactionStore {
             enemies: from_faction.enemies.iter().filter_map(|i| { i.name() }).collect(),
             general: from_faction.general.clone(),
             clocks: from_faction.clocks.clone(),
+        }
+    }
+}
+
+// todo from factionstore to faction, for loading
+impl From<FactionStore> for Faction {
+    fn from(from_store: FactionStore) -> Self {
+        Faction {
+            name: from_store.name,
+            description: from_store.description,
+            tier: from_store.tier,
+            hq: None,  // todo
+            turf: Vec::new(),  // todo
+            leader: None,  // todo
+            notable: Vec::new(),  // todo
+            assets: from_store.assets,  // todo
+            notes: from_store.notes,
+            allies: Vec::new(),  // todo
+            enemies: Vec::new(),  // todo
+            general: from_store.general,
+            clocks: Vec::new(),  // todo
         }
     }
 }
