@@ -18,10 +18,15 @@
     {
       name: '{{lorem(1, "words")}}',
       description: '{{lorem(1, "paragraphs")}}',
-      tier: '{{integer(0, 5)}}',
+      tier: '{{random("Tier0", "Tier1", "Tier2", "Tier3", "Tier4", "Tier5")}}',
+      turf: [],
+      notable: [],
       assets: '{{lorem(1, "paragraphs")}}',
       notes: '{{lorem(1, "paragraphs")}}',
-      general: '{{lorem(1, "paragraphs")}}'
+      general: '{{lorem(1, "paragraphs")}}',
+      allies: [],
+      enemies: [],
+      clocks:[]
     }
   ]
 }

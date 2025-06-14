@@ -1,9 +1,10 @@
 use std::path::Path;
 
 use anyhow::{Result, Ok, anyhow};
+use log::{debug, error};
 use serde::{Deserialize, Serialize};
 
-use crate::{action::{Action, ActionNode}, app::load_from_pot, app_display::DisplayTable, district::District, faction::Faction, managed_list::ManagedList, person::Person};
+use crate::{action::{Action, ActionNode}, app::load_from_pot, app_display::DisplayTable, district::District, faction::{Faction, FactionStore}, managed_list::ManagedList, person::Person};
 
 const DATA_EXTENSION: &str = "pot";
 
@@ -123,6 +124,42 @@ impl AppData {
 
     pub fn load_from_file ( file_path: &Path ) -> Result<AppData> {
         load_save_data(&file_path.with_extension(DATA_EXTENSION))
+    }
+
+    // todo: actually we'd want to add this to the current data, and use the file name (_file_path: &Path)
+    pub fn import_from_json ( &mut self ) -> Result<()> {
+        #[derive(Deserialize)]
+        struct ImportData {
+            persons: Vec<Person>,
+            districts: Vec<District>,
+            factions: Vec<FactionStore>,
+        }
+
+        let data = include_str!("../test_data/test1.json");
+
+        let import: ImportData = serde_json::from_str(data)?;
+        debug!("imported {} people, {} districts, {} factions",
+                import.persons.len(), import.districts.len(), import.factions.len());
+
+        // todo: actually add imports
+        let mut district_add = ActionNode::new();
+        for d in import.districts {
+            district_add.push_back(Action::DistrictAdd(d));
+        }
+
+        let mut person_add = ActionNode::new();
+        for p in import.persons {
+            person_add.push_back(Action::PersonAdd(p));
+        }
+
+        if let Err(err) = self.do_action(&district_add) {
+            error!("unable to add districts: {}", err);
+        }
+        if let Err(err) = self.do_action(&person_add) {
+            error!("unable to add persons: {}", err);
+        }
+
+        Ok(())
     }
 }
 

@@ -4,7 +4,7 @@ use directories_next::ProjectDirs;
 use eframe::{egui::{menu, Align, Button, CentralPanel, Color32, Context, FontData, FontDefinitions, FontFamily, Label, Layout, Margin, RichText, Sense, Separator, Stroke, Theme, TopBottomPanel, Ui, ViewportCommand}, CreationContext, Frame};
 use egui_extras::{Column, TableBuilder};
 use enum_iterator::{all, cardinality, Sequence};
-use log::{debug, info};
+use log::{debug, error, info};
 use serde::{de::DeserializeOwned, Serialize};
 
 use crate::{app_data::AppData, app_settings::AppSettings, child_windows::ChildWindows, localize::fl, todo::TodoUndo};
@@ -135,6 +135,10 @@ impl eframe::App for App {
                     // info!("Starting")
                     // if completed
                     info!("Starting => Ready");
+                    if let Err(err) = self.data.import_from_json() {
+                        error!("importing json error: {}", err);
+                    }
+
                     Some(Ready(RefCell::new(None)))
                     // otherwise, keep doing start
                     // None
