@@ -3,7 +3,7 @@ use std::{collections::BTreeMap, marker::PhantomData, sync::Arc};
 use eframe::egui::mutex::RwLock;
 use log::{debug, info, warn};
 
-use crate::{app_data::DataIndex, district::District, faction::Faction, person::Person};
+use crate::{app_data::DataIndex, district::District, faction::Faction, person::Person, sorting::Sorting};
 
 
 
@@ -69,6 +69,7 @@ impl<T: Clone + Named> NamedIndex<T> {
 pub struct ManagedList<T: Clone + Named> {
     list: Vec<T>,
     list_index: BTreeMap<String, GenericRef<T>>,
+    sorting: Sorting,
 }
 
 #[allow(dead_code)]
@@ -188,6 +189,14 @@ impl<T: Clone + Named> ManagedList<T> {
                 self.fetch(re).map(|item| (re.clone(), item))
             } else { None }
         }).collect()
+    }
+
+    pub fn get_sorting ( &self ) -> Sorting {
+        self.sorting
+    }
+
+    pub fn set_sorting ( &mut self, index: usize ) {
+        self.sorting.set_field(index);
     }
 }
 

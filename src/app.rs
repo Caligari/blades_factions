@@ -1,10 +1,10 @@
-use std::{fmt::Display, fs::{self, create_dir_all, OpenOptions}, io::{BufReader, BufWriter, Write}, path::Path, sync::Arc};
+use std::{cell::RefCell, fmt::Display, fs::{self, create_dir_all, OpenOptions}, io::{BufReader, BufWriter, Write}, path::Path, sync::Arc};
 
 use directories_next::ProjectDirs;
 use eframe::{egui::{menu, Align, Button, CentralPanel, Color32, Context, FontData, FontDefinitions, FontFamily, Label, Layout, Margin, RichText, Sense, Separator, Stroke, Theme, TopBottomPanel, Ui, ViewportCommand}, CreationContext, Frame};
-use egui_extras::TableBuilder;
+use egui_extras::{Column, TableBuilder};
 use enum_iterator::{all, cardinality, Sequence};
-use log::info;
+use log::{debug, info};
 use serde::{de::DeserializeOwned, Serialize};
 
 use crate::{app_data::AppData, app_settings::AppSettings, child_windows::ChildWindows, localize::fl, todo::TodoUndo};
@@ -129,18 +129,18 @@ impl eframe::App for App {
         self.show_footer(ctx);
 
         if let Some(new_status) = CentralPanel::default().show(ctx,  |ui: &mut Ui| {
-            match self.status {
+            match &self.status {
                 Starting => {
                     // if not already starting, kick things off
                     // info!("Starting")
                     // if completed
                     info!("Starting => Ready");
-                    Some(Ready)
+                    Some(Ready(RefCell::new(None)))
                     // otherwise, keep doing start
                     // None
                 }
 
-                Ready => {
+                Ready ( hovered_line ) => {
                     // what are we looking at?
                     // select between views
                     if let Some(new_view) = self.show_select_views(ui) {
@@ -149,7 +149,7 @@ impl eframe::App for App {
                     }
 
                     // find or build display data table
-                    let _display_table = match &self.main_view {
+                    let display_table = match &self.main_view {
                         MainView::Districts => {
                             self.data.districts_display_table()
                         }
@@ -169,6 +169,12 @@ impl eframe::App for App {
                     const STROKE_COLOR: Color32 = Color32::GRAY;
                     const INNER_MARGIN: Margin = Margin::same(6);
                     const OUTER_MARGIN: Margin = Margin::same(1);
+                    const HEADER_HEIGHT: f32 = 25.0;
+                    const ROW_HEIGHT: f32 = 18.0;
+
+                    let mut new_sort = None;
+                    let mut new_selected = None;
+                    let mut new_hovered_line = None;
 
                     ui.horizontal_top(|ui| {
                         ui.with_layout(Layout::top_down_justified(Align::Min), |ui| {
@@ -182,12 +188,129 @@ impl eframe::App for App {
                                     .striped(true)
                                     .sense(Sense::click())
                                     .auto_shrink([false, false]);
-                                // now show display_table headers and data
+
+                                // todo: move this into DisplayTable - return column definitions
+                                for f in 0..display_table.number_columns() {
+                                    const MIN_COL_WIDTH: f32 = 20.0;
+                                    const NAME_COL_WIDTH: f32 = 120.0;
+
+                                    let col = if f == 0 {  // first column
+                                        Column::auto().at_least(NAME_COL_WIDTH)
+                                    } else {
+                                        Column::auto().at_least(MIN_COL_WIDTH)
+                                    };
+                                    // for use with extended field, if used
+                                    // Column::remainder(),
+
+                                    table = table.column(col);
+                                }
+
+                                // todo: display table headings should be just the label - pre-calculated
+                                table.header(HEADER_HEIGHT, |mut header| {
+                                    for (i, heading_text) in display_table.headings_iter().enumerate() {
+                                        let heading = {
+                                            let h = RichText::new(heading_text).strong();
+                                            if i == display_table.sorting().sort_field() {
+                                                h.underline()
+                                            } else { h }
+                                        };
+                                        header.col(|ui| {
+                                            if ui.add(Label::new(heading).sense(Sense::click())).clicked() {
+                                                new_sort = Some(i);
+                                            }
+                                        });
+                                    }
+                                })
+                                .body(|mut body| {
+                                    for (i, display_line) in display_table.lines_iter().enumerate() {
+                                        body.row(ROW_HEIGHT, |mut row| {
+                                            let mut field_click = false;
+                                            let mut field_hover = false;
+
+                                            if let Some(h_line) = *hovered_line.borrow() {
+                                                let hovering = i == h_line;
+                                                row.set_hovered(hovering);
+                                            }
+
+                                            // todo: display list fields should be labels - pre-generated
+                                            for f in display_line.field_iter() {
+                                                row.col(|ui| {
+                                                    let col_resp = ui.add(
+                                                        Label::new(f)
+                                                        .sense(Sense::click())
+                                                    );
+
+                                                    field_click |= col_resp.clicked();
+
+                                                    if col_resp.hovered() {
+                                                        field_hover = true;
+                                                    }
+                                                });
+                                            }
+
+                                            let row_resp = row.response();
+
+                                            if field_click || row_resp.clicked() {
+                                                debug!("row {} ({}) clicked", i, display_line.id());
+                                                new_selected = Some(display_line.id());
+                                            } else if field_hover || row_resp.hovered() {
+                                                let already_hovered = {
+                                                    if let Some(hover) = *hovered_line.borrow() {
+                                                        hover == i
+                                                    } else { false }
+                                                };
+                                                if !already_hovered {
+                                                    debug!("row {} hovered", i);
+                                                }
+                                                new_hovered_line = Some(i);  // set this regardless
+                                            }
+                                        });
+                                    }
+                                });
+
                             });
                         });
                     });
-                    // ?
-                    None
+
+                    *hovered_line.borrow_mut() = new_hovered_line;
+
+                    match &self.main_view {
+                        MainView::Districts => {
+                            if let Some(sort_index) = new_sort {
+                                debug!("setting district col {} to sort", sort_index);
+                                self.data.set_districts_sort(sort_index);
+                                None
+                            } else if let Some(id) = new_selected {
+                                debug!("selected distirct {}", id);
+                                // todo
+                                None
+                            } else { None }
+                        }
+
+                        MainView::Persons => {
+                            if let Some(sort_index) = new_sort {
+                                debug!("setting persons col {} to sort", sort_index);
+                                self.data.set_persons_sort(sort_index);
+                                None
+                            } else if let Some(id) = new_selected {
+                                debug!("selected person {}", id);
+                                // todo
+                                None
+                            } else { None }
+                        }
+
+                        MainView::Factions => {
+                            if let Some(sort_index) = new_sort {
+                                debug!("setting factions col {} to sort", sort_index);
+                                self.data.set_factions_sort(sort_index);
+                                None
+                            } else if let Some(id) = new_selected {
+                                debug!("selected faction {}", id);
+                                // todo
+                                None
+                            } else { None }
+                        }
+                    }
                 }
                 // _ => { None }
             }
@@ -234,7 +357,7 @@ impl App {
 enum AppStatus {
     #[default]
     Starting,
-    Ready,
+    Ready ( RefCell<Option<usize>> ),  // todo: Option<usize> to indicate which line is hovered?
 }
 
 impl Display for AppStatus {
@@ -243,7 +366,7 @@ impl Display for AppStatus {
 
         write!(f, "{}", match self {
             Starting => fl!("app_starting"),
-            Ready => fl!("app_ready"),
+            Ready (..) => fl!("app_ready"),
         })
     }
 }

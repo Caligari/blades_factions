@@ -105,6 +105,18 @@ impl AppData {
         (&self.factions).into()
     }
 
+    pub fn set_persons_sort ( &mut self, index: usize ) {
+        self.persons.set_sorting(index);
+    }
+
+    pub fn set_districts_sort ( &mut self, index: usize ) {
+        self.districts.set_sorting(index);
+    }
+
+    pub fn set_factions_sort ( &mut self, index: usize ) {
+        self.factions.set_sorting(index);
+    }
+
     pub fn save_to_file ( &self ) {
 
     }
