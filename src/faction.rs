@@ -132,16 +132,16 @@ impl From<&FactionStore> for Faction {
             name: from_store.name.clone(),
             description: from_store.description.clone(),
             tier: from_store.tier,
-            hq: None,  // todo
-            turf: Vec::new(),  // todo
-            leader: None,  // todo
-            notable: Vec::new(),  // todo
-            assets: from_store.assets.clone(),  // todo
+            hq: None,  // added after creation
+            turf: Vec::new(),  // added after creation
+            leader: None,  // added after creation
+            notable: Vec::new(),  // added after creation
+            assets: from_store.assets.clone(),
             notes: from_store.notes.clone(),
-            allies: Vec::new(),  // todo
-            enemies: Vec::new(),  // todo
+            allies: Vec::new(),  // added after creation
+            enemies: Vec::new(),  // added after creation
             general: from_store.general.clone(),
-            clocks: Vec::new(),  // todo
+            clocks: from_store.clocks.clone(),
         }
     }
 }
