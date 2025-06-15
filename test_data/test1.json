@@ -297,7 +297,7 @@
       "name": "minim"
     },
     {
-      "name": "laboris"
+      "name": "laborit"
     },
     {
       "name": "anim"
@@ -315,7 +315,7 @@
       "name": "eiusmod"
     },
     {
-      "name": "officia"
+      "name": "officiat"
     },
     {
       "name": "laborum"
@@ -335,13 +335,15 @@
       "name": "duis",
       "description": "Est non aliqua occaecat ad veniam eu velit consequat ipsum adipisicing consectetur magna et reprehenderit. Id sunt sint minim eiusmod enim do non exercitation. Nostrud do deserunt enim incididunt ad excepteur aliqua occaecat nisi dolor aliqua cupidatat. Laborum duis non occaecat eu. Dolor amet non nostrud ipsum veniam eu Lorem Lorem. Amet eiusmod labore proident anim exercitation excepteur id cillum Lorem aliqua enim duis.\r\n",
       "tier": "Tier0",
-      "turf": [],
-      "notable": [],
+      "hq": "officia",
+      "turf": ["anim", "sunt", "officia"],
+      "leader": "Elsa Doyle",
+      "notable": ["Cristina Bolton"],
       "assets": "Ex magna sit voluptate adipisicing fugiat eiusmod qui anim dolore id. Aliquip deserunt cillum id irure in aute proident adipisicing tempor eiusmod aliqua duis proident ad. Dolore in nisi quis proident culpa aliquip commodo nulla amet cupidatat. Qui sunt ad deserunt cillum nisi est do sint veniam ea mollit. Dolor eiusmod Lorem nisi magna ad esse incididunt ipsum in aliqua cillum.\r\n",
       "notes": "Ullamco proident proident eiusmod pariatur sunt pariatur consectetur occaecat nostrud duis aliquip non. Qui id ullamco do id laborum sunt. Nisi dolore incididunt et est ex ut et. Tempor esse elit cillum tempor in fugiat pariatur labore reprehenderit culpa. Non deserunt adipisicing in pariatur aliqua voluptate qui non dolor excepteur do consequat pariatur. Quis pariatur in occaecat est. Et cillum reprehenderit sit nulla enim laboris nostrud deserunt.\r\n",
       "general": "Eu adipisicing culpa qui esse qui proident ea. Adipisicing laborum consectetur laboris do amet do. Officia ullamco incididunt dolor irure ad dolor proident. Commodo pariatur deserunt elit consequat. Cillum mollit dolore id sunt aliquip et labore. Velit ad do elit nisi eu ad aliqua officia eiusmod enim ullamco enim. Voluptate quis esse ipsum proident laborum sint.\r\n",
-      "allies": [],
-      "enemies": [],
+      "allies": ["magna", "quis"],
+      "enemies": ["qui", "commodo"],
       "clocks": []
     },
     {
@@ -423,7 +425,7 @@
       "clocks": []
     },
     {
-      "name": "duis",
+      "name": "duit",
       "description": "Ut cillum culpa ad amet labore. Consequat mollit nisi tempor laboris. Non voluptate esse pariatur eu. Exercitation cupidatat et qui quis ad consequat. Nulla tempor veniam ad reprehenderit tempor deserunt fugiat. Voluptate exercitation pariatur fugiat proident consectetur do pariatur nisi amet pariatur incididunt amet magna.\r\n",
       "tier": "Tier1",
       "turf": [],
@@ -488,7 +490,7 @@
       "clocks": []
     },
     {
-      "name": "duis",
+      "name": "duia",
       "description": "Do voluptate minim excepteur enim. Esse duis incididunt eiusmod officia nostrud reprehenderit ipsum. Officia consectetur deserunt deserunt duis pariatur adipisicing consequat officia ex pariatur. Nisi proident do duis laboris officia ad. Aute esse excepteur duis consequat id reprehenderit nisi laborum proident non qui in. Tempor pariatur excepteur aliqua ea laboris duis nisi cupidatat sunt sint.\r\n",
       "tier": "Tier0",
       "turf": [],

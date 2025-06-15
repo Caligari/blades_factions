@@ -4,7 +4,7 @@ use anyhow::{Result, Ok, anyhow};
 use log::{debug, error};
 use serde::{Deserialize, Serialize};
 
-use crate::{action::{Action, ActionNode}, app::load_from_pot, app_display::DisplayTable, district::District, faction::{Faction, FactionStore}, managed_list::ManagedList, person::Person};
+use crate::{action::{Action, ActionNode}, app::load_from_pot, app_display::DisplayTable, district::District, faction::{Faction, FactionStore}, managed_list::{FactionRef, ManagedList, Named}, person::Person};
 
 const DATA_EXTENSION: &str = "pot";
 
@@ -149,11 +149,6 @@ impl AppData {
             Action::PersonAdd(p)
         }).collect();
 
-        // does this have to be done after the other two are in place, so we can make the right refs?
-        let faction_add = import.factions.into_iter().map(|f| {
-            Action::FactionAdd(f.into())
-        }).collect();
-
         if let Err(err) = self.do_action(&district_add) {
             error!("unable to add districts: {}", err);
         }
@@ -162,11 +157,86 @@ impl AppData {
             error!("unable to add persons: {}", err);
         }
 
+        let mut post_factions: Vec<(String, Vec<String>, Vec<String>)> = Vec::new();
+        let faction_add = import.factions.into_iter().map(|f| {
+            let (faction, allies, enemies) = self.faction_from_store(f);
+            post_factions.push((faction.name().to_string(), allies, enemies));
+            Action::FactionAdd(faction)
+        }).collect();
+
         if let Err(err) = self.do_action(&faction_add) {
             error!("unable to add factions: {}", err);
         }
 
+        // do faction references to factions
+        // note these do not have undo
+        let faction_replace: ActionNode = post_factions.into_iter().filter_map(|(faction_name, allies, enemies)| {
+            if let Some(fac_ref) = self.factions.find(&faction_name) {
+                if let Some(fac) = self.factions.fetch(&fac_ref) {
+                    let allies: Vec<FactionRef> = allies.into_iter().filter_map(|f| {
+                        let f_ref = self.factions.find(&f);
+                        if f_ref.is_none() { error!("unable to find faction {} as ally when loading faction {}", f, faction_name); }
+                        f_ref
+                    }).collect();
+                    let enemies: Vec<FactionRef> = enemies.into_iter().filter_map(|f| {
+                        let f_ref = self.factions.find(&f);
+                        if f_ref.is_none() { error!("unable to find faction {} as enemy when loading faction {}", f, faction_name); }
+                        f_ref
+                    }).collect();
+                    if !allies.is_empty() || !enemies.is_empty() {
+                        let mut faction = fac.clone();
+                        if !allies.is_empty() { faction.set_allies(allies); }
+                        if !enemies.is_empty() { faction.set_enemies(enemies); }
+                        Some(Action::FactionReplace(fac_ref, faction))
+                    } else { None }
+                } else { None }
+            } else { None }
+        }).collect();
+
+        if let Err(err) = self.do_action(&faction_replace) {
+            error!("unable to replace factions with allies and enemies: {}", err);
+        }
+
         Ok(())
+    }
+
+    fn faction_from_store ( &self, f_store: FactionStore )-> (Faction, Vec<String>, Vec<String>) {
+        let mut faction: Faction = (&f_store).into();
+        // todo: convert references
+        // hq (option district)
+        if let Some(hq) = f_store.hq {
+            let hq_ref = self.districts.find(&hq);
+            if hq_ref.is_none() { error!("unable to find district {} as hq when loading faction {}", hq, faction.name()); }
+            faction.set_hq(hq_ref);
+        }
+
+        // turf (vec district)
+        let turf = f_store.turf.into_iter().filter_map(|d| {
+            let d_ref = self.districts.find(&d);
+            if d_ref.is_none() { error!("unable to find district {} as turf when loading faction {}", d, faction.name()); }
+            d_ref
+        }).collect();
+        faction.set_turf(turf);
+
+        // leader (option person)
+        if let Some(leader) = f_store.leader {
+            let leader_ref = self.persons.find(&leader);
+            if leader_ref.is_none() { error!("unable to find person {} as leader when loading faction {}", leader, faction.name()); }
+            faction.set_leader(leader_ref);
+        }
+
+        // notable (vec person)
+        let notable = f_store.notable.into_iter().filter_map(|p| {
+            let p_ref = self.persons.find(&p);
+            if p_ref.is_none() { error!("unable to find person {} as notable when loading faction {}", p, faction.name()); }
+            p_ref
+        }).collect();
+        faction.set_notable(notable);
+
+        // allies (vec faction)
+        // enemies (vec faction)
+
+        (faction, f_store.allies, f_store.enemies)
     }
 }
 

@@ -1,5 +1,5 @@
 
-use eframe::epaint::Vertex;
+use log::warn;
 use serde::{Deserialize, Serialize};
 
 use crate::{app_data::DataIndex, clock::Clock, localize::fl, managed_list::{DistrictRef, FactionRef, Named, PersonRef}, tier::Tier};
@@ -52,6 +52,38 @@ impl Named for Faction {
     }
 }
 
+impl Faction {
+    pub fn set_hq ( &mut self, hq: Option<DistrictRef> ) {
+        if self.hq.is_some() { warn!("replacing hq of {} when it is not empty", self.name); }
+        self.hq = hq;
+    }
+
+    pub fn set_leader ( &mut self, leader: Option<PersonRef> ) {
+        if self.leader.is_some() { warn!("replacing leader of {} when it is not empty", self.name); }
+        self.leader = leader;
+    }
+
+    pub fn set_turf ( &mut self, turf: Vec<DistrictRef> ) {
+        if !self.turf.is_empty() { warn!("replacing turf of {} when it is not empty", self.name); }
+        self.turf = turf;
+    }
+
+    pub fn set_notable ( &mut self, notable: Vec<PersonRef> ) {
+        if !self.notable.is_empty() { warn!("replacing notable of {} when it is not empty", self.name); }
+        self.notable = notable;
+    }
+
+    pub fn set_allies ( &mut self, allies: Vec<FactionRef> ) {
+        if !self.allies.is_empty() { warn!("replacing allies of {} when it is not empty", self.name); }
+        self.allies = allies;
+    }
+
+    pub fn set_enemies ( &mut self, enemies: Vec<FactionRef> ) {
+        if !self.enemies.is_empty() { warn!("replacing enemies of {} when it is not empty", self.name); }
+        self.enemies = enemies;
+    }
+}
+
 // -----------------------------
 // Stored
 
@@ -61,14 +93,14 @@ pub struct FactionStore {
     name: String,
     description: String,
     tier: Tier,
-    hq: Option<String>,  // district name
-    turf: Vec<String>,  // districts
-    leader: Option<String>,  // person name
-    notable: Vec<String>,  // people
+    pub hq: Option<String>,  // district name
+    pub turf: Vec<String>,  // districts
+    pub leader: Option<String>,  // person name
+    pub notable: Vec<String>,  // people
     assets: String,
     notes: String,
-    allies: Vec<String>,  // fations
-    enemies: Vec<String>,  // factions
+    pub allies: Vec<String>,  // fations
+    pub enemies: Vec<String>,  // factions
     general: String,
     clocks: Vec<Clock>,
 }
@@ -94,21 +126,21 @@ impl From<&Faction> for FactionStore {
 }
 
 // todo from factionstore to faction, for loading
-impl From<FactionStore> for Faction {
-    fn from(from_store: FactionStore) -> Self {
+impl From<&FactionStore> for Faction {
+    fn from(from_store: &FactionStore) -> Self {
         Faction {
-            name: from_store.name,
-            description: from_store.description,
+            name: from_store.name.clone(),
+            description: from_store.description.clone(),
             tier: from_store.tier,
             hq: None,  // todo
             turf: Vec::new(),  // todo
             leader: None,  // todo
             notable: Vec::new(),  // todo
-            assets: from_store.assets,  // todo
-            notes: from_store.notes,
+            assets: from_store.assets.clone(),  // todo
+            notes: from_store.notes.clone(),
             allies: Vec::new(),  // todo
             enemies: Vec::new(),  // todo
-            general: from_store.general,
+            general: from_store.general.clone(),
             clocks: Vec::new(),  // todo
         }
     }
