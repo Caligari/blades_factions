@@ -66,7 +66,7 @@ impl DisplayTable {
 }
 
 impl<T: Named + Clone> From<&ManagedList<T>> for DisplayTable {
-    fn from(list: &ManagedList<T>) -> Self {
+    fn from ( list:&ManagedList<T> ) -> Self {
         let item_list = list.item_ref_list();
         let mut lines: Vec<DisplayLine> = item_list.iter().map(|(index, item)| {
                 displayline_from_item_ref(*item, index)

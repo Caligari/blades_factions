@@ -195,7 +195,7 @@ impl eframe::App for App {
 
                                 // todo: move this into DisplayTable - return column definitions
                                 for f in 0..display_table.number_columns() {
-                                    const MIN_COL_WIDTH: f32 = 20.0;
+                                    const MIN_COL_WIDTH: f32 = 40.0;
                                     const NAME_COL_WIDTH: f32 = 120.0;
 
                                     let col = if f == 0 {  // first column

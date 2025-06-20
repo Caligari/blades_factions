@@ -1,5 +1,5 @@
 
-use log::warn;
+use log::{error, warn};
 use serde::{Deserialize, Serialize};
 
 use crate::{app_data::DataIndex, clock::Clock, localize::fl, managed_list::{DistrictRef, FactionRef, Named, PersonRef}, tier::Tier};
@@ -43,12 +43,17 @@ impl Named for Faction {
         vec![
             self.name.clone(),
             self.tier.to_string(),
+            self.hq.clone().map_or(String::new(), |d| d.name().map_or(String::new(), |s| s)),
+            self.turf.iter()
+                .map(|d| if let Some(d_name) = d.name() { d_name } else { error!("reference has no name when making turf list for display fields"); String::new() })
+                .collect::<Vec<String>>()
+                .join(", "),
             //hq loc?
         ]
     }
 
     fn display_headings ( ) -> Vec<String> {
-        vec![fl!("name_heading"), fl!("tier_heading")]
+        vec![fl!("name_heading"), fl!("tier_heading"), fl!("hq_heading"), fl!("turf_heading")]
     }
 }
 

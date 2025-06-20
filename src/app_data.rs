@@ -93,17 +93,17 @@ impl AppData {
 
     // todo: precalc and cache this?
     pub fn persons_display_table ( &self ) -> DisplayTable {
-        (&self.persons).into()
+        DisplayTable::from(&self.persons)
     }
 
     // todo: precalc and cache this?
     pub fn districts_display_table ( &self ) -> DisplayTable {
-        (&self.districts).into()
+        DisplayTable::from(&self.districts)
     }
 
     // todo: precalc and cache this?
     pub fn factions_display_table ( &self ) -> DisplayTable {
-        (&self.factions).into()
+        DisplayTable::from(&self.factions)
     }
 
     pub fn set_persons_sort ( &mut self, index: usize ) {
