@@ -107,7 +107,7 @@ impl App {
                 if let Some(message) = &self.message {
                     let error_message = RichText::new(fl!("app_error_err", err = message))
                         .background_color(Color32::RED)
-                        .color(Color32::WHITE);
+                        .color(Color32::WHITE);  // todo: check colors with theme
                     ui.label(error_message);
                     // do we need an "OK" button to clear the message?
                 }
@@ -169,12 +169,11 @@ impl eframe::App for App {
 
                     // show table with display data
                     const STROKE_WIDTH: f32 = 1.;
-                    // todo: colors will need to change with theme?
                     const STROKE_COLOR: Color32 = Color32::GRAY;
                     const INNER_MARGIN: Margin = Margin::same(6);
-                    const OUTER_MARGIN: Margin = Margin::same(1);
                     const HEADER_HEIGHT: f32 = 25.0;
                     const ROW_HEIGHT: f32 = 18.0;
+                    const TINY_SPACE: f32 = 4.0;
 
                     let mut new_sort = None;
                     let mut new_selected = None;
@@ -182,15 +181,16 @@ impl eframe::App for App {
 
                     ui.horizontal_top(|ui| {
                         ui.with_layout(Layout::top_down_justified(Align::Min), |ui| {
+                        ui.add_space(TINY_SPACE);
                         eframe::egui::Frame::default()
                             .stroke(Stroke::new(STROKE_WIDTH, STROKE_COLOR))
                             .inner_margin(INNER_MARGIN)
-                            .outer_margin(OUTER_MARGIN)
                             .show(ui, |ui| {
                                 ui.style_mut().wrap_mode = Some(eframe::egui::TextWrapMode::Extend);
                                 let mut table = TableBuilder::new(ui)
                                     .striped(true)
                                     .sense(Sense::click())
+                                    .resizable(true)
                                     .auto_shrink([false, false]);
 
                                 // todo: move this into DisplayTable - return column definitions
@@ -218,50 +218,50 @@ impl eframe::App for App {
                                         });
                                     }
                                 })
-                                .body(|mut body| {
-                                    for (i, display_line) in display_table.lines_iter().enumerate() {
-                                        body.row(ROW_HEIGHT, |mut row| {
-                                            let mut field_click = false;
-                                            let mut field_hover = false;
+                                .body(|body| {
+                                    body.rows(ROW_HEIGHT, display_table.lines_len(), | mut row | {
+                                        let i = row.index();
+                                        let display_line = display_table.line(i);
+                                        let mut field_click = false;
+                                        let mut field_hover = false;
 
-                                            if let Some(h_line) = *hovered_line.borrow() {
-                                                let hovering = i == h_line;
-                                                row.set_hovered(hovering);
-                                            }
+                                        if let Some(h_line) = *hovered_line.borrow() {
+                                            let hovering = i == h_line;
+                                            row.set_hovered(hovering);
+                                        }
 
-                                            for f in display_line.field_iter() {
-                                                row.col(|ui| {
-                                                    let col_resp = ui.add(
-                                                        Label::new(f)
-                                                        .sense(Sense::click())
-                                                    );
+                                        for f in display_line.field_iter() {
+                                            row.col(|ui| {
+                                                let col_resp = ui.add(
+                                                    Label::new(f)
+                                                    .sense(Sense::click())
+                                                );
 
-                                                    field_click |= col_resp.clicked();
+                                                field_click |= col_resp.clicked();
 
-                                                    if col_resp.hovered() {
-                                                        field_hover = true;
-                                                    }
-                                                });
-                                            }
-
-                                            let row_resp = row.response();
-
-                                            if field_click || row_resp.clicked() {
-                                                debug!("row {} ({}) clicked", i, display_line.id());
-                                                new_selected = Some(display_line.id());
-                                            } else if field_hover || row_resp.hovered() {
-                                                let already_hovered = {
-                                                    if let Some(hover) = *hovered_line.borrow() {
-                                                        hover == i
-                                                    } else { false }
-                                                };
-                                                if !already_hovered {
-                                                    debug!("row {} hovered", i);
+                                                if col_resp.hovered() {
+                                                    field_hover = true;
                                                 }
-                                                new_hovered_line = Some(i);  // set this regardless
+                                            });
+                                        }
+
+                                        let row_resp = row.response();
+
+                                        if field_click || row_resp.clicked() {
+                                            debug!("row {} ({}) clicked", i, display_line.id());
+                                            new_selected = Some(display_line.id());
+                                        } else if field_hover || row_resp.hovered() {
+                                            let already_hovered = {
+                                                if let Some(hover) = *hovered_line.borrow() {
+                                                    hover == i
+                                                } else { false }
+                                            };
+                                            if !already_hovered {
+                                                debug!("row {} hovered", i);
                                             }
-                                        });
-                                    }
+                                            new_hovered_line = Some(i);  // set this regardless
+                                        }
+                                    });
                                 });
 
                             });
@@ -281,7 +281,7 @@ impl eframe::App for App {
                                 if let Some(show) = self.data.find_district(id) {
                                     if let Some(district) = self.data.clone_district(&show) {
                                         info!("Ready -> Show District ({id})");
-                                        Some(ShowEditDistrict(show, RefCell::new(district)))
+                                        Some(ShowEditDistrict(Some(show), RefCell::new(district)))
                                     } else { unreachable!("unable to clone district {id} using reference"); }
                                 } else { unreachable!("selected district '{id}' which is not in list"); }
                             } else { None }
@@ -297,7 +297,7 @@ impl eframe::App for App {
                                 if let Some(show) = self.data.find_person(id) {
                                     if let Some(person) = self.data.clone_person(&show) {
                                         info!("Ready -> Show Person ({id})");
-                                        Some(ShowEditPerson(show, RefCell::new(person)))
+                                        Some(ShowEditPerson(Some(show), RefCell::new(person)))
                                     } else { unreachable!("unable to clone person {id} using reference"); }
                                 } else { unreachable!("selected person '{id}' which is not in list"); }
                             } else { None }
@@ -313,7 +313,7 @@ impl eframe::App for App {
                                 if let Some(show) = self.data.find_faction(id) {
                                     if let Some(faction) = self.data.clone_faction(&show) {
                                         info!("Ready -> Show Faction ({id})");
-                                        Some(ShowEditFaction(show, RefCell::new(faction)))
+                                        Some(ShowEditFaction(Some(show), RefCell::new(faction)))
                                     } else { unreachable!("unable to clone faction {id} using reference"); }
                                 } else { unreachable!("selected faction '{id}' which is not in list"); }
                             } else { None }
@@ -381,9 +381,9 @@ enum AppStatus {
     #[default]
     Starting,
     Ready ( RefCell<Option<usize>> ),
-    ShowEditDistrict ( DistrictRef, RefCell<District> ),
-    ShowEditPerson ( PersonRef, RefCell<Person> ),
-    ShowEditFaction ( FactionRef, RefCell<Faction> ),
+    ShowEditDistrict ( Option<DistrictRef>, RefCell<District> ),
+    ShowEditPerson ( Option<PersonRef>, RefCell<Person> ),
+    ShowEditFaction ( Option<FactionRef>, RefCell<Faction> ),
 }
 
 impl Display for AppStatus {

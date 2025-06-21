@@ -54,6 +54,15 @@ impl DisplayTable {
         self.lines.iter()
     }
 
+    pub fn line ( &self, index: usize ) -> &DisplayLine {
+        assert!(index < self.lines.len());
+        &self.lines[index]
+    }
+
+    pub fn lines_len ( &self ) -> usize {
+        self.lines.len()
+    }
+
     pub fn headings_iter ( &self ) -> impl Iterator<Item=RichText> {
         self.headings.iter().enumerate().map(|(i, h)| {
             let heading_text = h.clone();
