@@ -1,5 +1,7 @@
 use std::slice::Iter;
 
+use eframe::egui::RichText;
+
 use crate::{app_data::DataIndex, managed_list::{GenericRef, ManagedList, Named}, sorting::Sorting};
 
 
@@ -42,18 +44,23 @@ fn displayline_from_item_ref<T: Named + Clone> ( item: &T, index: &GenericRef<T>
 #[derive(Clone)]
 pub struct DisplayTable {
     lines: Vec<DisplayLine>,
-    headings: Vec<String>,
+    headings: Vec<RichText>,
     sorting: Sorting,
 }
 
 #[allow(dead_code)]
 impl DisplayTable {
-    pub fn lines_iter ( &self ) -> Iter<'_, DisplayLine> {
+    pub fn lines_iter ( &self ) -> impl Iterator<Item=&DisplayLine> {
         self.lines.iter()
     }
 
-    pub fn headings_iter ( &self ) -> Iter<'_, String> {
-        self.headings.iter()
+    pub fn headings_iter ( &self ) -> impl Iterator<Item=RichText> {
+        self.headings.iter().enumerate().map(|(i, h)| {
+            let heading_text = h.clone();
+            if i == self.sorting.sort_field() {
+                heading_text.underline()
+            } else { heading_text }
+        })
     }
 
     pub fn number_columns ( &self ) -> usize {

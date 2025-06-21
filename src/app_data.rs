@@ -4,7 +4,7 @@ use anyhow::{Result, Ok, anyhow};
 use log::{debug, error};
 use serde::{Deserialize, Serialize};
 
-use crate::{action::{Action, ActionNode}, app::load_from_pot, app_display::DisplayTable, district::District, faction::{Faction, FactionStore}, managed_list::{FactionRef, ManagedList, Named}, person::Person};
+use crate::{action::{Action, ActionNode}, app::load_from_pot, app_display::DisplayTable, district::District, faction::{Faction, FactionStore}, managed_list::{DistrictRef, FactionRef, ManagedList, Named, PersonRef}, person::Person};
 
 const DATA_EXTENSION: &str = "pot";
 
@@ -116,6 +116,30 @@ impl AppData {
 
     pub fn set_factions_sort ( &mut self, index: usize ) {
         self.factions.set_sorting(index);
+    }
+
+    pub fn find_district ( &self, name: &str ) -> Option<DistrictRef> {
+        self.districts.find(name)
+    }
+
+    pub fn clone_district ( &self, index: &DistrictRef ) -> Option<District> {
+        self.districts.fetch(index).cloned()
+    }
+
+    pub fn find_person ( &self, name: &str ) -> Option<PersonRef> {
+        self.persons.find(name)
+    }
+
+    pub fn clone_person ( &self, index: &PersonRef ) -> Option<Person> {
+        self.persons.fetch(index).cloned()
+    }
+
+    pub fn find_faction ( &self, name: &str ) -> Option<FactionRef> {
+        self.factions.find(name)
+    }
+
+    pub fn clone_faction ( &self, index: &FactionRef ) -> Option<Faction> {
+        self.factions.fetch(index).cloned()
     }
 
     pub fn save_to_file ( &self ) {

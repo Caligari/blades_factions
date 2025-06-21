@@ -1,4 +1,5 @@
 
+use eframe::egui::RichText;
 use log::{error, warn};
 use serde::{Deserialize, Serialize};
 
@@ -52,8 +53,13 @@ impl Named for Faction {
         ]
     }
 
-    fn display_headings ( ) -> Vec<String> {
-        vec![fl!("name_heading"), fl!("tier_heading"), fl!("hq_heading"), fl!("turf_heading")]
+    fn display_headings ( ) -> Vec<RichText> {
+        vec![
+            RichText::new(fl!("name_heading")),
+            RichText::new(fl!("tier_heading")),
+            RichText::new(fl!("hq_heading")),
+            RichText::new(fl!("turf_heading")),
+        ]
     }
 }
 

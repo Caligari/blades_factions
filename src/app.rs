@@ -7,7 +7,7 @@ use enum_iterator::{all, cardinality, Sequence};
 use log::{debug, error, info};
 use serde::{de::DeserializeOwned, Serialize};
 
-use crate::{app_data::AppData, app_settings::AppSettings, child_windows::ChildWindows, localize::fl, todo::TodoUndo};
+use crate::{app_data::AppData, app_settings::AppSettings, child_windows::ChildWindows, district::District, faction::Faction, localize::fl, managed_list::{DistrictRef, FactionRef, PersonRef}, person::Person, todo::TodoUndo};
 
 
 
@@ -134,11 +134,11 @@ impl eframe::App for App {
                     // if not already starting, kick things off
                     // info!("Starting")
                     // if completed
-                    info!("Starting => Ready");
                     if let Err(err) = self.data.import_from_json() {
                         error!("importing json error: {}", err);
                     }
 
+                    info!("Starting => Ready");
                     Some(Ready(RefCell::new(None)))
                     // otherwise, keep doing start
                     // None
@@ -209,15 +209,8 @@ impl eframe::App for App {
                                     table = table.column(col);
                                 }
 
-                                // todo: display table headings should be just the label - pre-calculated
                                 table.header(HEADER_HEIGHT, |mut header| {
-                                    for (i, heading_text) in display_table.headings_iter().enumerate() {
-                                        let heading = {
-                                            let h = RichText::new(heading_text).strong();
-                                            if i == display_table.sorting().sort_field() {
-                                                h.underline()
-                                            } else { h }
-                                        };
+                                    for (i, heading) in display_table.headings_iter().enumerate() {
                                         header.col(|ui| {
                                             if ui.add(Label::new(heading).sense(Sense::click())).clicked() {
                                                 new_sort = Some(i);
@@ -236,7 +229,6 @@ impl eframe::App for App {
                                                 row.set_hovered(hovering);
                                             }
 
-                                            // todo: display list fields should be labels - pre-generated
                                             for f in display_line.field_iter() {
                                                 row.col(|ui| {
                                                     let col_resp = ui.add(
@@ -285,9 +277,13 @@ impl eframe::App for App {
                                 self.data.set_districts_sort(sort_index);
                                 None
                             } else if let Some(id) = new_selected {
-                                debug!("selected distirct {}", id);
-                                // todo
-                                None
+                                debug!("selected distirct {id}");
+                                if let Some(show) = self.data.find_district(id) {
+                                    if let Some(district) = self.data.clone_district(&show) {
+                                        info!("Ready -> Show District ({id})");
+                                        Some(ShowEditDistrict(show, RefCell::new(district)))
+                                    } else { unreachable!("unable to clone district {id} using reference"); }
+                                } else { unreachable!("selected district '{id}' which is not in list"); }
                             } else { None }
                         }
 
@@ -298,8 +294,12 @@ impl eframe::App for App {
                                 None
                             } else if let Some(id) = new_selected {
                                 debug!("selected person {}", id);
-                                // todo
-                                None
+                                if let Some(show) = self.data.find_person(id) {
+                                    if let Some(person) = self.data.clone_person(&show) {
+                                        info!("Ready -> Show Person ({id})");
+                                        Some(ShowEditPerson(show, RefCell::new(person)))
+                                    } else { unreachable!("unable to clone person {id} using reference"); }
+                                } else { unreachable!("selected person '{id}' which is not in list"); }
                             } else { None }
                         }
 
@@ -310,11 +310,30 @@ impl eframe::App for App {
                                 None
                             } else if let Some(id) = new_selected {
                                 debug!("selected faction {}", id);
-                                // todo
-                                None
+                                if let Some(show) = self.data.find_faction(id) {
+                                    if let Some(faction) = self.data.clone_faction(&show) {
+                                        info!("Ready -> Show Faction ({id})");
+                                        Some(ShowEditFaction(show, RefCell::new(faction)))
+                                    } else { unreachable!("unable to clone faction {id} using reference"); }
+                                } else { unreachable!("selected faction '{id}' which is not in list"); }
                             } else { None }
                         }
                     }
+                }
+
+                ShowEditDistrict( _index_ref, _district, ) => {
+                    // todo
+                    None
+                }
+
+                ShowEditPerson( _index_ref, _person, ) => {
+                    // todo
+                    None
+                }
+
+                ShowEditFaction( _index_ref, _faction, ) => {
+                    // todo
+                    None
                 }
                 // _ => { None }
             }
@@ -357,11 +376,14 @@ impl App {
 // AppStatus
 
 #[allow(dead_code)]
-#[derive(Debug, Default)]
+#[derive(Default)]
 enum AppStatus {
     #[default]
     Starting,
-    Ready ( RefCell<Option<usize>> ),  // todo: Option<usize> to indicate which line is hovered?
+    Ready ( RefCell<Option<usize>> ),
+    ShowEditDistrict ( DistrictRef, RefCell<District> ),
+    ShowEditPerson ( PersonRef, RefCell<Person> ),
+    ShowEditFaction ( FactionRef, RefCell<Faction> ),
 }
 
 impl Display for AppStatus {
@@ -371,6 +393,9 @@ impl Display for AppStatus {
         write!(f, "{}", match self {
             Starting => fl!("app_starting"),
             Ready (..) => fl!("app_ready"),
+            ShowEditDistrict (..) => fl!("app_edit_district"),
+            ShowEditPerson (..) => fl!("app_edit_person"),
+            ShowEditFaction (..) => fl!("app_edit_faction"),
         })
     }
 }

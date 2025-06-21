@@ -1,6 +1,6 @@
 use std::{collections::BTreeMap, marker::PhantomData, sync::Arc};
 
-use eframe::egui::mutex::RwLock;
+use eframe::egui::{mutex::RwLock, RichText};
 use log::{debug, info, warn};
 
 use crate::{app_data::DataIndex, district::District, faction::Faction, person::Person, sorting::Sorting};
@@ -210,7 +210,7 @@ pub trait Named {
     fn make_data_index ( index: usize ) -> DataIndex;
     fn fetch_data_index ( index: DataIndex ) -> Option<usize>;
     fn display_fields ( &self ) -> Vec<String>;
-    fn display_headings ( ) -> Vec<String>;
+    fn display_headings ( ) -> Vec<RichText>;
 }
 
 #[cfg(test)]

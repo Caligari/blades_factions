@@ -1,4 +1,5 @@
 
+use eframe::egui::RichText;
 use serde::{Deserialize, Serialize};
 
 use crate::{app_data::DataIndex, localize::fl, managed_list::Named};
@@ -38,7 +39,7 @@ impl Named for Person {
         vec![self.name.clone()]
     }
 
-    fn display_headings ( ) -> Vec<String> {
-        vec![fl!("name_heading")]
+    fn display_headings ( ) -> Vec<RichText> {
+        vec![RichText::new(fl!("name_heading"))]
     }
 }
