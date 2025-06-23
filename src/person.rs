@@ -1,5 +1,5 @@
 
-use eframe::egui::RichText;
+use eframe::egui::{RichText, TextEdit, TextStyle, Ui};
 use serde::{Deserialize, Serialize};
 
 use crate::{app_data::DataIndex, localize::fl, managed_list::Named};
@@ -41,5 +41,15 @@ impl Named for Person {
 
     fn display_headings ( ) -> Vec<RichText> {
         vec![RichText::new(fl!("name_heading"))]
+    }
+}
+
+impl Person {
+    pub fn show_edit ( &mut self, ui: &mut Ui ) {
+        ui.vertical(|ui| {
+            // let name_heading = RichText::new(&self.name).heading();
+            ui.add(TextEdit::singleline(&mut self.name).font(TextStyle::Heading));
+            // ui.label(name_heading);
+        });
     }
 }

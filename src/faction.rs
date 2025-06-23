@@ -1,5 +1,5 @@
 
-use eframe::egui::RichText;
+use eframe::egui::{RichText, TextEdit, TextStyle, Ui};
 use log::{error, warn};
 use serde::{Deserialize, Serialize};
 
@@ -92,6 +92,14 @@ impl Faction {
     pub fn set_enemies ( &mut self, enemies: Vec<FactionRef> ) {
         if !self.enemies.is_empty() { warn!("replacing enemies of {} when it is not empty", self.name); }
         self.enemies = enemies;
+    }
+
+    pub fn show_edit ( &mut self, ui: &mut Ui ) {
+        ui.vertical(|ui| {
+            // let name_heading = RichText::new(&self.name).heading();
+            ui.add(TextEdit::singleline(&mut self.name).font(TextStyle::Heading));
+            // ui.label(name_heading);
+        });
     }
 }
 

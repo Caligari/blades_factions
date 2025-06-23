@@ -345,18 +345,24 @@ impl eframe::App for App {
 
                 }
 
-                ShowEditDistrict( _index_ref, _district, ) => {
+                ShowEditDistrict( _index_ref, district, ) => {
                     // todo
+                    let mut district = district.borrow_mut();
+                    district.show_edit(ui);
                     None
                 }
 
-                ShowEditPerson( _index_ref, _person, ) => {
+                ShowEditPerson( _index_ref, person, ) => {
                     // todo
+                    let mut person = person.borrow_mut();
+                    person.show_edit(ui);
                     None
                 }
 
-                ShowEditFaction( _index_ref, _faction, ) => {
+                ShowEditFaction( _index_ref, faction, ) => {
                     // todo
+                    let mut faction = faction.borrow_mut();
+                    faction.show_edit(ui);
                     None
                 }
                 // _ => { None }
