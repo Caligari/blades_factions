@@ -64,6 +64,16 @@ impl App {
         }
     }
 
+    fn reset ( &mut self ) {
+        // do not reset: settings, project_directtories, status
+        self.status = AppStatus::default();
+        self.main_view = MainView::default();
+        self.data = AppData::default();
+        self.message = None;
+        self.child_windows = ChildWindows::default();  // is this sufficient?
+        self.todo_undo = TodoUndo::default();
+    }
+
     fn show_top ( &mut self, ctx: &Context, _frame: &mut Frame ) {
         TopBottomPanel::top("top").show(ctx, |ui| {
             menu::bar(ui, |ui| {
@@ -134,6 +144,8 @@ impl eframe::App for App {
                     // if not already starting, kick things off
                     // info!("Starting")
                     // if completed
+                    info!("resetting local data");
+                    self.reset();
                     if let Err(err) = self.data.import_from_json() {
                         error!("importing json error: {}", err);
                     }
@@ -147,178 +159,190 @@ impl eframe::App for App {
                 Ready ( hovered_line ) => {
                     // what are we looking at?
                     // select between views
-                    if let Some(new_view) = self.show_select_views(ui) {
-                        self.main_view = new_view;
-                        // anything else to do?
-                    }
-
-                    // find or build display data table
-                    let display_table = match &self.main_view {
-                        MainView::Districts => {
-                            self.data.districts_display_table()
+                    let view_request = self.show_select_views(ui);
+                    if matches!(view_request, ViewRequest::NewItem) {
+                        info!("Ready -> Create New {}", self.main_view.item_name());
+                        match self.main_view {
+                            MainView::Districts => Some(ShowEditDistrict(None, RefCell::new(District::default()))),
+                            MainView::Persons => Some(ShowEditPerson(None, RefCell::new(Person::default()))),
+                            MainView::Factions => Some(ShowEditFaction(None, RefCell::new(Faction::default()))),
+                        }
+                    } else {
+                        // not asking for a new item
+                        if let ViewRequest::NewView(new_view) = view_request {
+                            self.main_view = new_view;
                         }
 
-                        MainView::Persons => {
-                            self.data.persons_display_table()
-                        }
+                        // find or build display data table
+                        let display_table = match &self.main_view {
+                            MainView::Districts => {
+                                self.data.districts_display_table()
+                            }
 
-                        MainView::Factions => {
-                            self.data.factions_display_table()
-                        }
-                    };
+                            MainView::Persons => {
+                                self.data.persons_display_table()
+                            }
 
-                    // show table with display data
-                    const STROKE_WIDTH: f32 = 1.;
-                    const STROKE_COLOR: Color32 = Color32::GRAY;
-                    const INNER_MARGIN: Margin = Margin::same(6);
-                    const HEADER_HEIGHT: f32 = 25.0;
-                    const ROW_HEIGHT: f32 = 18.0;
-                    const TINY_SPACE: f32 = 4.0;
+                            MainView::Factions => {
+                                self.data.factions_display_table()
+                            }
+                        };
 
-                    let mut new_sort = None;
-                    let mut new_selected = None;
-                    let mut new_hovered_line = None;
+                        // show table with display data
+                        const STROKE_WIDTH: f32 = 1.;
+                        const STROKE_COLOR: Color32 = Color32::GRAY;
+                        const INNER_MARGIN: Margin = Margin::same(6);
+                        const HEADER_HEIGHT: f32 = 25.0;
+                        const ROW_HEIGHT: f32 = 18.0;
+                        const TINY_SPACE: f32 = 4.0;
 
-                    ui.horizontal_top(|ui| {
-                        ui.with_layout(Layout::top_down_justified(Align::Min), |ui| {
-                        ui.add_space(TINY_SPACE);
-                        eframe::egui::Frame::default()
-                            .stroke(Stroke::new(STROKE_WIDTH, STROKE_COLOR))
-                            .inner_margin(INNER_MARGIN)
-                            .show(ui, |ui| {
-                                ui.style_mut().wrap_mode = Some(eframe::egui::TextWrapMode::Extend);
-                                let mut table = TableBuilder::new(ui)
-                                    .striped(true)
-                                    .sense(Sense::click())
-                                    .resizable(true)
-                                    .auto_shrink([false, false]);
+                        let mut new_sort = None;
+                        let mut new_selected = None;
+                        let mut new_hovered_line = None;
 
-                                // todo: move this into DisplayTable - return column definitions
-                                for f in 0..display_table.number_columns() {
-                                    const MIN_COL_WIDTH: f32 = 40.0;
-                                    const NAME_COL_WIDTH: f32 = 120.0;
+                        ui.horizontal_top(|ui| {
+                            ui.with_layout(Layout::top_down_justified(Align::Min), |ui| {
+                                ui.add_space(TINY_SPACE);
+                                eframe::egui::Frame::default()
+                                    .stroke(Stroke::new(STROKE_WIDTH, STROKE_COLOR))
+                                    .inner_margin(INNER_MARGIN)
+                                    .show(ui, |ui| {
+                                        ui.vertical(|ui| {
+                                            ui.style_mut().wrap_mode = Some(eframe::egui::TextWrapMode::Extend);
+                                            let mut table = TableBuilder::new(ui)
+                                                .striped(true)
+                                                .sense(Sense::click())
+                                                .resizable(true)
+                                                .auto_shrink([false, true]);
 
-                                    let col = if f == 0 {  // first column
-                                        Column::auto().at_least(NAME_COL_WIDTH)
-                                    } else {
-                                        Column::auto().at_least(MIN_COL_WIDTH)
-                                    };
-                                    // for use with extended field, if used
-                                    // Column::remainder(),
+                                            // todo: move this into DisplayTable - return column definitions
+                                            for f in 0..display_table.number_columns() {
+                                                const MIN_COL_WIDTH: f32 = 40.0;
+                                                const NAME_COL_WIDTH: f32 = 120.0;
 
-                                    table = table.column(col);
-                                }
+                                                let col = if f == 0 {  // first column
+                                                    Column::auto().at_least(NAME_COL_WIDTH)
+                                                } else {
+                                                    Column::auto().at_least(MIN_COL_WIDTH)
+                                                };
+                                                // for use with extended field, if used
+                                                // Column::remainder(),
 
-                                table.header(HEADER_HEIGHT, |mut header| {
-                                    for (i, heading) in display_table.headings_iter().enumerate() {
-                                        header.col(|ui| {
-                                            if ui.add(Label::new(heading).sense(Sense::click())).clicked() {
-                                                new_sort = Some(i);
+                                                table = table.column(col);
                                             }
-                                        });
-                                    }
-                                })
-                                .body(|body| {
-                                    body.rows(ROW_HEIGHT, display_table.lines_len(), | mut row | {
-                                        let i = row.index();
-                                        let display_line = display_table.line(i);
-                                        let mut field_click = false;
-                                        let mut field_hover = false;
 
-                                        if let Some(h_line) = *hovered_line.borrow() {
-                                            let hovering = i == h_line;
-                                            row.set_hovered(hovering);
-                                        }
-
-                                        for f in display_line.field_iter() {
-                                            row.col(|ui| {
-                                                let col_resp = ui.add(
-                                                    Label::new(f)
-                                                    .sense(Sense::click())
-                                                );
-
-                                                field_click |= col_resp.clicked();
-
-                                                if col_resp.hovered() {
-                                                    field_hover = true;
+                                            table.header(HEADER_HEIGHT, |mut header| {
+                                                for (i, heading) in display_table.headings_iter().enumerate() {
+                                                    header.col(|ui| {
+                                                        if ui.add(Label::new(heading).sense(Sense::click())).clicked() {
+                                                            new_sort = Some(i);
+                                                        }
+                                                    });
                                                 }
+                                            })
+                                            .body(|body| {
+                                                body.rows(ROW_HEIGHT, display_table.lines_len(), | mut row | {
+                                                    let i = row.index();
+                                                    let display_line = display_table.line(i);
+                                                    let mut field_click = false;
+                                                    let mut field_hover = false;
+
+                                                    if let Some(h_line) = *hovered_line.borrow() {
+                                                        let hovering = i == h_line;
+                                                        row.set_hovered(hovering);
+                                                    }
+
+                                                    for f in display_line.field_iter() {
+                                                        row.col(|ui| {
+                                                            let col_resp = ui.add(
+                                                                Label::new(f)
+                                                                .sense(Sense::click())
+                                                            );
+
+                                                            field_click |= col_resp.clicked();
+
+                                                            if col_resp.hovered() {
+                                                                field_hover = true;
+                                                            }
+                                                        });
+                                                    }
+
+                                                    let row_resp = row.response();
+
+                                                    if field_click || row_resp.clicked() {
+                                                        debug!("row {} ({}) clicked", i, display_line.id());
+                                                        new_selected = Some(display_line.id());
+                                                    } else if field_hover || row_resp.hovered() {
+                                                        let already_hovered = {
+                                                            if let Some(hover) = *hovered_line.borrow() {
+                                                                hover == i
+                                                            } else { false }
+                                                        };
+                                                        if !already_hovered {
+                                                            debug!("row {} hovered", i);
+                                                        }
+                                                        new_hovered_line = Some(i);  // set this regardless
+                                                    }
+                                                });
                                             });
-                                        }
-
-                                        let row_resp = row.response();
-
-                                        if field_click || row_resp.clicked() {
-                                            debug!("row {} ({}) clicked", i, display_line.id());
-                                            new_selected = Some(display_line.id());
-                                        } else if field_hover || row_resp.hovered() {
-                                            let already_hovered = {
-                                                if let Some(hover) = *hovered_line.borrow() {
-                                                    hover == i
-                                                } else { false }
-                                            };
-                                            if !already_hovered {
-                                                debug!("row {} hovered", i);
-                                            }
-                                            new_hovered_line = Some(i);  // set this regardless
-                                        }
+                                        });
                                     });
-                                });
-
                             });
                         });
-                    });
 
-                    *hovered_line.borrow_mut() = new_hovered_line;
+                        *hovered_line.borrow_mut() = new_hovered_line;
 
-                    match &self.main_view {
-                        MainView::Districts => {
-                            if let Some(sort_index) = new_sort {
-                                debug!("setting district col {} to sort", sort_index);
-                                self.data.set_districts_sort(sort_index);
-                                None
-                            } else if let Some(id) = new_selected {
-                                debug!("selected distirct {id}");
-                                if let Some(show) = self.data.find_district(id) {
-                                    if let Some(district) = self.data.clone_district(&show) {
-                                        info!("Ready -> Show District ({id})");
-                                        Some(ShowEditDistrict(Some(show), RefCell::new(district)))
-                                    } else { unreachable!("unable to clone district {id} using reference"); }
-                                } else { unreachable!("selected district '{id}' which is not in list"); }
-                            } else { None }
-                        }
+                        match &self.main_view {
+                            MainView::Districts => {
+                                if let Some(sort_index) = new_sort {
+                                    debug!("setting district col {} to sort", sort_index);
+                                    self.data.set_districts_sort(sort_index);
+                                    None
+                                } else if let Some(id) = new_selected {
+                                    debug!("selected distirct {id}");
+                                    if let Some(show) = self.data.find_district(id) {
+                                        if let Some(district) = self.data.clone_district(&show) {
+                                            info!("Ready -> Show District ({id})");
+                                            Some(ShowEditDistrict(Some(show), RefCell::new(district)))
+                                        } else { unreachable!("unable to clone district {id} using reference"); }
+                                    } else { unreachable!("selected district '{id}' which is not in list"); }
+                                } else { None }
+                            }
 
-                        MainView::Persons => {
-                            if let Some(sort_index) = new_sort {
-                                debug!("setting persons col {} to sort", sort_index);
-                                self.data.set_persons_sort(sort_index);
-                                None
-                            } else if let Some(id) = new_selected {
-                                debug!("selected person {}", id);
-                                if let Some(show) = self.data.find_person(id) {
-                                    if let Some(person) = self.data.clone_person(&show) {
-                                        info!("Ready -> Show Person ({id})");
-                                        Some(ShowEditPerson(Some(show), RefCell::new(person)))
-                                    } else { unreachable!("unable to clone person {id} using reference"); }
-                                } else { unreachable!("selected person '{id}' which is not in list"); }
-                            } else { None }
-                        }
+                            MainView::Persons => {
+                                if let Some(sort_index) = new_sort {
+                                    debug!("setting persons col {} to sort", sort_index);
+                                    self.data.set_persons_sort(sort_index);
+                                    None
+                                } else if let Some(id) = new_selected {
+                                    debug!("selected person {}", id);
+                                    if let Some(show) = self.data.find_person(id) {
+                                        if let Some(person) = self.data.clone_person(&show) {
+                                            info!("Ready -> Show Person ({id})");
+                                            Some(ShowEditPerson(Some(show), RefCell::new(person)))
+                                        } else { unreachable!("unable to clone person {id} using reference"); }
+                                    } else { unreachable!("selected person '{id}' which is not in list"); }
+                                } else { None }
+                            }
 
-                        MainView::Factions => {
-                            if let Some(sort_index) = new_sort {
-                                debug!("setting factions col {} to sort", sort_index);
-                                self.data.set_factions_sort(sort_index);
-                                None
-                            } else if let Some(id) = new_selected {
-                                debug!("selected faction {}", id);
-                                if let Some(show) = self.data.find_faction(id) {
-                                    if let Some(faction) = self.data.clone_faction(&show) {
-                                        info!("Ready -> Show Faction ({id})");
-                                        Some(ShowEditFaction(Some(show), RefCell::new(faction)))
-                                    } else { unreachable!("unable to clone faction {id} using reference"); }
-                                } else { unreachable!("selected faction '{id}' which is not in list"); }
-                            } else { None }
+                            MainView::Factions => {
+                                if let Some(sort_index) = new_sort {
+                                    debug!("setting factions col {} to sort", sort_index);
+                                    self.data.set_factions_sort(sort_index);
+                                    None
+                                } else if let Some(id) = new_selected {
+                                    debug!("selected faction {}", id);
+                                    if let Some(show) = self.data.find_faction(id) {
+                                        if let Some(faction) = self.data.clone_faction(&show) {
+                                            info!("Ready -> Show Faction ({id})");
+                                            Some(ShowEditFaction(Some(show), RefCell::new(faction)))
+                                        } else { unreachable!("unable to clone faction {id} using reference"); }
+                                    } else { unreachable!("selected faction '{id}' which is not in list"); }
+                                } else { None }
+                            }
                         }
                     }
+
                 }
 
                 ShowEditDistrict( _index_ref, _district, ) => {
@@ -347,9 +371,9 @@ impl eframe::App for App {
 
 impl App {
 
-    fn show_select_views ( &self, ui: &mut Ui ) -> Option<MainView> {
+    fn show_select_views ( &self, ui: &mut Ui ) -> ViewRequest {
         let select_color = if self.settings.theme() == Theme::Dark { Color32::LIGHT_GREEN } else { Color32::DARK_GREEN };
-        let mut new_view = None;
+        let mut new_request = ViewRequest::None;
         ui.horizontal(|ui| {
             for (num, view) in all::<MainView>().enumerate() {
                 let mut v_text = RichText::new(view.to_string()).heading();
@@ -359,7 +383,7 @@ impl App {
 
                 if ui.add(Label::new(v_text).sense(Sense::click())).clicked() {
                     info!("selected {}", view);
-                    new_view = Some(view);
+                    new_request = ViewRequest::NewView(view);
                 }
 
                 if num != cardinality::<MainView>() {
@@ -367,9 +391,25 @@ impl App {
                 }
             }
 
+            ui.with_layout(Layout::right_to_left(Align::Max), |ui| {
+                let item = self.main_view.item_name();
+                if ui.add(Button::new(fl!("app_add_itm", itm = item.clone())).sense(Sense::click())).clicked() {
+                    info!("New {item} requested");
+                    new_request = ViewRequest::NewItem;
+                }
+            });
         });
-        new_view
+
+        new_request
     }
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+enum ViewRequest {
+    #[default]
+    None,
+    NewView ( MainView ),
+    NewItem,  // uses current view
 }
 
 // ===========================
@@ -393,9 +433,30 @@ impl Display for AppStatus {
         write!(f, "{}", match self {
             Starting => fl!("app_starting"),
             Ready (..) => fl!("app_ready"),
-            ShowEditDistrict (..) => fl!("app_edit_district"),
-            ShowEditPerson (..) => fl!("app_edit_person"),
-            ShowEditFaction (..) => fl!("app_edit_faction"),
+            ShowEditDistrict (ind, ..) => {
+                let item = fl!("main_item_district");
+                if ind.is_none() {
+                    fl!("app_create_itm", itm = item)
+                } else {
+                    fl!("app_edit_itm", itm = item)
+                }
+            },
+            ShowEditPerson (ind, ..) => {
+                let item = fl!("main_item_person");
+                if ind.is_none() {
+                    fl!("app_create_itm", itm = item)
+                } else {
+                    fl!("app_edit_itm", itm = item)
+                }
+            },
+            ShowEditFaction (ind, ..) => {
+                let item = fl!("main_item_faction");
+                if ind.is_none() {
+                    fl!("app_create_itm", itm = item)
+                } else {
+                    fl!("app_edit_itm", itm = item)
+                }
+            },
         })
     }
 }
@@ -404,12 +465,24 @@ impl Display for AppStatus {
 // MainView
 
 #[allow(dead_code)]
-#[derive(Debug, Default, Clone, Copy, Sequence, PartialEq)]
+#[derive(Debug, Default, Clone, Copy, Sequence, PartialEq, Eq)]
 enum MainView {
     #[default]
     Factions,
     Persons,
     Districts,
+}
+
+impl MainView {
+    pub fn item_name ( &self ) -> String {
+        use MainView::*;
+
+        match self {
+            Factions => fl!("main_item_faction"),
+            Persons => fl!("main_item_person"),
+            Districts => fl!("main_item_district"),
+        }
+    }
 }
 
 impl Display for MainView {
