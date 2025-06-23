@@ -138,6 +138,8 @@ impl eframe::App for App {
         self.show_top(ctx, frame);
         self.show_footer(ctx);
 
+        // todo: can we run the todo list here? Or will that lead to slowdown?
+
         if let Some(new_status) = CentralPanel::default().show(ctx,  |ui: &mut Ui| {
             match &self.status {
                 Starting => {
@@ -348,22 +350,62 @@ impl eframe::App for App {
                 ShowEditDistrict( _index_ref, district, ) => {
                     // todo
                     let mut district = district.borrow_mut();
-                    district.show_edit(ui);
-                    None
+                    let name_collision = true;
+                    // todo: if generic ref and name in item differs from edit item name and list already has edit item name
+                    if let Some(edit_result) = district.show_edit(ui, name_collision) {
+                        use EditResult::*;
+                        match edit_result {
+                            Submit => {
+                                // if there is no generic ref, add Add action to todo_undo, then go to Ready
+                                // otherwise fetch item
+                                // compare item to edited item
+                                // if equal, then no action, and go to Ready
+                                // otherwise add Replace action to todo_undo, then go to Ready
+                                info!("submit edited district");
+                                Some(Ready(RefCell::new(None)))
+                            },
+                            Ignore => {
+                                info!("ignore edited district");
+                                Some(Ready(RefCell::new(None)))
+                            },
+                        }
+                    } else { None }
                 }
 
                 ShowEditPerson( _index_ref, person, ) => {
                     // todo
                     let mut person = person.borrow_mut();
-                    person.show_edit(ui);
-                    None
+                    if let Some(edit_result) = person.show_edit(ui) {
+                        use EditResult::*;
+                        match edit_result {
+                            Submit => {
+                                info!("submit edited person");
+                                Some(Ready(RefCell::new(None)))
+                            },
+                            Ignore => {
+                                info!("ignore edited person");
+                                Some(Ready(RefCell::new(None)))
+                            },
+                        }
+                    } else { None }
                 }
 
                 ShowEditFaction( _index_ref, faction, ) => {
                     // todo
                     let mut faction = faction.borrow_mut();
-                    faction.show_edit(ui);
-                    None
+                    if let Some(edit_result) = faction.show_edit(ui) {
+                        use EditResult::*;
+                        match edit_result {
+                            Submit => {
+                                info!("submit edited faction");
+                                Some(Ready(RefCell::new(None)))
+                            },
+                            Ignore => {
+                                info!("ignore edited faction");
+                                Some(Ready(RefCell::new(None)))
+                            },
+                        }
+                    } else { None }
                 }
                 // _ => { None }
             }
@@ -410,6 +452,9 @@ impl App {
     }
 }
 
+// ===========================
+// ViewRequest
+
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 enum ViewRequest {
     #[default]
@@ -417,6 +462,16 @@ enum ViewRequest {
     NewView ( MainView ),
     NewItem,  // uses current view
 }
+
+// ===========================
+// EditResult
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EditResult {
+    Submit,
+    Ignore,
+}
+
 
 // ===========================
 // AppStatus

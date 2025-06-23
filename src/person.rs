@@ -2,13 +2,13 @@
 use eframe::egui::{RichText, TextEdit, TextStyle, Ui};
 use serde::{Deserialize, Serialize};
 
-use crate::{app_data::DataIndex, localize::fl, managed_list::Named};
+use crate::{app::EditResult, app_data::DataIndex, localize::fl, managed_list::Named};
 
 
 
 
 
-#[derive(Debug, Default, Clone, Deserialize, Serialize)]
+#[derive(Debug, Default, Clone, PartialEq, Deserialize, Serialize)]
 pub struct Person {
     name: String,
     description: String,
@@ -45,11 +45,13 @@ impl Named for Person {
 }
 
 impl Person {
-    pub fn show_edit ( &mut self, ui: &mut Ui ) {
+    pub fn show_edit ( &mut self, ui: &mut Ui ) -> Option<EditResult> {
         ui.vertical(|ui| {
             // let name_heading = RichText::new(&self.name).heading();
             ui.add(TextEdit::singleline(&mut self.name).font(TextStyle::Heading));
             // ui.label(name_heading);
         });
+
+        None
     }
 }

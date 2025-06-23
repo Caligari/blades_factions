@@ -3,10 +3,10 @@ use eframe::egui::{RichText, TextEdit, TextStyle, Ui};
 use log::{error, warn};
 use serde::{Deserialize, Serialize};
 
-use crate::{app_data::DataIndex, clock::Clock, localize::fl, managed_list::{DistrictRef, FactionRef, Named, PersonRef}, tier::Tier};
+use crate::{app::EditResult, app_data::DataIndex, clock::Clock, localize::fl, managed_list::{DistrictRef, FactionRef, Named, PersonRef}, tier::Tier};
 
 #[allow(dead_code)]
-#[derive(Default, Clone)]
+#[derive(Default, Clone, PartialEq)]
 pub struct Faction {
     name: String,
     description: String,
@@ -94,12 +94,14 @@ impl Faction {
         self.enemies = enemies;
     }
 
-    pub fn show_edit ( &mut self, ui: &mut Ui ) {
+    pub fn show_edit ( &mut self, ui: &mut Ui ) -> Option<EditResult> {
         ui.vertical(|ui| {
             // let name_heading = RichText::new(&self.name).heading();
             ui.add(TextEdit::singleline(&mut self.name).font(TextStyle::Heading));
             // ui.label(name_heading);
         });
+
+        None
     }
 }
 

@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 
 #[allow(dead_code)]
-#[derive(Debug, Default, Clone, Deserialize, Serialize)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, Deserialize, Serialize)]
 pub struct Clock {
     name: String,
     description: String,  // ?

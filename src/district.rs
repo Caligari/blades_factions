@@ -1,13 +1,16 @@
 
-use eframe::egui::{RichText, TextEdit, TextStyle, Ui};
+use std::sync::WaitTimeoutResult;
+
+use eframe::egui::{Color32, Label, RichText, Sense, TextEdit, TextStyle, Ui};
+use log::debug;
 use serde::{Deserialize, Serialize};
 
-use crate::{app_data::DataIndex, localize::fl, managed_list::Named};
+use crate::{app::EditResult, app_data::DataIndex, localize::fl, managed_list::Named};
 
 
 
 #[allow(dead_code)]
-#[derive(Debug, Default, Clone, Deserialize, Serialize)]
+#[derive(Debug, Default, Clone, PartialEq, Deserialize, Serialize)]
 pub struct District {
     name: String,
     // ? is there other data to store?
@@ -49,11 +52,34 @@ impl Named for District {
 }
 
 impl District {
-    pub fn show_edit ( &mut self, ui: &mut Ui ) {
-        ui.vertical(|ui| {
-            // let name_heading = RichText::new(&self.name).heading();
-            ui.add(TextEdit::singleline(&mut self.name).font(TextStyle::Heading));
-            // ui.label(name_heading);
+    pub fn show_edit ( &mut self, ui: &mut Ui, name_in_use: bool ) -> Option<EditResult> {
+        const EDGE_SPACER: f32 = 6.0;
+        const HEAD_SPACE: f32 = 6.0;
+        let mut result = None;
+
+        ui.horizontal(|ui| {
+            if ui.add(Label::new(RichText::new("<").heading()).sense(Sense::click())).clicked() {
+                debug!("return from edit district");
+                result = Some(EditResult::Ignore);  // should this be return?
+            }
+            ui.add_space(EDGE_SPACER);
+
+            ui.vertical(|ui| {
+                ui.label(RichText::new("District").heading().strong().underline());
+                ui.add_space(HEAD_SPACE);
+
+                let name_text = RichText::new("Name").small().weak();
+                ui.label(name_text);
+                ui.horizontal(|ui| {
+                    ui.add(TextEdit::singleline(&mut self.name).font(TextStyle::Heading));
+                    if name_in_use {
+                        let no_text = RichText::new("X").color(Color32::RED).strong();
+                        ui.label(no_text);
+                    }
+                });
+            });
         });
+
+        result
     }
 }

@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 
 
-#[derive(Debug, Default, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum Tier {
     #[default]
     Tier0,

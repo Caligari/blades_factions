@@ -33,6 +33,14 @@ impl<T: Clone + Named> GenericRef<T> {
     }
 }
 
+impl<T: Clone + Named + PartialEq> PartialEq for GenericRef<T> {
+    fn eq(&self, other: &Self) -> bool {
+        let a = self.0.read().clone();
+        let b = other.0.read().clone();
+        a == b
+    }
+}
+
 #[allow(dead_code)]
 pub type FactionRef = GenericRef<Faction>;
 
@@ -44,7 +52,7 @@ pub type DistrictRef = GenericRef<District>;
 
 
 #[allow(dead_code)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct NamedIndex<T: Clone + Named> {
     name: String,
     index: DataIndex,
