@@ -7,7 +7,7 @@ use enum_iterator::{all, cardinality, Sequence};
 use log::{debug, error, info};
 use serde::{de::DeserializeOwned, Serialize};
 
-use crate::{app_data::AppData, app_settings::AppSettings, child_windows::ChildWindows, district::District, faction::Faction, localize::fl, managed_list::{DistrictRef, FactionRef, PersonRef}, person::Person, todo::TodoUndo};
+use crate::{action::{Action, ActionNode}, app_data::AppData, app_settings::AppSettings, child_windows::ChildWindows, district::District, faction::Faction, localize::fl, managed_list::{DistrictRef, FactionRef, Named, PersonRef}, person::Person, todo::TodoUndo};
 
 
 
@@ -347,21 +347,44 @@ impl eframe::App for App {
 
                 }
 
-                ShowEditDistrict( _index_ref, district, ) => {
+                ShowEditDistrict( index_ref, district, ) => {
                     // todo
                     let mut district = district.borrow_mut();
-                    let name_collision = true;
-                    // todo: if generic ref and name in item differs from edit item name and list already has edit item name
-                    if let Some(edit_result) = district.show_edit(ui, name_collision) {
+                    let (name_collision, difference) = if let Some(index_ref) = index_ref {
+                        let old_name = index_ref.name().map_or("<none>".to_string(), |n| n);
+                        if let Some(old_district) = self.data.clone_district(index_ref) {
+                            if old_name != district.name() {
+                                (self.data.find_district(district.name()).is_some(), true)
+                            } else { (false, old_district != *district) }
+                        } else {
+                            error!("unable to find district '{old_name}' when index ref exists, during replace");
+                            (false, true)
+                        }
+                    } else { (self.data.find_district(district.name()).is_some(), District::default() != *district) };
+
+                    if let Some(edit_result) = district.show_edit(ui, name_collision, difference) {
                         use EditResult::*;
                         match edit_result {
                             Submit => {
-                                // if there is no generic ref, add Add action to todo_undo, then go to Ready
-                                // otherwise fetch item
-                                // compare item to edited item
-                                // if equal, then no action, and go to Ready
-                                // otherwise add Replace action to todo_undo, then go to Ready
                                 info!("submit edited district");
+                                if let Some(index_ref) = index_ref {
+                                    // fetch indexed item
+                                    if let Some(old_district) = self.data.clone_district(index_ref) {
+                                        if old_district != *district {
+                                            info!("replacing existing district");
+                                            self.todo_undo.add_todo(ActionNode::from(Action::DistrictReplace(index_ref.clone(), district.clone())));
+                                        }  else {
+                                            debug!("new district matches existing district - no action taken");
+                                        }
+                                    } else {
+                                        let old_name = index_ref.name().map_or("<none>".to_string(), |n| n);
+                                        error!("unable to find existing district {old_name} in data, on replace attempt");
+                                    }
+                                } else {
+                                    // no index, thus this is an Add
+                                    info!("adding new district");
+                                    self.todo_undo.add_todo(ActionNode::from(Action::DistrictAdd(district.clone())));
+                                }
                                 Some(Ready(RefCell::new(None)))
                             },
                             Ignore => {
@@ -413,6 +436,8 @@ impl eframe::App for App {
             self.status = new_status;
         }
 
+        self.run_todo();
+
         self.child_windows.show_windows(ctx);
     }
 }
@@ -450,6 +475,25 @@ impl App {
 
         new_request
     }
+
+    fn run_todo ( &mut self ) {
+        if let Some(todo) = self.todo_undo.todo() {
+            info!("carrying out todo");
+            let result = self.data.do_action(&todo);
+            match result {
+                Ok(undo) => {
+                    info!("todo complete");
+                    self.todo_undo.add_undo(undo);
+                    // self.todo_undo.add_done(todo);  // todo: not sure this is what we need; is done for undo actions?
+                },
+
+                Err(err) => {
+                    error!("unable to complete todo action: {err}");
+                    // do we add this back to the todo?
+                }
+            }
+        }
+    }
 }
 
 // ===========================
@@ -466,6 +510,7 @@ enum ViewRequest {
 // ===========================
 // EditResult
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EditResult {
     Submit,

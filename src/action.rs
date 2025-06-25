@@ -5,6 +5,14 @@ use crate::{district::District, faction::Faction, managed_list::{DistrictRef, Fa
 
 pub type ActionNode = VecDeque<Action>;
 
+impl From<Action> for ActionNode {
+    fn from(value: Action) -> Self {
+        let mut me = ActionNode::new();
+        me.push_back(value);
+        me
+    }
+}
+
 #[allow(dead_code)]
 #[derive(Clone)]
 pub enum Action {

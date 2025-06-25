@@ -21,3 +21,4 @@ name_heading = Name
 tier_heading = Tier
 hq_heading = HQ
 turf_heading = Turf
+edit_save = Save
