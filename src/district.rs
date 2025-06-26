@@ -3,7 +3,7 @@ use eframe::egui::{Color32, Label, Margin, RichText, Sense, Stroke, TextEdit, Te
 use log::debug;
 use serde::{Deserialize, Serialize};
 
-use crate::{app::EditResult, app_data::DataIndex, localize::fl, managed_list::Named};
+use crate::{app::EditResult, app_data::DataIndex, app_display::{ShowEditInfo, ShowEdit}, localize::fl, managed_list::Named};
 
 
 
@@ -49,8 +49,8 @@ impl Named for District {
     }
 }
 
-impl District {
-    pub fn show_edit ( &mut self, ui: &mut Ui, name_in_use: bool, has_change: bool ) -> Option<EditResult> {
+impl ShowEdit for District {
+    fn show_edit ( &mut self, ui: &mut Ui, item_info: ShowEditInfo ) -> Option<EditResult> {
         const EDGE_SPACER: f32 = 6.0;
         const HEAD_SPACE: f32 = 6.0;
         const STROKE_WIDTH: f32 = 1.;
@@ -69,7 +69,7 @@ impl District {
             ui.vertical(|ui| {
                 ui.horizontal(|ui| {
                     ui.label(RichText::new("District").heading().strong().underline());
-                    if has_change && !name_in_use {
+                    if item_info.show_save() {
                         ui.add_space(60.0);
                         if ui.button(fl!("edit_save")).clicked() {
                             debug!("save edited district requested");
@@ -87,7 +87,7 @@ impl District {
                         ui.label(name_text);
                         ui.horizontal(|ui| {
                             ui.add(TextEdit::singleline(&mut self.name).font(TextStyle::Heading));
-                            if name_in_use {
+                            if item_info.name_collision() {
                                 let no_text = RichText::new("X").color(Color32::RED).strong();
                                 ui.label(no_text);
                             }

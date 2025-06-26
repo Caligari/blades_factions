@@ -1,8 +1,8 @@
 use std::slice::Iter;
 
-use eframe::egui::RichText;
+use eframe::egui::{RichText, Ui};
 
-use crate::{app_data::DataIndex, managed_list::{GenericRef, ManagedList, Named}, sorting::Sorting};
+use crate::{app::EditResult, app_data::DataIndex, managed_list::{GenericRef, ManagedList, Named}, sorting::Sorting};
 
 
 #[allow(dead_code)]
@@ -97,4 +97,46 @@ impl<T: Named + Clone> From<&ManagedList<T>> for DisplayTable {
             sorting,
         }
     }
+}
+
+// -------------------
+// ItemDisplayParams
+
+#[derive(Debug, Clone, Copy, Default)]
+pub struct ShowEditInfo {
+    name_collision: bool,
+    differs_from: bool,
+    create_new: bool,
+    // could have reference lists??
+}
+
+#[allow(dead_code)]
+impl ShowEditInfo {
+    pub fn new ( name_collision: bool, differs_from: bool, create_new: bool ) -> Self {
+        ShowEditInfo {
+            name_collision,
+            differs_from,
+            create_new,
+        }
+    }
+
+    pub fn name_collision ( &self ) -> bool {
+        self.name_collision
+    }
+
+    pub fn differs_from ( &self ) -> bool {
+        self.differs_from
+    }
+
+    pub fn create_new ( &self ) -> bool {
+        self.create_new
+    }
+
+    pub fn show_save ( &self ) -> bool {
+        self.differs_from && !self.name_collision
+    }
+}
+
+pub trait ShowEdit {
+    fn show_edit ( &mut self, ui: &mut Ui, item_info: ShowEditInfo ) -> Option<EditResult>;
 }

@@ -28,6 +28,10 @@ impl<T: Clone + Named> GenericRef<T> {
         self.0.read().index
     }
 
+    // pub fn index_type ( &self ) -> IndexType {
+    //     self.0.read().index.into()
+    // }
+
     pub fn name ( &self ) -> Option<String> {
         self.0.read().name().map(|n| n.to_string())
     }
@@ -50,6 +54,24 @@ pub type PersonRef = GenericRef<Person>;
 #[allow(dead_code)]
 pub type DistrictRef = GenericRef<District>;
 
+// pub enum IndexType {
+//     Nothing,
+//     District,
+//     Person,
+//     Faction,
+// }
+
+// impl From <DataIndex> for IndexType {
+//     fn from ( value: DataIndex ) -> Self {
+//         use DataIndex::*;
+//         match value {
+//             Nothing => IndexType::Nothing,
+//             DistrictIndex (..) => IndexType::District,
+//             PersonIndex (..) => IndexType::Person,
+//             FactionIndex(..) => IndexType::Faction,
+//         }
+//     }
+// }
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq)]

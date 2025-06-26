@@ -7,7 +7,7 @@ use enum_iterator::{all, cardinality, Sequence};
 use log::{debug, error, info};
 use serde::{de::DeserializeOwned, Serialize};
 
-use crate::{action::{Action, ActionNode}, app_data::AppData, app_settings::AppSettings, child_windows::ChildWindows, district::District, faction::Faction, localize::fl, managed_list::{DistrictRef, FactionRef, Named, PersonRef}, person::Person, todo::TodoUndo};
+use crate::{action::{Action, ActionNode}, app_data::AppData, app_display::{ShowEdit, ShowEditInfo}, app_settings::AppSettings, child_windows::ChildWindows, district::District, faction::Faction, localize::fl, managed_list::{DistrictRef, FactionRef, Named, PersonRef}, person::Person, todo::TodoUndo};
 
 
 
@@ -350,7 +350,7 @@ impl eframe::App for App {
                 ShowEditDistrict( index_ref, district, ) => {
                     // todo
                     let mut district = district.borrow_mut();
-                    let (name_collision, difference) = if let Some(index_ref) = index_ref {
+                    let (name_collision, differs_from) = if let Some(index_ref) = index_ref {
                         let old_name = index_ref.name().map_or("<none>".to_string(), |n| n);
                         if let Some(old_district) = self.data.clone_district(index_ref) {
                             if old_name != district.name() {
@@ -362,7 +362,9 @@ impl eframe::App for App {
                         }
                     } else { (self.data.find_district(district.name()).is_some(), District::default() != *district) };
 
-                    if let Some(edit_result) = district.show_edit(ui, name_collision, difference) {
+                    let item_info = ShowEditInfo::new(name_collision, differs_from, index_ref.is_none());
+
+                    if let Some(edit_result) = district.show_edit(ui, item_info) {
                         use EditResult::*;
                         match edit_result {
                             Submit => {
@@ -495,6 +497,7 @@ impl App {
         }
     }
 }
+
 
 // ===========================
 // ViewRequest
