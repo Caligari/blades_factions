@@ -22,6 +22,7 @@ mod action;
 mod todo;
 mod app_display;
 mod sorting;
+mod dots;
 
 const APP_NAME: &str = "Blades Factions";
 const COMPANY_DOMAIN: &str = "org";

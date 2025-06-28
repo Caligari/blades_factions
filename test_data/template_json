@@ -10,7 +10,13 @@
   districts: [
     '{{repeat(15, 20)}}',
     {
-      name: '{{lorem(1, "words")}}'
+      name: '{{lorem(1, "words")}}',
+      wealth: '{{random("Zero", "One", "Two", "Three", "Four", "Five")}}',
+      safety: '{{random("Zero", "One", "Two", "Three", "Four", "Five")}}',
+      crime: '{{random("Zero", "One", "Two", "Three", "Four", "Five")}}',
+      occult: '{{random("Zero", "One", "Two", "Three", "Four", "Five")}}',
+      description: '{{lorem(1, "paragraphs")}}',
+      notes: '{{lorem(1, "paragraphs")}}'
     }
   ],
   factions: [
@@ -30,5 +36,7 @@
     }
   ]
 }
+
+
 
 https://json-generator.com

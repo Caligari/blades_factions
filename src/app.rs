@@ -1,8 +1,11 @@
-use std::{cell::RefCell, fmt::Display, fs::{self, create_dir_all, OpenOptions}, io::{BufReader, BufWriter, Write}, path::Path, sync::Arc};
+use std::{cell::RefCell, collections::BTreeMap, fmt::Display, fs::{self, create_dir_all, OpenOptions}, io::{BufReader, BufWriter, Write}, path::Path, sync::Arc};
 
 use directories_next::ProjectDirs;
 use eframe::{egui::{menu, Align, Button, CentralPanel, Color32, Context, FontData, FontDefinitions, FontFamily, Label, Layout, Margin, RichText, Sense, Separator, Stroke, Theme, TopBottomPanel, Ui, ViewportCommand}, CreationContext, Frame};
 use egui_extras::{Column, TableBuilder};
+use eframe::egui::FontFamily::Proportional;
+use eframe::egui::FontId;
+use eframe::egui::TextStyle::*;
 use enum_iterator::{all, cardinality, Sequence};
 use log::{debug, error, info};
 use serde::{de::DeserializeOwned, Serialize};
@@ -32,7 +35,7 @@ pub const CHANGE_NOTES: &[&str] = &[
 
 // todo: localize this
 pub const FONT_NOTES: &[&str] = &[
-    "Using the Manrope font, by Michael Sharanda, covered under the SIL Open Font License (http://scripts.sil.org/OFL)"
+    "Using the Dihjauti font, by T. Christopher White, covered under the SIL Open Font License (http://scripts.sil.org/OFL)"
 ];
 
 
@@ -611,9 +614,24 @@ impl Display for MainView {
 
 fn configure_fonts ( ctx: &CreationContext, zoom: f32 ) {
 	let mut fonts = FontDefinitions::default();
-	fonts.font_data.insert("manrope".to_string(), Arc::new(FontData::from_static(include_bytes!("../manrope_regular.otf"))));
-	fonts.families.get_mut(&FontFamily::Proportional).unwrap().insert(0, "manrope".to_owned());
+	fonts.font_data.insert("dihjauti".to_string(), Arc::new(FontData::from_static(include_bytes!("../Dihjauti-Regular.otf"))));
+	fonts.families.get_mut(&FontFamily::Proportional).unwrap().insert(0, "dihjauti".to_owned());
 	ctx.egui_ctx.set_fonts(fonts);
+
+    // Redefine text_styles
+    let text_styles: BTreeMap<_, _> = [
+        (Heading, FontId::new(30.0, Proportional)),
+        // (Name("Heading2".into()), FontId::new(25.0, Proportional)),
+        // (Name("Context".into()), FontId::new(23.0, Proportional)),
+        (Body, FontId::new(16.0, Proportional)),
+        (Monospace, FontId::new(14.0, Proportional)),
+        (Button, FontId::new(14.0, Proportional)),
+        (Small, FontId::new(12.0, Proportional)),
+    ].into();
+
+    // Mutate global styles with new text styles
+    ctx.egui_ctx.all_styles_mut(move |style| style.text_styles = text_styles.clone());
+
     ctx.egui_ctx.set_zoom_factor(zoom);
 }
 
