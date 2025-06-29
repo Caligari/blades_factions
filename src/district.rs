@@ -64,6 +64,8 @@ impl ShowEdit for District {
         const INNER_MARGIN: Margin = Margin::same(6);
         const FIELD_VERTICAL_SPACE: f32 = 10.0;
         const FIELD_HORIZONTAL_SPACE: f32 = 20.0;
+        const DESCRIPTION_ROWS: usize = 2;
+        const NOTES_ROWS: usize = 6;
 
         let mut result = None;
 
@@ -103,41 +105,46 @@ impl ShowEdit for District {
 
                             ui.add_space(FIELD_VERTICAL_SPACE);
                             ui.label(RichText::new(fl!("description_heading")).small().weak());
-                            ui.add(TextEdit::multiline(&mut self.description));
+                            ui.add(TextEdit::multiline(&mut self.description)
+                                .desired_width(ui.available_width())
+                                .desired_rows(DESCRIPTION_ROWS)
+                            );
 
-                            ui.add_space(FIELD_VERTICAL_SPACE);
+                            ui.add_space(FIELD_VERTICAL_SPACE * 2.0);
                             ui.horizontal(|ui| {
                                 ui.vertical(|ui| {
                                     ui.label(RichText::new(fl!("wealth_heading")).small().weak());
-                                    ui.add(TextEdit::singleline(&mut self.wealth.to_string()).font(TextStyle::Heading));
-
+                                    self.wealth.show_edit("wealth", ui);
                                 });
 
                                 ui.add_space(FIELD_HORIZONTAL_SPACE);
                                 ui.vertical(|ui| {
                                     ui.label(RichText::new(fl!("safety_heading")).small().weak());
-                                    ui.add(TextEdit::singleline(&mut self.safety.to_string()).font(TextStyle::Heading));
-
+                                    self.safety.show_edit("safety", ui);
+                                    // ui.add(TextEdit::singleline(&mut self.safety.to_string()));
                                 });
 
                                 ui.add_space(FIELD_HORIZONTAL_SPACE);
                                 ui.vertical(|ui| {
                                     ui.label(RichText::new(fl!("crime_heading")).small().weak());
-                                    ui.add(TextEdit::singleline(&mut self.crime.to_string()).font(TextStyle::Heading));
-
+                                    self.crime.show_edit("crime", ui);
+                                    // ui.add(TextEdit::singleline(&mut self.crime.to_string()));
                                 });
 
                                 ui.add_space(FIELD_HORIZONTAL_SPACE);
                                 ui.vertical(|ui| {
                                     ui.label(RichText::new(fl!("occult_heading")).small().weak());
-                                    ui.add(TextEdit::singleline(&mut self.occult.to_string()).font(TextStyle::Heading));
-
+                                    self.occult.show_edit("occult", ui);
+                                    // ui.add(TextEdit::singleline(&mut self.occult.to_string()));
                                 });
                             });
 
-                            ui.add_space(FIELD_VERTICAL_SPACE);
+                            ui.add_space(FIELD_VERTICAL_SPACE * 2.0);
                             ui.label(RichText::new(fl!("notes_heading")).small().weak());
-                            ui.add(TextEdit::multiline(&mut self.description));
+                            ui.add(TextEdit::multiline(&mut self.notes)
+                                .desired_width(ui.available_width())
+                                .desired_rows(NOTES_ROWS)
+                            );
 
                         });
                     });
