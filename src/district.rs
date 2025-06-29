@@ -1,9 +1,8 @@
 
-use eframe::egui::{Color32, Label, Margin, RichText, Sense, Stroke, TextEdit, TextStyle, Ui};
-use log::debug;
+use eframe::egui::{Color32, RichText, TextEdit, TextStyle, Ui};
 use serde::{Deserialize, Serialize};
 
-use crate::{app::EditResult, app_data::DataIndex, app_display::{ShowEdit, ShowEditInfo}, dots::Dots, localize::fl, managed_list::Named};
+use crate::{app::EditResult, app_data::DataIndex, app_display::{show_edit_frame, ShowEdit, ShowEditInfo, DESCRIPTION_ROWS, FIELD_HORIZONTAL_SPACE, FIELD_VERTICAL_SPACE, NOTES_ROWS}, dots::Dots, localize::fl, managed_list::Named};
 
 
 
@@ -57,42 +56,12 @@ impl Named for District {
 
 impl ShowEdit for District {
     fn show_edit ( &mut self, ui: &mut Ui, item_info: ShowEditInfo ) -> Option<EditResult> {
-        const EDGE_SPACER: f32 = 6.0;
-        const HEAD_SPACE: f32 = 6.0;
-        const STROKE_WIDTH: f32 = 1.;
-        const STROKE_COLOR: Color32 = Color32::GRAY;
-        const INNER_MARGIN: Margin = Margin::same(6);
-        const FIELD_VERTICAL_SPACE: f32 = 10.0;
-        const FIELD_HORIZONTAL_SPACE: f32 = 20.0;
-        const DESCRIPTION_ROWS: usize = 2;
-        const NOTES_ROWS: usize = 6;
-
-        let mut result = None;
-
-        ui.horizontal(|ui| {
-            if ui.add(Label::new(RichText::new("<").heading()).sense(Sense::click())).clicked() {
-                debug!("return from edit district");
-                result = Some(EditResult::Ignore);  // should this be return?
-            }
-            ui.add_space(EDGE_SPACER);
-
-            ui.vertical(|ui| {
-                ui.horizontal(|ui| {
-                    ui.label(RichText::new(fl!("main_item_district")).heading().strong().underline());
-                    if item_info.show_save() {
-                        ui.add_space(60.0);
-                        if ui.button(fl!("edit_save")).clicked() {
-                            debug!("save edited district requested");
-                            result = Some(EditResult::Submit);
-                        }
-                    }
-                });
-                ui.add_space(HEAD_SPACE);
-
-                eframe::egui::Frame::default()
-                    .stroke(Stroke::new(STROKE_WIDTH, STROKE_COLOR))
-                    .inner_margin(INNER_MARGIN)
-                    .show(ui, |ui| {
+        show_edit_frame(
+            ui,
+            fl!("main_item_district"),
+            "district",
+            item_info,
+            |ui| {
                         ui.vertical(|ui| {
                             ui.label(RichText::new(fl!("name_heading")).small().weak());
                             ui.horizontal(|ui| {
@@ -121,21 +90,18 @@ impl ShowEdit for District {
                                 ui.vertical(|ui| {
                                     ui.label(RichText::new(fl!("safety_heading")).small().weak());
                                     self.safety.show_edit("safety", ui);
-                                    // ui.add(TextEdit::singleline(&mut self.safety.to_string()));
                                 });
 
                                 ui.add_space(FIELD_HORIZONTAL_SPACE);
                                 ui.vertical(|ui| {
                                     ui.label(RichText::new(fl!("crime_heading")).small().weak());
                                     self.crime.show_edit("crime", ui);
-                                    // ui.add(TextEdit::singleline(&mut self.crime.to_string()));
                                 });
 
                                 ui.add_space(FIELD_HORIZONTAL_SPACE);
                                 ui.vertical(|ui| {
                                     ui.label(RichText::new(fl!("occult_heading")).small().weak());
                                     self.occult.show_edit("occult", ui);
-                                    // ui.add(TextEdit::singleline(&mut self.occult.to_string()));
                                 });
                             });
 
@@ -147,10 +113,7 @@ impl ShowEdit for District {
                             );
 
                         });
-                    });
-            });
-        });
-
-        result
+                    }
+        )
     }
 }

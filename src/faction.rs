@@ -1,9 +1,9 @@
 
-use eframe::egui::{RichText, TextEdit, TextStyle, Ui};
+use eframe::egui::{Color32, RichText, TextEdit, TextStyle, Ui};
 use log::{error, warn};
 use serde::{Deserialize, Serialize};
 
-use crate::{app::EditResult, app_data::DataIndex, clock::Clock, localize::fl, managed_list::{DistrictRef, FactionRef, Named, PersonRef}, tier::Tier};
+use crate::{app::EditResult, app_data::DataIndex, app_display::{show_edit_frame, ShowEdit, ShowEditInfo, DESCRIPTION_ROWS, FIELD_VERTICAL_SPACE, NOTES_ROWS}, clock::Clock, localize::fl, managed_list::{DistrictRef, FactionRef, Named, PersonRef}, tier::Tier};
 
 #[allow(dead_code)]
 #[derive(Default, Clone, PartialEq)]
@@ -93,17 +93,47 @@ impl Faction {
         if !self.enemies.is_empty() { warn!("replacing enemies of {} when it is not empty", self.name); }
         self.enemies = enemies;
     }
+}
 
-    pub fn show_edit ( &mut self, ui: &mut Ui ) -> Option<EditResult> {
-        ui.vertical(|ui| {
-            // let name_heading = RichText::new(&self.name).heading();
-            ui.add(TextEdit::singleline(&mut self.name).font(TextStyle::Heading));
-            // ui.label(name_heading);
-        });
+impl ShowEdit for Faction {
+    fn show_edit ( &mut self, ui: &mut Ui, item_info: ShowEditInfo ) -> Option<EditResult> {
+        show_edit_frame(
+            ui,
+            fl!("main_item_faction"),
+            "faction",
+            item_info,
+            |ui| {
+                        ui.vertical(|ui| {
+                            ui.label(RichText::new(fl!("name_heading")).small().weak());
+                            ui.horizontal(|ui| {
+                                ui.add(TextEdit::singleline(&mut self.name).font(TextStyle::Heading));
+                                if item_info.name_collision() {
+                                    let no_text = RichText::new("X").color(Color32::RED).strong();
+                                    ui.label(no_text);
+                                }
+                            });
 
-        None
+                            ui.add_space(FIELD_VERTICAL_SPACE);
+                            ui.label(RichText::new(fl!("description_heading")).small().weak());
+                            ui.add(TextEdit::multiline(&mut self.description)
+                                .desired_width(ui.available_width())
+                                .desired_rows(DESCRIPTION_ROWS)
+                            );
+
+                            ui.add_space(FIELD_VERTICAL_SPACE * 2.0);
+                            ui.label(RichText::new(fl!("notes_heading")).small().weak());
+                            ui.add(TextEdit::multiline(&mut self.notes)
+                                .desired_width(ui.available_width())
+                                .desired_rows(NOTES_ROWS)
+                            );
+
+                        });
+                    }
+        )
     }
 }
+
+
 
 // -----------------------------
 // Stored

@@ -351,7 +351,6 @@ impl eframe::App for App {
                 }
 
                 ShowEditDistrict( index_ref, district, ) => {
-                    // todo
                     let mut district = district.borrow_mut();
                     let (name_collision, differs_from) = if let Some(index_ref) = index_ref {
                         let old_name = index_ref.name().map_or("<none>".to_string(), |n| n);
@@ -400,14 +399,45 @@ impl eframe::App for App {
                     } else { None }
                 }
 
-                ShowEditPerson( _index_ref, person, ) => {
-                    // todo
+                ShowEditPerson( index_ref, person, ) => {
                     let mut person = person.borrow_mut();
-                    if let Some(edit_result) = person.show_edit(ui) {
+                    let (name_collision, differs_from) = if let Some(index_ref) = index_ref {
+                        let old_name = index_ref.name().map_or("<none>".to_string(), |n| n);
+                        if let Some(old_person) = self.data.clone_person(index_ref) {
+                            if old_name != person.name() {
+                                (self.data.find_person(person.name()).is_some(), true)
+                            } else { (false, old_person != *person) }
+                        } else {
+                            error!("unable to find person '{old_name}' when index ref exists, during replace");
+                            (false, true)
+                        }
+                    } else { (self.data.find_person(person.name()).is_some(), Person::default() != *person) };
+
+                    let item_info = ShowEditInfo::new(name_collision, differs_from, index_ref.is_none());
+
+                    if let Some(edit_result) = person.show_edit(ui, item_info) {
                         use EditResult::*;
                         match edit_result {
                             Submit => {
                                 info!("submit edited person");
+                                if let Some(index_ref) = index_ref {
+                                    // fetch indexed item
+                                    if let Some(old_person) = self.data.clone_person(index_ref) {
+                                        if old_person != *person {
+                                            info!("replacing existing person");
+                                            self.todo_undo.add_todo(ActionNode::from(Action::PersonReplace(index_ref.clone(), person.clone())));
+                                        }  else {
+                                            debug!("new person matches existing person - no action taken");
+                                        }
+                                    } else {
+                                        let old_name = index_ref.name().map_or("<none>".to_string(), |n| n);
+                                        error!("unable to find existing person {old_name} in data, on replace attempt");
+                                    }
+                                } else {
+                                    // no index, thus this is an Add
+                                    info!("adding new person");
+                                    self.todo_undo.add_todo(ActionNode::from(Action::PersonAdd(person.clone())));
+                                }
                                 Some(Ready(RefCell::new(None)))
                             },
                             Ignore => {
@@ -418,14 +448,45 @@ impl eframe::App for App {
                     } else { None }
                 }
 
-                ShowEditFaction( _index_ref, faction, ) => {
-                    // todo
+                ShowEditFaction( index_ref, faction, ) => {
                     let mut faction = faction.borrow_mut();
-                    if let Some(edit_result) = faction.show_edit(ui) {
+                    let (name_collision, differs_from) = if let Some(index_ref) = index_ref {
+                        let old_name = index_ref.name().map_or("<none>".to_string(), |n| n);
+                        if let Some(old_faction) = self.data.clone_faction(index_ref) {
+                            if old_name != faction.name() {
+                                (self.data.find_faction(faction.name()).is_some(), true)
+                            } else { (false, old_faction != *faction) }
+                        } else {
+                            error!("unable to find faction '{old_name}' when index ref exists, during replace");
+                            (false, true)
+                        }
+                    } else { (self.data.find_faction(faction.name()).is_some(), Faction::default() != *faction) };
+
+                    let item_info = ShowEditInfo::new(name_collision, differs_from, index_ref.is_none());
+
+                    if let Some(edit_result) = faction.show_edit(ui, item_info) {
                         use EditResult::*;
                         match edit_result {
                             Submit => {
                                 info!("submit edited faction");
+                                if let Some(index_ref) = index_ref {
+                                    // fetch indexed item
+                                    if let Some(old_faction) = self.data.clone_faction(index_ref) {
+                                        if old_faction != *faction {
+                                            info!("replacing existing faction");
+                                            self.todo_undo.add_todo(ActionNode::from(Action::FactionReplace(index_ref.clone(), faction.clone())));
+                                        }  else {
+                                            debug!("new faction matches existing faction - no action taken");
+                                        }
+                                    } else {
+                                        let old_name = index_ref.name().map_or("<none>".to_string(), |n| n);
+                                        error!("unable to find existing faction {old_name} in data, on replace attempt");
+                                    }
+                                } else {
+                                    // no index, thus this is an Add
+                                    info!("adding new faction");
+                                    self.todo_undo.add_todo(ActionNode::from(Action::FactionAdd(faction.clone())));
+                                }
                                 Some(Ready(RefCell::new(None)))
                             },
                             Ignore => {
@@ -435,7 +496,6 @@ impl eframe::App for App {
                         }
                     } else { None }
                 }
-                // _ => { None }
             }
         }).inner {
             self.status = new_status;

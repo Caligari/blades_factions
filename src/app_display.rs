@@ -1,8 +1,9 @@
 use std::slice::Iter;
 
-use eframe::egui::{RichText, Ui};
+use eframe::egui::{Color32, Label, Margin, RichText, Sense, Stroke, Ui};
+use log::debug;
 
-use crate::{app::EditResult, app_data::DataIndex, managed_list::{GenericRef, ManagedList, Named}, sorting::Sorting};
+use crate::{app::EditResult, app_data::DataIndex, localize::fl, managed_list::{GenericRef, ManagedList, Named}, sorting::Sorting};
 
 
 #[allow(dead_code)]
@@ -137,6 +138,52 @@ impl ShowEditInfo {
     }
 }
 
+// ----------------------
+// Item layout constants
+pub const EDGE_SPACER: f32 = 6.0;
+pub const HEAD_SPACE: f32 = 6.0;
+pub const STROKE_WIDTH: f32 = 1.;
+pub const STROKE_COLOR: Color32 = Color32::GRAY;
+pub const INNER_MARGIN: Margin = Margin::same(6);
+pub const FIELD_VERTICAL_SPACE: f32 = 10.0;
+pub const FIELD_HORIZONTAL_SPACE: f32 = 20.0;
+pub const DESCRIPTION_ROWS: usize = 2;
+pub const NOTES_ROWS: usize = 6;
+
+
 pub trait ShowEdit {
     fn show_edit ( &mut self, ui: &mut Ui, item_info: ShowEditInfo ) -> Option<EditResult>;
+}
+
+pub fn show_edit_frame ( ui: &mut Ui, item_name: String, debug_name: &str, item_info: ShowEditInfo, contents: impl FnOnce(&mut Ui) ) -> Option<EditResult> {
+    let mut result = None;
+
+    ui.horizontal(|ui| {
+        if ui.add(Label::new(RichText::new("<").heading()).sense(Sense::click())).clicked() {
+            debug!("return from edit {debug_name}");
+            result = Some(EditResult::Ignore);  // should this be return?
+        }
+        ui.add_space(EDGE_SPACER);
+
+        ui.vertical(|ui| {
+            ui.horizontal(|ui| {
+                ui.label(RichText::new(item_name).heading().strong().underline());
+                if item_info.show_save() {
+                    ui.add_space(60.0);
+                    if ui.button(fl!("edit_save")).clicked() {
+                        debug!("save edited {debug_name} requested");
+                        result = Some(EditResult::Submit);
+                    }
+                }
+            });
+            ui.add_space(HEAD_SPACE);
+
+            eframe::egui::Frame::default()
+                .stroke(Stroke::new(STROKE_WIDTH, STROKE_COLOR))
+                .inner_margin(INNER_MARGIN)
+                .show(ui, contents);
+        });
+    });
+
+    result
 }

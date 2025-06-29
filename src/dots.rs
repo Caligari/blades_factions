@@ -29,7 +29,6 @@ impl Dots {
         ComboBox::from_id_salt(name)
             .show_index(ui, &mut selected, DOT_STRINGS.len(), |i| DOT_STRINGS[i].to_string());
         *self = selected.into();
-
     }
 }
 
@@ -66,7 +65,6 @@ const DOT_STRINGS: &[&str] = &[
 
 impl Display for Dots {
     fn fmt ( &self, f: &mut std::fmt::Formatter<'_> ) -> std::fmt::Result {
-
         write!(f, "{}", DOT_STRINGS[*self as usize])
     }
 }
