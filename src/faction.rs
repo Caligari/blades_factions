@@ -3,7 +3,7 @@ use eframe::egui::{Color32, RichText, TextEdit, TextStyle, Ui};
 use log::{error, warn};
 use serde::{Deserialize, Serialize};
 
-use crate::{app::EditResult, app_data::DataIndex, app_display::{show_edit_frame, ShowEdit, ShowEditInfo, DESCRIPTION_ROWS, FIELD_VERTICAL_SPACE, NOTES_ROWS}, clock::Clock, localize::fl, managed_list::{DistrictRef, FactionRef, Named, PersonRef}, tier::Tier};
+use crate::{app::EditResult, app_data::DataIndex, app_display::{show_edit_district, show_edit_frame, ShowEdit, ShowEditInfo, DESCRIPTION_ROWS, FIELD_HORIZONTAL_SPACE, FIELD_VERTICAL_SPACE, NOTES_ROWS}, clock::Clock, localize::fl, managed_list::{DistrictRef, FactionRef, Named, PersonRef}, tier::Tier};
 
 #[allow(dead_code)]
 #[derive(Default, Clone, PartialEq)]
@@ -104,13 +104,23 @@ impl ShowEdit for Faction {
             item_info,
             |ui| {
                         ui.vertical(|ui| {
-                            ui.label(RichText::new(fl!("name_heading")).small().weak());
                             ui.horizontal(|ui| {
-                                ui.add(TextEdit::singleline(&mut self.name).font(TextStyle::Heading));
-                                if item_info.name_collision() {
-                                    let no_text = RichText::new("X").color(Color32::RED).strong();
-                                    ui.label(no_text);
-                                }
+                                ui.vertical(|ui| {
+                                    ui.label(RichText::new(fl!("name_heading")).small().weak());
+                                    ui.horizontal(|ui| {
+                                        ui.add(TextEdit::singleline(&mut self.name).font(TextStyle::Heading));
+                                        if item_info.name_collision() {
+                                            let no_text = RichText::new("X").color(Color32::RED).strong();
+                                            ui.label(no_text);
+                                        }
+                                    });
+                                });
+
+                                ui.add_space(FIELD_HORIZONTAL_SPACE);
+                                ui.vertical(|ui| {
+                                    ui.label(RichText::new(fl!("tier_heading")).small().weak());
+                                    self.tier.show_edit("tier", ui);
+                                });
                             });
 
                             ui.add_space(FIELD_VERTICAL_SPACE);
@@ -119,6 +129,16 @@ impl ShowEdit for Faction {
                                 .desired_width(ui.available_width())
                                 .desired_rows(DESCRIPTION_ROWS)
                             );
+
+                            ui.add_space(FIELD_VERTICAL_SPACE);
+                            ui.horizontal(|ui| {
+                                ui.vertical(|ui| {
+                                    ui.label(RichText::new(fl!("hq_heading")).small().weak());
+                                    show_edit_district("hq", &mut self.hq, item_info.app_data(), ui);
+                                });
+
+                            });
+
 
                             ui.add_space(FIELD_VERTICAL_SPACE * 2.0);
                             ui.label(RichText::new(fl!("notes_heading")).small().weak());

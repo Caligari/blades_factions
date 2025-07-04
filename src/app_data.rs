@@ -106,6 +106,18 @@ impl AppData {
         DisplayTable::from(&self.factions)
     }
 
+    pub fn persons_names ( &self ) -> Vec<String> {
+        self.persons.names()
+    }
+
+    pub fn districts_names ( &self ) -> Vec<String> {
+        self.districts.names()
+    }
+
+    pub fn factions_names ( &self ) -> Vec<String> {
+        self.factions.names()
+    }
+
     pub fn set_persons_sort ( &mut self, index: usize ) {
         self.persons.set_sorting(index);
     }

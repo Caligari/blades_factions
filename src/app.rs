@@ -364,7 +364,7 @@ impl eframe::App for App {
                         }
                     } else { (self.data.find_district(district.name()).is_some(), District::default() != *district) };
 
-                    let item_info = ShowEditInfo::new(name_collision, differs_from, index_ref.is_none());
+                    let item_info = ShowEditInfo::new(name_collision, differs_from, index_ref.is_none(), &self.data);
 
                     if let Some(edit_result) = district.show_edit(ui, item_info) {
                         use EditResult::*;
@@ -413,7 +413,7 @@ impl eframe::App for App {
                         }
                     } else { (self.data.find_person(person.name()).is_some(), Person::default() != *person) };
 
-                    let item_info = ShowEditInfo::new(name_collision, differs_from, index_ref.is_none());
+                    let item_info = ShowEditInfo::new(name_collision, differs_from, index_ref.is_none(), &self.data);
 
                     if let Some(edit_result) = person.show_edit(ui, item_info) {
                         use EditResult::*;
@@ -462,7 +462,7 @@ impl eframe::App for App {
                         }
                     } else { (self.data.find_faction(faction.name()).is_some(), Faction::default() != *faction) };
 
-                    let item_info = ShowEditInfo::new(name_collision, differs_from, index_ref.is_none());
+                    let item_info = ShowEditInfo::new(name_collision, differs_from, index_ref.is_none(), &self.data);
 
                     if let Some(edit_result) = faction.show_edit(ui, item_info) {
                         use EditResult::*;

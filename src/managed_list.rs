@@ -228,6 +228,10 @@ impl<T: Clone + Named> ManagedList<T> {
     pub fn set_sorting ( &mut self, index: usize ) {
         self.sorting.set_field(index);
     }
+
+    pub fn names ( &self ) -> Vec<String> {
+        self.list_index.keys().cloned().collect()
+    }
 }
 
 

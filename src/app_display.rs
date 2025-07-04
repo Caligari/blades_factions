@@ -1,9 +1,9 @@
 use std::slice::Iter;
 
-use eframe::egui::{Color32, Label, Margin, RichText, Sense, Stroke, Ui};
+use eframe::egui::{Color32, ComboBox, Label, Margin, RichText, Sense, Stroke, Ui};
 use log::debug;
 
-use crate::{app::EditResult, app_data::DataIndex, localize::fl, managed_list::{GenericRef, ManagedList, Named}, sorting::Sorting};
+use crate::{app::EditResult, app_data::{AppData, DataIndex}, localize::fl, managed_list::{DistrictRef, GenericRef, ManagedList, Named}, sorting::Sorting};
 
 
 #[allow(dead_code)]
@@ -103,21 +103,23 @@ impl<T: Named + Clone> From<&ManagedList<T>> for DisplayTable {
 // -------------------
 // ItemDisplayParams
 
-#[derive(Debug, Clone, Copy, Default)]
-pub struct ShowEditInfo {
+#[derive(Clone, Copy)]
+pub struct ShowEditInfo<'a> {
     name_collision: bool,
     differs_from: bool,
     create_new: bool,
     // could have reference lists??
+    app_data: &'a AppData,
 }
 
 #[allow(dead_code)]
-impl ShowEditInfo {
-    pub fn new ( name_collision: bool, differs_from: bool, create_new: bool ) -> Self {
+impl <'a> ShowEditInfo<'a> {
+    pub fn new ( name_collision: bool, differs_from: bool, create_new: bool, app_data: &'a AppData ) -> Self {
         ShowEditInfo {
             name_collision,
             differs_from,
             create_new,
+            app_data,
         }
     }
 
@@ -136,7 +138,12 @@ impl ShowEditInfo {
     pub fn show_save ( &self ) -> bool {
         self.differs_from && !self.name_collision
     }
+
+    pub fn app_data ( &self ) -> &AppData {
+        self.app_data
+    }
 }
+
 
 // ----------------------
 // Item layout constants
@@ -186,4 +193,35 @@ pub fn show_edit_frame ( ui: &mut Ui, item_name: String, debug_name: &str, item_
     });
 
     result
+}
+
+// ------------------------
+// Show / Edit GenericRefs
+
+const EMPTY_NAME: &str = "    ";
+
+pub fn show_edit_district ( name: &str, district: &mut Option<DistrictRef>, app_data: &AppData, ui: &mut Ui ) {
+    let district_list = {
+        let mut list = app_data.districts_names();
+        list.insert(0, EMPTY_NAME.to_string());
+        list
+    };
+    let mut selected_district = if let Some(is_district) = district {
+        let name = is_district.name().unwrap_or_else(|| EMPTY_NAME.to_string());
+        district_list.iter().position(|n| *n == name).unwrap_or_default()
+    } else { 0 };
+    let was_selected = selected_district;
+
+    ComboBox::from_id_salt(name)
+        .show_index(ui, &mut selected_district, district_list.len(), |i| district_list[i].to_string());
+
+    if selected_district != was_selected {
+        *district = if selected_district == 0 {
+            None
+        } else {
+            let new_name = &district_list[selected_district];
+            app_data.find_district(new_name)
+        }
+    }
+
 }
