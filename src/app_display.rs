@@ -225,3 +225,60 @@ pub fn show_edit_district ( name: &str, district: &mut Option<DistrictRef>, app_
     }
 
 }
+
+pub fn show_edit_districts ( name: &str, districts: &mut Vec<DistrictRef>, app_data: &AppData, ui: &mut Ui ) {
+    ui.horizontal(|ui| {
+        ui.spacing_mut().item_spacing.x = 0.0;
+        let mut first = true;
+        let mut empty = false;
+        for dist in districts {
+            // this should not be able to point to nothing, but it might?
+            if let Some(district_name) = dist.name() {
+                if !first {
+                    ui.label(", ");
+                }
+
+                // should we store the name we are hovered over and check and show strikethrough and red text?
+                let resp = ui.add(Label::new(district_name.clone()).sense(Sense::click()));
+                if resp.clicked() {
+                    debug!("clicked delete on name for {district_name}");
+                    // todo
+                } else if resp.hovered() {
+                    if ui.add(Label::new(RichText::new("x").color(Color32::RED).strong()).sense(Sense::click())).clicked() {
+                        debug!("clicked delete X for {district_name}");
+                        // todo
+                    }
+                }
+                first = false;
+            } else { // else just ignore it?
+                empty = true;
+                let district_list = {
+                    let mut list = app_data.districts_names();
+                    list.insert(0, EMPTY_NAME.to_string());
+                    list
+                };
+                let mut selected_district = 0;  // todo: store which we have selected? won't be empty?
+
+                ComboBox::from_id_salt(name)
+                    .show_index(ui, &mut selected_district, district_list.len(), |i| district_list[i].to_string());
+            }
+            // perhaps an empty item indicates we want a selector for the districts
+        }
+
+        // now perhaps add an entry
+        // show + -> click to create empty
+        // maybe do not show if there was an empty item in the list?
+        if !empty {
+            if !first {
+                ui.label(", ");
+            }
+            if ui.add(Label::new(RichText::new("+").strong()).sense(Sense::click())).clicked() {
+                debug!("requested add item for {name}")
+                // todo: store as new item for this list?
+            }
+        }
+
+    });
+}
+
+// todo: person and faction

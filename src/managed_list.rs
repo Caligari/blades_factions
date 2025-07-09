@@ -54,6 +54,30 @@ pub type PersonRef = GenericRef<Person>;
 #[allow(dead_code)]
 pub type DistrictRef = GenericRef<District>;
 
+// todo: type for Vec of GenericRef, which includes a New item, which is None or some name, which can be used externally to create new item
+#[allow(dead_code)]
+pub struct GenericRefList<T: Clone + Named> {
+    list: Vec<GenericRef<T>>,  // todo: should this be a set?
+    new: Option<String>,
+}
+
+#[allow(dead_code)]
+impl<T: Clone + Named> GenericRefList<T> {
+    pub fn list ( &self ) -> &Vec<GenericRef<T>> {
+        &self.list
+    }
+
+    // todo: remove and add
+
+    pub fn new_name ( &self ) -> Option<&str> {
+        self.new.as_deref()
+    }
+
+    pub fn set_new ( &mut self, name: Option<&str> ) {
+        self.new = name.map(|n| n.to_string());
+    }
+}
+
 // pub enum IndexType {
 //     Nothing,
 //     District,

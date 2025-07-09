@@ -3,7 +3,7 @@ use eframe::egui::{Color32, RichText, TextEdit, TextStyle, Ui};
 use log::{error, warn};
 use serde::{Deserialize, Serialize};
 
-use crate::{app::EditResult, app_data::DataIndex, app_display::{show_edit_district, show_edit_frame, ShowEdit, ShowEditInfo, DESCRIPTION_ROWS, FIELD_HORIZONTAL_SPACE, FIELD_VERTICAL_SPACE, NOTES_ROWS}, clock::Clock, localize::fl, managed_list::{DistrictRef, FactionRef, Named, PersonRef}, tier::Tier};
+use crate::{app::EditResult, app_data::DataIndex, app_display::{show_edit_district, show_edit_districts, show_edit_frame, ShowEdit, ShowEditInfo, DESCRIPTION_ROWS, FIELD_HORIZONTAL_SPACE, FIELD_VERTICAL_SPACE, NOTES_ROWS}, clock::Clock, localize::fl, managed_list::{DistrictRef, FactionRef, Named, PersonRef}, tier::Tier};
 
 #[allow(dead_code)]
 #[derive(Default, Clone, PartialEq)]
@@ -135,6 +135,12 @@ impl ShowEdit for Faction {
                                 ui.vertical(|ui| {
                                     ui.label(RichText::new(fl!("hq_heading")).small().weak());
                                     show_edit_district("hq", &mut self.hq, item_info.app_data(), ui);
+                                });
+
+                                ui.add_space(FIELD_HORIZONTAL_SPACE);
+                                ui.vertical(|ui| {
+                                    ui.label(RichText::new(fl!("turf_heading")).small().weak());
+                                    show_edit_districts("turf", &mut self.turf, item_info.app_data(), ui);
                                 });
 
                             });

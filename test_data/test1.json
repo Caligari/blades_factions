@@ -597,7 +597,7 @@
       "name": "cupidatat",
       "description": "Duis adipisicing in magna ad reprehenderit eiusmod veniam. Laboris ipsum tempor tempor qui laborum Lorem laboris aliquip reprehenderit reprehenderit aliqua commodo. Eiusmod duis culpa amet proident id consequat irure et eiusmod. Fugiat eu deserunt nostrud dolore veniam non fugiat sit fugiat eu magna tempor eu.\r\n",
       "tier": "Tier4",
-      "turf": [],
+      "turf": ["qui", "culpa", "elit"],
       "notable": [],
       "assets": "Aute fugiat enim excepteur mollit. Lorem anim dolore eiusmod ipsum culpa. Commodo minim qui nisi nulla.\r\n",
       "notes": "Non sunt sunt enim quis elit ex nisi. Dolor fugiat consequat dolore adipisicing. Ea laborum excepteur qui ea est tempor id nisi enim laboris aliquip. Commodo eiusmod est nostrud tempor. Ea veniam fugiat consequat adipisicing tempor quis qui. Id officia eiusmod ea enim ad id aute proident.\r\n",
