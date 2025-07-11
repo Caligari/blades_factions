@@ -54,20 +54,41 @@ pub type PersonRef = GenericRef<Person>;
 #[allow(dead_code)]
 pub type DistrictRef = GenericRef<District>;
 
-// todo: type for Vec of GenericRef, which includes a New item, which is None or some name, which can be used externally to create new item
+
 #[allow(dead_code)]
+#[derive(Default, Clone, PartialEq)]
 pub struct GenericRefList<T: Clone + Named> {
-    list: Vec<GenericRef<T>>,  // todo: should this be a set?
+    list: Vec<GenericRef<T>>,  // should this be a set? Not worth the pain? Requires ordering to not change, which we can't guarantee
     new: Option<String>,
 }
 
 #[allow(dead_code)]
 impl<T: Clone + Named> GenericRefList<T> {
+    pub fn from_list ( input_list: Vec<GenericRef<T>> ) -> Self {
+        GenericRefList::<T> {
+            list: input_list,
+            new: None,
+        }
+    }
+
     pub fn list ( &self ) -> &Vec<GenericRef<T>> {
         &self.list
     }
 
-    // todo: remove and add
+    /// This silently ignores duplicates
+    pub fn push ( &mut self, item: GenericRef<T> ) {
+        if let Some(new_name) = item.name() {
+            if !self.list.iter().any(|r| r.0.read().name == new_name) {
+                self.list.push(item);
+            }
+        }
+    }
+
+    pub fn swap_remove ( &mut self, item_name: &str ) {  // ?? should return success?
+        let Some(index) = self.list.iter().position(|r| r.0.read().name == item_name )
+            else { warn!("failed to remove item >{item_name}> from GenericRefList"); return; };
+        self.list.swap_remove(index);
+    }
 
     pub fn new_name ( &self ) -> Option<&str> {
         self.new.as_deref()
@@ -77,6 +98,16 @@ impl<T: Clone + Named> GenericRefList<T> {
         self.new = name.map(|n| n.to_string());
     }
 }
+
+#[allow(dead_code)]
+pub type FactionRefList = GenericRefList<Faction>;
+
+#[allow(dead_code)]
+pub type PersonRefList = GenericRefList<Person>;
+
+#[allow(dead_code)]
+pub type DistrictRefList = GenericRefList<District>;
+
 
 // pub enum IndexType {
 //     Nothing,

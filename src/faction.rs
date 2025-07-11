@@ -3,7 +3,7 @@ use eframe::egui::{Color32, RichText, TextEdit, TextStyle, Ui};
 use log::{error, warn};
 use serde::{Deserialize, Serialize};
 
-use crate::{app::EditResult, app_data::DataIndex, app_display::{show_edit_district, show_edit_districts, show_edit_frame, ShowEdit, ShowEditInfo, DESCRIPTION_ROWS, FIELD_HORIZONTAL_SPACE, FIELD_VERTICAL_SPACE, NOTES_ROWS}, clock::Clock, localize::fl, managed_list::{DistrictRef, FactionRef, Named, PersonRef}, tier::Tier};
+use crate::{app::EditResult, app_data::DataIndex, app_display::{show_edit_district, show_edit_districts, show_edit_frame, ShowEdit, ShowEditInfo, DESCRIPTION_ROWS, FIELD_HORIZONTAL_SPACE, FIELD_VERTICAL_SPACE, NOTES_ROWS}, clock::Clock, localize::fl, managed_list::{DistrictRef, DistrictRefList, FactionRef, Named, PersonRef}, tier::Tier};
 
 #[allow(dead_code)]
 #[derive(Default, Clone, PartialEq)]
@@ -12,7 +12,7 @@ pub struct Faction {
     description: String,
     tier: Tier,
     hq: Option<DistrictRef>,
-    turf: Vec<DistrictRef>,
+    turf: DistrictRefList, // Vec<DistrictRef>,
     leader: Option<PersonRef>,
     notable: Vec<PersonRef>,
     assets: String,
@@ -45,7 +45,7 @@ impl Named for Faction {
             self.name.clone(),
             self.tier.to_string(),
             self.hq.clone().map_or(String::new(), |d| d.name().map_or(String::new(), |s| s)),
-            self.turf.iter()
+            self.turf.list().iter()
                 .map(|d| if let Some(d_name) = d.name() { d_name } else { error!("reference has no name when making turf list for display fields"); String::new() })
                 .collect::<Vec<String>>()
                 .join(", "),
@@ -75,8 +75,8 @@ impl Faction {
     }
 
     pub fn set_turf ( &mut self, turf: Vec<DistrictRef> ) {
-        if !self.turf.is_empty() { warn!("replacing turf of {} when it is not empty", self.name); }
-        self.turf = turf;
+        if !self.turf.list().is_empty() { warn!("replacing turf of {} when it is not empty", self.name); }
+        self.turf = DistrictRefList::from_list(turf);
     }
 
     pub fn set_notable ( &mut self, notable: Vec<PersonRef> ) {
@@ -189,7 +189,7 @@ impl From<&Faction> for FactionStore {
             description: from_faction.description.clone(),
             tier: from_faction.tier,
             hq: from_faction.hq.as_ref().and_then(|i| { i.name() }),
-            turf: from_faction.turf.iter().filter_map(|i| { i.name() }).collect(),
+            turf: from_faction.turf.list().iter().filter_map(|i| { i.name() }).collect(),
             leader: from_faction.leader.as_ref().and_then(|i| { i.name() }),
             notable: from_faction.notable.iter().filter_map(|i| { i.name() }).collect(),
             assets: from_faction.assets.clone(),
@@ -210,7 +210,7 @@ impl From<&FactionStore> for Faction {
             description: from_store.description.clone(),
             tier: from_store.tier,
             hq: None,  // added after creation
-            turf: Vec::new(),  // added after creation
+            turf: DistrictRefList::default(),  // added after creation
             leader: None,  // added after creation
             notable: Vec::new(),  // added after creation
             assets: from_store.assets.clone(),

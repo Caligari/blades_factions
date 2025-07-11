@@ -587,7 +587,7 @@ pub enum EditResult {
 // ===========================
 // AppStatus
 
-#[allow(dead_code)]
+#[allow(dead_code, clippy::large_enum_variant)]
 #[derive(Default)]
 enum AppStatus {
     #[default]

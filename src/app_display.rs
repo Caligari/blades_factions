@@ -3,7 +3,7 @@ use std::slice::Iter;
 use eframe::egui::{Color32, ComboBox, Label, Margin, RichText, Sense, Stroke, Ui};
 use log::debug;
 
-use crate::{app::EditResult, app_data::{AppData, DataIndex}, localize::fl, managed_list::{DistrictRef, GenericRef, ManagedList, Named}, sorting::Sorting};
+use crate::{app::EditResult, app_data::{AppData, DataIndex}, localize::fl, managed_list::{DistrictRef, DistrictRefList, GenericRef, ManagedList, Named}, sorting::Sorting};
 
 
 #[allow(dead_code)]
@@ -226,12 +226,11 @@ pub fn show_edit_district ( name: &str, district: &mut Option<DistrictRef>, app_
 
 }
 
-pub fn show_edit_districts ( name: &str, districts: &mut Vec<DistrictRef>, app_data: &AppData, ui: &mut Ui ) {
+pub fn show_edit_districts ( name: &str, districts: &mut DistrictRefList, app_data: &AppData, ui: &mut Ui ) {
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 0.0;
         let mut first = true;
-        let mut empty = false;
-        for dist in districts {
+        for dist in districts.list().clone() {
             // this should not be able to point to nothing, but it might?
             if let Some(district_name) = dist.name() {
                 if !first {
@@ -243,38 +242,54 @@ pub fn show_edit_districts ( name: &str, districts: &mut Vec<DistrictRef>, app_d
                 if resp.clicked() {
                     debug!("clicked delete on name for {district_name}");
                     // todo
-                } else if resp.hovered() {
+                    districts.swap_remove(&district_name);
+                } else if resp.hovered() {  // todo: can we somehow make the name strikethrough, next draw?
                     if ui.add(Label::new(RichText::new("x").color(Color32::RED).strong()).sense(Sense::click())).clicked() {
                         debug!("clicked delete X for {district_name}");
-                        // todo
+                        // todo: can't happen at the moment
                     }
                 }
                 first = false;
-            } else { // else just ignore it?
-                empty = true;
-                let district_list = {
-                    let mut list = app_data.districts_names();
-                    list.insert(0, EMPTY_NAME.to_string());
-                    list
-                };
-                let mut selected_district = 0;  // todo: store which we have selected? won't be empty?
-
-                ComboBox::from_id_salt(name)
-                    .show_index(ui, &mut selected_district, district_list.len(), |i| district_list[i].to_string());
-            }
-            // perhaps an empty item indicates we want a selector for the districts
+            } else { unreachable!(); }
         }
 
         // now perhaps add an entry
         // show + -> click to create empty
-        // maybe do not show if there was an empty item in the list?
-        if !empty {
-            if !first {
-                ui.label(", ");
+        if !first {
+            ui.label(", ");
+        }
+
+        if let Some(new_name) = districts.new_name() {
+            // show combo box
+            let district_list = {
+                let mut list = app_data.districts_names();
+                list.insert(0, EMPTY_NAME.to_string());
+                list
+            };
+            let mut selected_district = district_list.iter().position(|n| *n == new_name).unwrap_or_default();
+            let was_selected = selected_district;
+
+            ComboBox::from_id_salt(name)
+                .show_index(ui, &mut selected_district, district_list.len(), |i| district_list[i].to_string());
+
+            if selected_district != was_selected {
+                if selected_district == 0 {
+                    districts.set_new(Some(EMPTY_NAME));
+                } else {
+                    let new_name = district_list[selected_district].as_str();
+                    // find district ref
+                    if let Some(d) = app_data.find_district(new_name) {
+                        // push to districts
+                        districts.push(d);
+                        // reset new
+                        districts.set_new(None);
+                    } else { districts.set_new(Some(new_name)); }
+                }
             }
+        } else {  // no new name
             if ui.add(Label::new(RichText::new("+").strong()).sense(Sense::click())).clicked() {
-                debug!("requested add item for {name}")
-                // todo: store as new item for this list?
+                debug!("requested add item for {name}");
+                districts.set_new(Some(EMPTY_NAME));
             }
         }
 
