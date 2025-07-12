@@ -12,7 +12,7 @@ pub struct Faction {
     description: String,
     tier: Tier,
     hq: Option<DistrictRef>,
-    turf: DistrictRefList, // Vec<DistrictRef>,
+    turf: DistrictRefList,
     leader: Option<PersonRef>,
     notable: Vec<PersonRef>,
     assets: String,

@@ -227,9 +227,11 @@ pub fn show_edit_district ( name: &str, district: &mut Option<DistrictRef>, app_
 }
 
 pub fn show_edit_districts ( name: &str, districts: &mut DistrictRefList, app_data: &AppData, ui: &mut Ui ) {
-    ui.horizontal(|ui| {
+    ui.horizontal_top(|ui| {
         ui.spacing_mut().item_spacing.x = 0.0;
         let mut first = true;
+        let was_hovered = districts.hovered_name().map(|h| h.to_string());
+        let mut hovered = None;
         for dist in districts.list().clone() {
             // this should not be able to point to nothing, but it might?
             if let Some(district_name) = dist.name() {
@@ -238,19 +240,29 @@ pub fn show_edit_districts ( name: &str, districts: &mut DistrictRefList, app_da
                 }
 
                 // should we store the name we are hovered over and check and show strikethrough and red text?
-                let resp = ui.add(Label::new(district_name.clone()).sense(Sense::click()));
+                let district_label = {
+                    let mut district_label = RichText::new(district_name.clone());
+                    if let Some(hovered_name) = districts.hovered_name() {
+                        if hovered_name == district_name {
+                            district_label = district_label.color(Color32::DARK_RED).strikethrough();
+                        }
+                    }
+                    district_label
+                };
+                let resp = ui.add(Label::new(district_label).sense(Sense::click()));
                 if resp.clicked() {
                     debug!("clicked delete on name for {district_name}");
                     // todo
                     districts.swap_remove(&district_name);
                 } else if resp.hovered() {  // todo: can we somehow make the name strikethrough, next draw?
-                    if ui.add(Label::new(RichText::new("x").color(Color32::RED).strong()).sense(Sense::click())).clicked() {
-                        debug!("clicked delete X for {district_name}");
-                        // todo: can't happen at the moment
-                    }
+                    hovered = Some(district_name.clone());
                 }
                 first = false;
             } else { unreachable!(); }
+        }
+
+        if hovered != was_hovered {
+            districts.set_hovered(hovered);
         }
 
         // now perhaps add an entry
@@ -262,7 +274,7 @@ pub fn show_edit_districts ( name: &str, districts: &mut DistrictRefList, app_da
         if let Some(new_name) = districts.new_name() {
             // show combo box
             let district_list = {
-                let mut list = app_data.districts_names();
+                let mut list = app_data.districts_names();  // todo: sort?
                 list.insert(0, EMPTY_NAME.to_string());
                 list
             };

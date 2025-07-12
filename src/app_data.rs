@@ -107,15 +107,15 @@ impl AppData {
     }
 
     pub fn persons_names ( &self ) -> Vec<String> {
-        self.persons.names()
+        self.persons.names_sorted()
     }
 
     pub fn districts_names ( &self ) -> Vec<String> {
-        self.districts.names()
+        self.districts.names_sorted()
     }
 
     pub fn factions_names ( &self ) -> Vec<String> {
-        self.factions.names()
+        self.factions.names_sorted()
     }
 
     pub fn set_persons_sort ( &mut self, index: usize ) {

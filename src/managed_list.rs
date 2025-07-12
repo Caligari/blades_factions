@@ -56,10 +56,11 @@ pub type DistrictRef = GenericRef<District>;
 
 
 #[allow(dead_code)]
-#[derive(Default, Clone, PartialEq)]
+#[derive(Default, Clone)]
 pub struct GenericRefList<T: Clone + Named> {
     list: Vec<GenericRef<T>>,  // should this be a set? Not worth the pain? Requires ordering to not change, which we can't guarantee
     new: Option<String>,
+    hovered: Option<String>,
 }
 
 #[allow(dead_code)]
@@ -68,6 +69,7 @@ impl<T: Clone + Named> GenericRefList<T> {
         GenericRefList::<T> {
             list: input_list,
             new: None,
+            hovered: None,
         }
     }
 
@@ -94,8 +96,22 @@ impl<T: Clone + Named> GenericRefList<T> {
         self.new.as_deref()
     }
 
+    pub fn hovered_name ( &self ) -> Option<&str> {
+        self.hovered.as_deref()
+    }
+
     pub fn set_new ( &mut self, name: Option<&str> ) {
         self.new = name.map(|n| n.to_string());
+    }
+
+    pub fn set_hovered ( &mut self, name: Option<String> ) {
+        self.hovered = name;
+    }
+}
+
+impl<T: Clone + Named + PartialEq> PartialEq for GenericRefList<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.list == other.list
     }
 }
 
@@ -284,8 +300,10 @@ impl<T: Clone + Named> ManagedList<T> {
         self.sorting.set_field(index);
     }
 
-    pub fn names ( &self ) -> Vec<String> {
-        self.list_index.keys().cloned().collect()
+    pub fn names_sorted ( &self ) -> Vec<String> {
+        let mut list_copy: Vec<String> = self.list_index.keys().cloned().collect();
+        list_copy.sort();  // ?? do we need a more sophisticated sort? For People Names, for example
+        list_copy
     }
 }
 
