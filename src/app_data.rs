@@ -106,6 +106,18 @@ impl AppData {
         DisplayTable::from(&self.factions)
     }
 
+    pub fn person_list ( &self ) -> &ManagedList<Person> {
+        &self.persons
+    }
+
+    pub fn district_list ( &self ) -> &ManagedList<District> {
+        &self.districts
+    }
+
+    pub fn faction_list ( &self ) -> &ManagedList<Faction> {
+        &self.factions
+    }
+
     pub fn persons_names ( &self ) -> Vec<String> {
         self.persons.names_sorted()
     }

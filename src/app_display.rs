@@ -1,9 +1,9 @@
 use std::slice::Iter;
 
 use eframe::egui::{Color32, ComboBox, Label, Margin, RichText, Sense, Stroke, Ui};
-use log::debug;
+use log::{debug, info};
 
-use crate::{app::EditResult, app_data::{AppData, DataIndex}, localize::fl, managed_list::{DistrictRef, DistrictRefList, GenericRef, ManagedList, Named}, sorting::Sorting};
+use crate::{app::EditResult, app_data::{AppData, DataIndex}, localize::fl, managed_list::{GenericRef, GenericRefList, ManagedList, Named}, sorting::Sorting};
 
 
 #[allow(dead_code)]
@@ -178,7 +178,7 @@ pub fn show_edit_frame ( ui: &mut Ui, item_name: String, debug_name: &str, item_
                 if item_info.show_save() {
                     ui.add_space(60.0);
                     if ui.button(fl!("edit_save")).clicked() {
-                        debug!("save edited {debug_name} requested");
+                        info!("save edited {debug_name} requested");
                         result = Some(EditResult::Submit);
                     }
                 }
@@ -200,9 +200,9 @@ pub fn show_edit_frame ( ui: &mut Ui, item_name: String, debug_name: &str, item_
 
 const EMPTY_NAME: &str = "    ";
 
-pub fn show_edit_district ( name: &str, district: &mut Option<DistrictRef>, app_data: &AppData, ui: &mut Ui ) {
+pub fn show_edit_item<T: Named +Clone> ( name: &str, district: &mut Option<GenericRef<T>>, master_list: &ManagedList<T>, ui: &mut Ui ) {
     let district_list = {
-        let mut list = app_data.districts_names();
+        let mut list = master_list.names_sorted();
         list.insert(0, EMPTY_NAME.to_string());
         list
     };
@@ -217,16 +217,17 @@ pub fn show_edit_district ( name: &str, district: &mut Option<DistrictRef>, app_
 
     if selected_district != was_selected {
         *district = if selected_district == 0 {
+            info!("clearing {name}");
             None
         } else {
             let new_name = &district_list[selected_district];
-            app_data.find_district(new_name)
+            info!("setting {name} to {new_name}");
+            master_list.find(new_name)
         }
     }
-
 }
 
-pub fn show_edit_districts ( name: &str, districts: &mut DistrictRefList, app_data: &AppData, ui: &mut Ui ) {
+pub fn show_edit_list<T: Named + Clone> ( name: &str, districts: &mut GenericRefList<T>, master_list: &ManagedList<T>, ui: &mut Ui ) {
     ui.horizontal_top(|ui| {
         ui.spacing_mut().item_spacing.x = 0.0;
         let mut first = true;
@@ -239,7 +240,6 @@ pub fn show_edit_districts ( name: &str, districts: &mut DistrictRefList, app_da
                     ui.label(", ");
                 }
 
-                // should we store the name we are hovered over and check and show strikethrough and red text?
                 let district_label = {
                     let mut district_label = RichText::new(district_name.clone());
                     if let Some(hovered_name) = districts.hovered_name() {
@@ -251,10 +251,9 @@ pub fn show_edit_districts ( name: &str, districts: &mut DistrictRefList, app_da
                 };
                 let resp = ui.add(Label::new(district_label).sense(Sense::click()));
                 if resp.clicked() {
-                    debug!("clicked delete on name for {district_name}");
-                    // todo
+                    info!("deleting {district_name} from list {name}");
                     districts.swap_remove(&district_name);
-                } else if resp.hovered() {  // todo: can we somehow make the name strikethrough, next draw?
+                } else if resp.hovered() {
                     hovered = Some(district_name.clone());
                 }
                 first = false;
@@ -274,7 +273,7 @@ pub fn show_edit_districts ( name: &str, districts: &mut DistrictRefList, app_da
         if let Some(new_name) = districts.new_name() {
             // show combo box
             let district_list = {
-                let mut list = app_data.districts_names();  // todo: sort?
+                let mut list = master_list.names_sorted();
                 list.insert(0, EMPTY_NAME.to_string());
                 list
             };
@@ -290,7 +289,8 @@ pub fn show_edit_districts ( name: &str, districts: &mut DistrictRefList, app_da
                 } else {
                     let new_name = district_list[selected_district].as_str();
                     // find district ref
-                    if let Some(d) = app_data.find_district(new_name) {
+                    if let Some(d) = master_list.find(new_name) {
+                        info!("adding {new_name} to list {name}");
                         // push to districts
                         districts.push(d);
                         // reset new
@@ -300,12 +300,9 @@ pub fn show_edit_districts ( name: &str, districts: &mut DistrictRefList, app_da
             }
         } else {  // no new name
             if ui.add(Label::new(RichText::new("+").strong()).sense(Sense::click())).clicked() {
-                debug!("requested add item for {name}");
+                info!("requested add item for {name}");
                 districts.set_new(Some(EMPTY_NAME));
             }
         }
-
     });
 }
-
-// todo: person and faction

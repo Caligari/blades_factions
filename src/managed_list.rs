@@ -125,25 +125,6 @@ pub type PersonRefList = GenericRefList<Person>;
 pub type DistrictRefList = GenericRefList<District>;
 
 
-// pub enum IndexType {
-//     Nothing,
-//     District,
-//     Person,
-//     Faction,
-// }
-
-// impl From <DataIndex> for IndexType {
-//     fn from ( value: DataIndex ) -> Self {
-//         use DataIndex::*;
-//         match value {
-//             Nothing => IndexType::Nothing,
-//             DistrictIndex (..) => IndexType::District,
-//             PersonIndex (..) => IndexType::Person,
-//             FactionIndex(..) => IndexType::Faction,
-//         }
-//     }
-// }
-
 #[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq)]
 pub struct NamedIndex<T: Clone + Named> {
