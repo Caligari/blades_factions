@@ -12,7 +12,7 @@ use crate::{app::EditResult, app_data::DataIndex, app_display::{show_edit_frame,
 pub struct Person {
     name: String,
     description: String,
-    // characteristics strings
+    personality: Vec<String>,  // just 3?
     notes: String,
     // connections?
     // faction?
@@ -68,6 +68,21 @@ impl ShowEdit for Person {
                                 .desired_width(ui.available_width())
                                 .desired_rows(DESCRIPTION_ROWS)
                             );
+
+                            ui.add_space(FIELD_VERTICAL_SPACE);
+                            ui.label(RichText::new(fl!("personality_heading")).small().weak());
+                            ui.horizontal(|ui| {
+                                ui.label(RichText::new("(").italics());
+                                let mut first = true;
+                                for p in &self.personality {
+                                    if !first {
+                                        ui.label(RichText::new(", ").italics());
+                                    } else { first = false; }
+                                    ui.label(RichText::new(p).italics());  // todo: destruction
+                                }
+                                // todo: add new
+                                ui.label(RichText::new(")").italics());
+                            });
 
                             ui.add_space(FIELD_VERTICAL_SPACE * 2.0);
                             ui.label(RichText::new(fl!("notes_heading")).small().weak());

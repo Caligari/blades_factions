@@ -3,7 +3,7 @@ use eframe::egui::{Color32, RichText, TextEdit, TextStyle, Ui};
 use log::{error, warn};
 use serde::{Deserialize, Serialize};
 
-use crate::{app::EditResult, app_data::DataIndex, app_display::{show_edit_frame, show_edit_item, show_edit_list, ShowEdit, ShowEditInfo, DESCRIPTION_ROWS, FIELD_HORIZONTAL_SPACE, FIELD_VERTICAL_SPACE, NOTES_ROWS}, clock::Clock, localize::fl, managed_list::{DistrictRef, DistrictRefList, FactionRef, Named, PersonRef}, tier::Tier};
+use crate::{app::EditResult, app_data::DataIndex, app_display::{show_edit_frame, show_edit_item, show_edit_list, ShowEdit, ShowEditInfo, DESCRIPTION_ROWS, FIELD_HORIZONTAL_SPACE, FIELD_VERTICAL_SPACE, NOTES_ROWS}, clock::Clock, localize::fl, managed_list::{DistrictRef, DistrictRefList, FactionRef, Named, PersonRef, PersonRefList}, tier::Tier};
 
 #[allow(dead_code)]
 #[derive(Default, Clone, PartialEq)]
@@ -14,7 +14,7 @@ pub struct Faction {
     hq: Option<DistrictRef>,
     turf: DistrictRefList,
     leader: Option<PersonRef>,
-    notable: Vec<PersonRef>,
+    notable: PersonRefList,
     assets: String,
     notes: String,
     allies: Vec<FactionRef>,
@@ -80,8 +80,8 @@ impl Faction {
     }
 
     pub fn set_notable ( &mut self, notable: Vec<PersonRef> ) {
-        if !self.notable.is_empty() { warn!("replacing notable of {} when it is not empty", self.name); }
-        self.notable = notable;
+        if !self.notable.list().is_empty() { warn!("replacing notable of {} when it is not empty", self.name); }
+        self.notable = PersonRefList::from_list(notable);
     }
 
     pub fn set_allies ( &mut self, allies: Vec<FactionRef> ) {
@@ -102,59 +102,69 @@ impl ShowEdit for Faction {
             fl!("main_item_faction"),
             "faction",
             item_info,
-            |ui| {
+    |ui| {
+                ui.vertical(|ui| {
+                    ui.horizontal(|ui| {
                         ui.vertical(|ui| {
+                            ui.label(RichText::new(fl!("name_heading")).small().weak());
                             ui.horizontal(|ui| {
-                                ui.vertical(|ui| {
-                                    ui.label(RichText::new(fl!("name_heading")).small().weak());
-                                    ui.horizontal(|ui| {
-                                        ui.add(TextEdit::singleline(&mut self.name).font(TextStyle::Heading));
-                                        if item_info.name_collision() {
-                                            let no_text = RichText::new("X").color(Color32::RED).strong();
-                                            ui.label(no_text);
-                                        }
-                                    });
-                                });
-
-                                ui.add_space(FIELD_HORIZONTAL_SPACE);
-                                ui.vertical(|ui| {
-                                    ui.label(RichText::new(fl!("tier_heading")).small().weak());
-                                    self.tier.show_edit("tier", ui);
-                                });
+                                ui.add(TextEdit::singleline(&mut self.name).font(TextStyle::Heading));
+                                if item_info.name_collision() {
+                                    let no_text = RichText::new("X").color(Color32::RED).strong();
+                                    ui.label(no_text);
+                                }
                             });
-
-                            ui.add_space(FIELD_VERTICAL_SPACE);
-                            ui.label(RichText::new(fl!("description_heading")).small().weak());
-                            ui.add(TextEdit::multiline(&mut self.description)
-                                .desired_width(ui.available_width())
-                                .desired_rows(DESCRIPTION_ROWS)
-                            );
-
-                            ui.add_space(FIELD_VERTICAL_SPACE);
-                            ui.horizontal(|ui| {
-                                ui.vertical(|ui| {
-                                    ui.label(RichText::new(fl!("hq_heading")).small().weak());
-                                    show_edit_item("hq", &mut self.hq, item_info.app_data().district_list(), ui);
-                                });
-
-                                ui.add_space(FIELD_HORIZONTAL_SPACE);
-                                ui.vertical(|ui| {
-                                    ui.label(RichText::new(fl!("turf_heading")).small().weak());
-                                    show_edit_list("turf", &mut self.turf, item_info.app_data().district_list(), ui);
-                                });
-
-                            });
-
-
-                            ui.add_space(FIELD_VERTICAL_SPACE * 2.0);
-                            ui.label(RichText::new(fl!("notes_heading")).small().weak());
-                            ui.add(TextEdit::multiline(&mut self.notes)
-                                .desired_width(ui.available_width())
-                                .desired_rows(NOTES_ROWS)
-                            );
-
                         });
-                    }
+
+                        ui.add_space(FIELD_HORIZONTAL_SPACE);
+                        ui.vertical(|ui| {
+                            ui.label(RichText::new(fl!("tier_heading")).small().weak());
+                            self.tier.show_edit("tier", ui);
+                        });
+                    });
+
+                    ui.add_space(FIELD_VERTICAL_SPACE);
+                    ui.label(RichText::new(fl!("description_heading")).small().weak());
+                    ui.add(TextEdit::multiline(&mut self.description)
+                        .desired_width(ui.available_width())
+                        .desired_rows(DESCRIPTION_ROWS)
+                    );
+
+                    ui.add_space(FIELD_VERTICAL_SPACE);
+                    ui.vertical(|ui| {
+                        ui.label(RichText::new(fl!("leader_heading")).small().weak());
+                        show_edit_item("leader", &mut self.leader, item_info.app_data().person_list(), ui);
+                    });
+
+                    ui.add_space(FIELD_VERTICAL_SPACE);
+                    ui.horizontal(|ui| {
+                        ui.vertical(|ui| {
+                            ui.label(RichText::new(fl!("hq_heading")).small().weak());
+                            show_edit_item("hq", &mut self.hq, item_info.app_data().district_list(), ui);
+                        });
+
+                        ui.add_space(FIELD_HORIZONTAL_SPACE);
+                        ui.vertical(|ui| {
+                            ui.label(RichText::new(fl!("turf_heading")).small().weak());
+                            show_edit_list("turf", &mut self.turf, item_info.app_data().district_list(), ui);
+                        });
+                    });
+
+                    ui.add_space(FIELD_VERTICAL_SPACE);
+                    ui.vertical(|ui| {
+                        ui.label(RichText::new(fl!("notables_heading")).small().weak());
+                        show_edit_list("notables", &mut self.notable, item_info.app_data().person_list(), ui);
+                    });
+
+                    ui.add_space(FIELD_VERTICAL_SPACE * 2.0);
+                    ui.label(RichText::new(fl!("notes_heading")).small().weak());
+                    ui.add(TextEdit::multiline(&mut self.notes)
+                        .desired_width(ui.available_width())
+                        .desired_rows(NOTES_ROWS)
+                    );
+
+                });
+            }
         )
     }
 }
@@ -191,7 +201,7 @@ impl From<&Faction> for FactionStore {
             hq: from_faction.hq.as_ref().and_then(|i| { i.name() }),
             turf: from_faction.turf.list().iter().filter_map(|i| { i.name() }).collect(),
             leader: from_faction.leader.as_ref().and_then(|i| { i.name() }),
-            notable: from_faction.notable.iter().filter_map(|i| { i.name() }).collect(),
+            notable: from_faction.notable.list().iter().filter_map(|i| { i.name() }).collect(),
             assets: from_faction.assets.clone(),
             notes: from_faction.notes.clone(),
             allies: from_faction.allies.iter().filter_map(|i| { i.name() }).collect(),
@@ -212,7 +222,7 @@ impl From<&FactionStore> for Faction {
             hq: None,  // added after creation
             turf: DistrictRefList::default(),  // added after creation
             leader: None,  // added after creation
-            notable: Vec::new(),  // added after creation
+            notable: PersonRefList::default(),  // added after creation
             assets: from_store.assets.clone(),
             notes: from_store.notes.clone(),
             allies: Vec::new(),  // added after creation

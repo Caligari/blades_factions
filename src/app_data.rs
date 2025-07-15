@@ -4,7 +4,7 @@ use anyhow::{Result, Ok, anyhow};
 use log::{debug, error};
 use serde::{Deserialize, Serialize};
 
-use crate::{action::{Action, ActionNode}, app::load_from_pot, app_display::DisplayTable, district::District, faction::{Faction, FactionStore}, managed_list::{DistrictRef, FactionRef, ManagedList, Named, PersonRef}, person::Person};
+use crate::{action::{Action, ActionNode}, app::load_from_pot, app_display::DisplayTable, district::{District, DistrictStore}, faction::{Faction, FactionStore}, managed_list::{DistrictRef, FactionRef, ManagedList, Named, PersonRef}, person::Person};
 
 const DATA_EXTENSION: &str = "pot";
 
@@ -179,7 +179,7 @@ impl AppData {
         #[derive(Deserialize)]
         struct ImportData {
             persons: Vec<Person>,
-            districts: Vec<District>,
+            districts: Vec<DistrictStore>,
             factions: Vec<FactionStore>,
         }
 
@@ -189,21 +189,48 @@ impl AppData {
         debug!("imported {} people, {} districts, {} factions",
                 import.persons.len(), import.districts.len(), import.factions.len());
 
-        let district_add: ActionNode = import.districts.into_iter().map(|d| {
-            Action::DistrictAdd(d)
-        }).collect();
-
-        let person_add = import.persons.into_iter().map(|p| {
-            Action::PersonAdd(p)
+        let mut post_districts: Vec<(String, Vec<String>)> = Vec::new();
+        let district_add = import.districts.into_iter().map(|d| {
+            let (district, notable) = self.district_from_store(d);
+            post_districts.push((district.name().to_string(), notable));
+            Action::DistrictAdd(district)
         }).collect();
 
         if let Err(err) = self.do_action(&district_add) {
             error!("unable to add districts: {}", err);
         }
 
+        let person_add = import.persons.into_iter().map(|p| {
+            Action::PersonAdd(p)
+        }).collect();
+
         if let Err(err) = self.do_action(&person_add) {
             error!("unable to add persons: {}", err);
         }
+
+        // do district references to persons; no undo
+        let district_replace: ActionNode = post_districts.into_iter().filter_map(|(district_name, notable)| {
+            if let Some(dist_ref) = self.districts.find(&district_name) {
+                if let Some(dist) = self.districts.fetch(&dist_ref) {
+                    let notables: Vec<PersonRef> = notable.into_iter().filter_map(|p| {
+                        let p_ref = self.persons.find(&p);
+                        if p_ref.is_none() { error!("unable to find person {p} as notable when loading district {district_name}"); }
+                        p_ref
+                    }).collect();
+                    if !notables.is_empty() {
+                        let mut district = dist.clone();
+                        district.set_notable(notables);
+                        Some(Action::DistrictReplace(dist_ref, district))
+                    } else { None }
+
+                } else { None }
+            } else { None }
+        }).collect();
+
+        if let Err(err) = self.do_action(&district_replace) {
+            error!("unable to replace districts with notables: {}", err);
+        }
+
 
         let mut post_factions: Vec<(String, Vec<String>, Vec<String>)> = Vec::new();
         let faction_add = import.factions.into_iter().map(|f| {
@@ -246,6 +273,14 @@ impl AppData {
         }
 
         Ok(())
+    }
+
+    /// Returns list of notable Person Strings
+    fn district_from_store ( &self, d_store: DistrictStore )-> (District, Vec<String>) {
+        let district: District = (&d_store).into();
+        // todo: convert references
+
+        (district, d_store.notable)
     }
 
     fn faction_from_store ( &self, f_store: FactionStore )-> (Faction, Vec<String>, Vec<String>) {

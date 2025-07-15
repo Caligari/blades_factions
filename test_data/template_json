@@ -4,6 +4,10 @@
     {
       name: '{{firstName()}} {{surname()}}',
       description: '{{lorem(1, "paragraphs")}}',
+      personality: [
+        '{{repeat(0, 3)}}',
+        '{{lorem(1, "words")}}'
+      ],
       notes: '{{lorem(1, "paragraphs")}}'
     }
   ],
@@ -16,6 +20,7 @@
       crime: '{{random("Zero", "One", "Two", "Three", "Four", "Five")}}',
       occult: '{{random("Zero", "One", "Two", "Three", "Four", "Five")}}',
       description: '{{lorem(1, "paragraphs")}}',
+      notable: [],
       notes: '{{lorem(1, "paragraphs")}}'
     }
   ],

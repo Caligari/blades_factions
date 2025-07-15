@@ -1,13 +1,14 @@
 
 use eframe::egui::{Color32, RichText, TextEdit, TextStyle, Ui};
+use log::warn;
 use serde::{Deserialize, Serialize};
 
-use crate::{app::EditResult, app_data::DataIndex, app_display::{show_edit_frame, ShowEdit, ShowEditInfo, DESCRIPTION_ROWS, FIELD_HORIZONTAL_SPACE, FIELD_VERTICAL_SPACE, NOTES_ROWS}, dots::Dots, localize::fl, managed_list::Named};
+use crate::{app::EditResult, app_data::DataIndex, app_display::{show_edit_frame, show_edit_list, ShowEdit, ShowEditInfo, DESCRIPTION_ROWS, FIELD_HORIZONTAL_SPACE, FIELD_VERTICAL_SPACE, NOTES_ROWS}, dots::Dots, localize::fl, managed_list::{Named, PersonRef, PersonRefList}};
 
 
 
 #[allow(dead_code)]
-#[derive(Debug, Default, Clone, PartialEq, Deserialize, Serialize)]
+#[derive(Default, Clone, PartialEq)]
 pub struct District {
     name: String,
     description: String,
@@ -15,6 +16,7 @@ pub struct District {
     safety: Dots,
     crime: Dots,
     occult: Dots,
+    notable: PersonRefList,
     notes: String,
 }
 
@@ -26,6 +28,12 @@ impl District {
             ..Default::default()
         }
     }
+
+    pub fn set_notable ( &mut self, notable: Vec<PersonRef> ) {
+        if !self.notable.list().is_empty() { warn!("replacing notable of {} when it is not empty", self.name); }
+        self.notable = PersonRefList::from_list(notable);
+    }
+
 }
 
 // ---------------------------
@@ -106,6 +114,12 @@ impl ShowEdit for District {
                             });
 
                             ui.add_space(FIELD_VERTICAL_SPACE * 2.0);
+                            ui.vertical(|ui| {
+                                ui.label(RichText::new(fl!("notables_heading")).small().weak());
+                                show_edit_list("notables", &mut self.notable, item_info.app_data().person_list(), ui);
+                            });
+
+                            ui.add_space(FIELD_VERTICAL_SPACE * 2.0);
                             ui.label(RichText::new(fl!("notes_heading")).small().weak());
                             ui.add(TextEdit::multiline(&mut self.notes)
                                 .desired_width(ui.available_width())
@@ -117,3 +131,49 @@ impl ShowEdit for District {
         )
     }
 }
+
+
+#[allow(dead_code)]
+#[derive(Default, Clone, PartialEq, Deserialize, Serialize)]
+pub struct DistrictStore {
+    name: String,
+    description: String,
+    wealth: Dots,
+    safety: Dots,
+    crime: Dots,
+    occult: Dots,
+    pub notable: Vec<String>,  // people
+    notes: String,
+}
+
+impl From<&District> for DistrictStore {
+    fn from(from_district: &District) -> Self {
+        DistrictStore {
+            name: from_district.name.clone(),
+            description: from_district.description.clone(),
+            notable: from_district.notable.list().iter().filter_map(|i| { i.name() }).collect(),
+            notes: from_district.notes.clone(),
+            wealth: from_district.wealth,
+            safety: from_district.safety,
+            crime: from_district.crime,
+            occult: from_district.occult,
+        }
+    }
+}
+
+// todo from factionstore to faction, for loading
+impl From<&DistrictStore> for District {
+    fn from(from_store: &DistrictStore) -> Self {
+        District {
+            name: from_store.name.clone(),
+            description: from_store.description.clone(),
+            notable: PersonRefList::default(),  // added after creation
+            notes: from_store.notes.clone(),
+            wealth: Dots::default(),
+            safety: Dots::default(),
+            crime: Dots::default(),
+            occult: Dots::default(),
+        }
+    }
+}
+
