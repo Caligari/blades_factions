@@ -4,7 +4,7 @@ use anyhow::{Result, Ok, anyhow};
 use log::{debug, error};
 use serde::{Deserialize, Serialize};
 
-use crate::{action::{Action, ActionNode}, app::load_from_pot, app_display::DisplayTable, district::{District, DistrictStore}, faction::{Faction, FactionStore}, managed_list::{DistrictRef, FactionRef, ManagedList, Named, PersonRef}, person::Person};
+use crate::{action::{Action, ActionNode}, app::load_from_pot, app_display::DisplayTable, district::{District, DistrictStore}, faction::{Faction, FactionStore}, managed_list::{DistrictRef, FactionRef, ManagedList, Named, PersonRef}, person::{Person, PersonStore}};
 
 const DATA_EXTENSION: &str = "pot";
 
@@ -178,7 +178,7 @@ impl AppData {
     pub fn import_from_json ( &mut self ) -> Result<()> {
         #[derive(Deserialize)]
         struct ImportData {
-            persons: Vec<Person>,
+            persons: Vec<PersonStore>,
             districts: Vec<DistrictStore>,
             factions: Vec<FactionStore>,
         }
@@ -201,7 +201,8 @@ impl AppData {
         }
 
         let person_add = import.persons.into_iter().map(|p| {
-            Action::PersonAdd(p)
+            let person = self.person_from_store(p);
+            Action::PersonAdd(person)
         }).collect();
 
         if let Err(err) = self.do_action(&person_add) {
@@ -273,6 +274,13 @@ impl AppData {
         }
 
         Ok(())
+    }
+
+    fn person_from_store ( &self, p_store: PersonStore )-> Person {
+        let person: Person = (&p_store).into();
+        // todo: convert references
+
+        person
     }
 
     /// Returns list of notable Person Strings

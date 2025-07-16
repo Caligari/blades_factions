@@ -212,7 +212,6 @@ impl From<&Faction> for FactionStore {
     }
 }
 
-// todo from factionstore to faction, for loading
 impl From<&FactionStore> for Faction {
     fn from(from_store: &FactionStore) -> Self {
         Faction {

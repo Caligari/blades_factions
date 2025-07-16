@@ -161,7 +161,6 @@ impl From<&District> for DistrictStore {
     }
 }
 
-// todo from factionstore to faction, for loading
 impl From<&DistrictStore> for District {
     fn from(from_store: &DistrictStore) -> Self {
         District {

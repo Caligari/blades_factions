@@ -2,17 +2,17 @@
 use eframe::egui::{Color32, RichText, TextEdit, TextStyle, Ui};
 use serde::{Deserialize, Serialize};
 
-use crate::{app::EditResult, app_data::DataIndex, app_display::{show_edit_frame, ShowEdit, ShowEditInfo, DESCRIPTION_ROWS, FIELD_VERTICAL_SPACE, NOTES_ROWS}, localize::fl, managed_list::Named};
+use crate::{app::EditResult, app_data::DataIndex, app_display::{show_edit_frame, show_edit_stringlist_italics, ShowEdit, ShowEditInfo, DESCRIPTION_ROWS, FIELD_VERTICAL_SPACE, NOTES_ROWS}, localize::fl, managed_list::{Named, StringList}};
 
 
 
 
 
-#[derive(Debug, Default, Clone, PartialEq, Deserialize, Serialize)]
+#[derive(Default, Clone, PartialEq)]
 pub struct Person {
     name: String,
     description: String,
-    personality: Vec<String>,  // just 3?
+    personality: StringList, // just 3?
     notes: String,
     // connections?
     // faction?
@@ -73,14 +73,7 @@ impl ShowEdit for Person {
                             ui.label(RichText::new(fl!("personality_heading")).small().weak());
                             ui.horizontal(|ui| {
                                 ui.label(RichText::new("(").italics());
-                                let mut first = true;
-                                for p in &self.personality {
-                                    if !first {
-                                        ui.label(RichText::new(", ").italics());
-                                    } else { first = false; }
-                                    ui.label(RichText::new(p).italics());  // todo: destruction
-                                }
-                                // todo: add new
+                                show_edit_stringlist_italics("personality", &mut self.personality, ui);
                                 ui.label(RichText::new(")").italics());
                             });
 
@@ -94,5 +87,37 @@ impl ShowEdit for Person {
                         });
                     }
         )
+    }
+}
+
+
+#[allow(dead_code)]
+#[derive(Default, Clone, PartialEq, Deserialize, Serialize)]
+pub struct PersonStore {
+    name: String,
+    description: String,
+    personality: Vec<String>,
+    notes: String,
+}
+
+impl From<&Person> for PersonStore {
+    fn from(from_person: &Person) -> Self {
+        PersonStore {
+            name: from_person.name.clone(),
+            description: from_person.description.clone(),
+            personality: from_person.personality.list().to_vec(),
+            notes: from_person.notes.clone(),
+        }
+    }
+}
+
+impl From<&PersonStore> for Person {
+    fn from(from_store: &PersonStore) -> Self {
+        Person {
+            name: from_store.name.clone(),
+            description: from_store.description.clone(),
+            personality: StringList::from_list(from_store.personality.clone()),
+            notes: from_store.notes.clone(),
+        }
     }
 }

@@ -301,6 +301,69 @@ pub trait Named {
     fn display_headings ( ) -> Vec<RichText>;
 }
 
+
+// --------------------------------
+// StringList
+
+#[allow(dead_code)]
+#[derive(Default, Clone)]
+pub struct StringList {
+    list: Vec<String>,  // should this be a set? Not worth the pain? Requires ordering to not change, which we can't guarantee
+    new: Option<String>,
+    hovered: Option<String>,
+}
+
+#[allow(dead_code)]
+impl StringList {
+    pub fn from_list ( input_list: Vec<String> ) -> Self {
+        StringList {
+            list: input_list,
+            new: None,
+            hovered: None,
+        }
+    }
+
+    pub fn list ( &self ) -> &Vec<String> {
+        &self.list
+    }
+
+    /// This silently ignores duplicates
+    pub fn push ( &mut self, item: String ) {
+        if !self.list.contains(&item) {
+            self.list.push(item);
+        }
+    }
+
+    pub fn swap_remove ( &mut self, item_name: &str ) {  // ?? should return success?
+        let Some(index) = self.list.iter().position(|r| r == item_name )
+            else { warn!("failed to remove item >{item_name}> from StringList"); return; };
+        self.list.swap_remove(index);
+    }
+
+    pub fn new_name ( &mut self ) -> &mut Option<String> {
+        &mut self.new
+    }
+
+    pub fn hovered_name ( &self ) -> Option<&str> {
+        self.hovered.as_deref()
+    }
+
+    pub fn set_new ( &mut self, name: Option<String> ) {
+        self.new = name;
+    }
+
+    pub fn set_hovered ( &mut self, name: Option<String> ) {
+        self.hovered = name;
+    }
+}
+
+impl PartialEq for StringList {
+    fn eq(&self, other: &Self) -> bool {
+        self.list == other.list
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
 
