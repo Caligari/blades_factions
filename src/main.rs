@@ -42,7 +42,7 @@ fn main() {
     let base_name = exe_name.to_string_lossy();
 
     let Some(base_dir) = ProjectDirs::from(COMPANY_DOMAIN, COMPANY_NAME, &base_name)
-    else { panic!("Unable to find project directory for {}, {}, {}", COMPANY_DOMAIN, COMPANY_NAME, base_name); };
+    else { panic!("Unable to find project directory for {COMPANY_DOMAIN}, {COMPANY_NAME}, {base_name}"); };
 
     let settings = match AppSettings::load_from_file(base_dir.config_dir()) {
         Ok(settings) => settings,

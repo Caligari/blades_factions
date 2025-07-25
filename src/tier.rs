@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use eframe::egui::{ComboBox, FontFamily, FontId, Ui};
+use eframe::egui::{ComboBox, FontFamily, FontId, TextStyle, Ui};
 use log::error;
 use serde::{Deserialize, Serialize};
 
@@ -23,7 +23,7 @@ impl Tier {
     pub fn show_edit ( &mut self, name: &str, ui: &mut Ui ) {
         let mut selected = *self as usize;
         ui.scope(|ui| {
-            ui.style_mut().text_styles.insert(eframe::egui::TextStyle::Button, FontId::new(28.0, FontFamily::Proportional));
+            ui.style_mut().text_styles.insert(TextStyle::Button, FontId::new(28.0, FontFamily::Proportional));
             ComboBox::from_id_salt(name)
                 .show_index(ui, &mut selected, TIER_STRINGS.len(), |i| TIER_STRINGS[i].to_string());
 

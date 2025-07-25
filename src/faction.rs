@@ -3,7 +3,7 @@ use eframe::egui::{Color32, RichText, TextEdit, TextStyle, Ui};
 use log::{error, warn};
 use serde::{Deserialize, Serialize};
 
-use crate::{app::EditResult, app_data::DataIndex, app_display::{show_edit_frame, show_edit_item, show_edit_list, ShowEdit, ShowEditInfo, DESCRIPTION_ROWS, FIELD_HORIZONTAL_SPACE, FIELD_VERTICAL_SPACE, NOTES_ROWS}, clock::Clock, localize::fl, managed_list::{DistrictRef, DistrictRefList, FactionRef, Named, PersonRef, PersonRefList}, tier::Tier};
+use crate::{app::EditResult, app_data::DataIndex, app_display::{show_edit_frame, show_edit_item, show_edit_list, ShowEdit, ShowEditInfo, DESCRIPTION_ROWS, FIELD_HORIZONTAL_SPACE, FIELD_VERTICAL_SPACE, NOTES_ROWS}, clock::Clock, localize::fl, managed_list::{DistrictRef, DistrictRefList, FactionRef, FactionRefList, Named, PersonRef, PersonRefList}, tier::Tier};
 
 #[allow(dead_code)]
 #[derive(Default, Clone, PartialEq)]
@@ -17,8 +17,8 @@ pub struct Faction {
     notable: PersonRefList,
     assets: String,
     notes: String,
-    allies: Vec<FactionRef>,
-    enemies: Vec<FactionRef>,
+    allies: FactionRefList,  // Vec<FactionRef>,
+    enemies: FactionRefList,  // Vec<FactionRef>,
     general: String,
     clocks: Vec<Clock>,
 }
@@ -85,13 +85,13 @@ impl Faction {
     }
 
     pub fn set_allies ( &mut self, allies: Vec<FactionRef> ) {
-        if !self.allies.is_empty() { warn!("replacing allies of {} when it is not empty", self.name); }
-        self.allies = allies;
+        if !self.allies.list().is_empty() { warn!("replacing allies of {} when it is not empty", self.name); }
+        self.allies = FactionRefList::from_list(allies);
     }
 
     pub fn set_enemies ( &mut self, enemies: Vec<FactionRef> ) {
-        if !self.enemies.is_empty() { warn!("replacing enemies of {} when it is not empty", self.name); }
-        self.enemies = enemies;
+        if !self.enemies.list().is_empty() { warn!("replacing enemies of {} when it is not empty", self.name); }
+        self.enemies = FactionRefList::from_list(enemies);
     }
 }
 
@@ -156,6 +156,18 @@ impl ShowEdit for Faction {
                         show_edit_list("notables", &mut self.notable, item_info.app_data().person_list(), ui);
                     });
 
+                    ui.add_space(FIELD_VERTICAL_SPACE);
+                    ui.vertical(|ui| {
+                        ui.label(RichText::new(fl!("allies_heading")).small().weak());
+                        show_edit_list("allies", &mut self.allies, item_info.app_data().faction_list(), ui);
+                    });
+
+                    ui.add_space(FIELD_VERTICAL_SPACE);
+                    ui.vertical(|ui| {
+                        ui.label(RichText::new(fl!("enemies_heading")).small().weak());
+                        show_edit_list("enemies", &mut self.enemies, item_info.app_data().faction_list(), ui);
+                    });
+
                     ui.add_space(FIELD_VERTICAL_SPACE * 2.0);
                     ui.label(RichText::new(fl!("notes_heading")).small().weak());
                     ui.add(TextEdit::multiline(&mut self.notes)
@@ -204,8 +216,8 @@ impl From<&Faction> for FactionStore {
             notable: from_faction.notable.list().iter().filter_map(|i| { i.name() }).collect(),
             assets: from_faction.assets.clone(),
             notes: from_faction.notes.clone(),
-            allies: from_faction.allies.iter().filter_map(|i| { i.name() }).collect(),
-            enemies: from_faction.enemies.iter().filter_map(|i| { i.name() }).collect(),
+            allies: from_faction.allies.list().iter().filter_map(|i| { i.name() }).collect(),
+            enemies: from_faction.enemies.list().iter().filter_map(|i| { i.name() }).collect(),
             general: from_faction.general.clone(),
             clocks: from_faction.clocks.clone(),
         }
@@ -224,8 +236,8 @@ impl From<&FactionStore> for Faction {
             notable: PersonRefList::default(),  // added after creation
             assets: from_store.assets.clone(),
             notes: from_store.notes.clone(),
-            allies: Vec::new(),  // added after creation
-            enemies: Vec::new(),  // added after creation
+            allies: FactionRefList::default(),  // added after creation
+            enemies: FactionRefList::default(),  // added after creation
             general: from_store.general.clone(),
             clocks: from_store.clocks.clone(),
         }

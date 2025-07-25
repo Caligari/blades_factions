@@ -29,5 +29,7 @@ crime_heading = Crime
 occult_heading = Occult
 turf_heading = Turf
 notables_heading = Notables
+allies_heading = Allies
+enemies_heading = Enemies
 personality_heading = Personality
 edit_save = Save

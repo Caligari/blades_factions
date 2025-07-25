@@ -1,7 +1,7 @@
 use std::{cell::RefCell, collections::BTreeMap, fmt::Display, fs::{self, create_dir_all, OpenOptions}, io::{BufReader, BufWriter, Write}, path::Path, sync::Arc};
 
 use directories_next::ProjectDirs;
-use eframe::{egui::{menu, Align, Button, CentralPanel, Color32, Context, FontData, FontDefinitions, FontFamily, Label, Layout, Margin, RichText, Sense, Separator, Stroke, Theme, TopBottomPanel, Ui, ViewportCommand}, CreationContext, Frame};
+use eframe::{egui::{Align, Button, CentralPanel, Color32, Context, FontData, FontDefinitions, FontFamily, Label, Layout, Margin, MenuBar, RichText, Sense, Separator, Stroke, Theme, TopBottomPanel, Ui, ViewportCommand}, CreationContext, Frame};
 use egui_extras::{Column, TableBuilder};
 use eframe::egui::FontFamily::Proportional;
 use eframe::egui::FontId;
@@ -79,14 +79,13 @@ impl App {
 
     fn show_top ( &mut self, ctx: &Context, _frame: &mut Frame ) {
         TopBottomPanel::top("top").show(ctx, |ui| {
-            menu::bar(ui, |ui| {
+            MenuBar::new().ui(ui, |ui| {
                 ui.with_layout(Layout::left_to_right(Align::Center), |ui| {
                     ui.menu_button(fl!("menu"), |ui| {
                         if ui.button(fl!("menu_restart")).clicked() {
                             self.status = AppStatus::Starting;
                             self.message = None;
                             info!("Requested Restart");
-                            ui.close_menu();
                         }
                         ui.add(Separator::default().spacing(2.));
                         if ui.add_enabled(false, Button::new(fl!("menu_settings"))).clicked() {
@@ -152,7 +151,7 @@ impl eframe::App for App {
                     info!("resetting local data");
                     self.reset();
                     if let Err(err) = self.data.import_from_json() {
-                        error!("importing json error: {}", err);
+                        error!("importing json error: {err}");
                     }
 
                     info!("Starting => Ready");
@@ -284,7 +283,7 @@ impl eframe::App for App {
                                                             } else { false }
                                                         };
                                                         if !already_hovered {
-                                                            debug!("row {} hovered", i);
+                                                            debug!("row {i} hovered");
                                                         }
                                                         new_hovered_line = Some(i);  // set this regardless
                                                     }
@@ -300,7 +299,7 @@ impl eframe::App for App {
                         match &self.main_view {
                             MainView::Districts => {
                                 if let Some(sort_index) = new_sort {
-                                    debug!("setting district col {} to sort", sort_index);
+                                    debug!("setting district col {sort_index} to sort");
                                     self.data.set_districts_sort(sort_index);
                                     None
                                 } else if let Some(id) = new_selected {
@@ -316,11 +315,11 @@ impl eframe::App for App {
 
                             MainView::Persons => {
                                 if let Some(sort_index) = new_sort {
-                                    debug!("setting persons col {} to sort", sort_index);
+                                    debug!("setting persons col {sort_index} to sort");
                                     self.data.set_persons_sort(sort_index);
                                     None
                                 } else if let Some(id) = new_selected {
-                                    debug!("selected person {}", id);
+                                    debug!("selected person {id}");
                                     if let Some(show) = self.data.find_person(id) {
                                         if let Some(person) = self.data.clone_person(&show) {
                                             info!("Ready -> Show Person ({id})");
@@ -332,11 +331,11 @@ impl eframe::App for App {
 
                             MainView::Factions => {
                                 if let Some(sort_index) = new_sort {
-                                    debug!("setting factions col {} to sort", sort_index);
+                                    debug!("setting factions col {sort_index} to sort");
                                     self.data.set_factions_sort(sort_index);
                                     None
                                 } else if let Some(id) = new_selected {
-                                    debug!("selected faction {}", id);
+                                    debug!("selected faction {id}");
                                     if let Some(show) = self.data.find_faction(id) {
                                         if let Some(faction) = self.data.clone_faction(&show) {
                                             info!("Ready -> Show Faction ({id})");
@@ -520,7 +519,7 @@ impl App {
                 }
 
                 if ui.add(Label::new(v_text).sense(Sense::click())).clicked() {
-                    info!("selected {}", view);
+                    info!("selected {view}");
                     new_request = ViewRequest::NewView(view);
                 }
 

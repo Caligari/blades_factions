@@ -197,7 +197,7 @@ impl AppData {
         }).collect();
 
         if let Err(err) = self.do_action(&district_add) {
-            error!("unable to add districts: {}", err);
+            error!("unable to add districts: {err}");
         }
 
         let person_add = import.persons.into_iter().map(|p| {
@@ -206,7 +206,7 @@ impl AppData {
         }).collect();
 
         if let Err(err) = self.do_action(&person_add) {
-            error!("unable to add persons: {}", err);
+            error!("unable to add persons: {err}");
         }
 
         // do district references to persons; no undo
@@ -229,7 +229,7 @@ impl AppData {
         }).collect();
 
         if let Err(err) = self.do_action(&district_replace) {
-            error!("unable to replace districts with notables: {}", err);
+            error!("unable to replace districts with notables: {err}");
         }
 
 
@@ -241,7 +241,7 @@ impl AppData {
         }).collect();
 
         if let Err(err) = self.do_action(&faction_add) {
-            error!("unable to add factions: {}", err);
+            error!("unable to add factions: {err}");
         }
 
         // do faction references to factions
@@ -251,12 +251,12 @@ impl AppData {
                 if let Some(fac) = self.factions.fetch(&fac_ref) {
                     let allies: Vec<FactionRef> = allies.into_iter().filter_map(|f| {
                         let f_ref = self.factions.find(&f);
-                        if f_ref.is_none() { error!("unable to find faction {} as ally when loading faction {}", f, faction_name); }
+                        if f_ref.is_none() { error!("unable to find faction {f} as ally when loading faction {faction_name}"); }
                         f_ref
                     }).collect();
                     let enemies: Vec<FactionRef> = enemies.into_iter().filter_map(|f| {
                         let f_ref = self.factions.find(&f);
-                        if f_ref.is_none() { error!("unable to find faction {} as enemy when loading faction {}", f, faction_name); }
+                        if f_ref.is_none() { error!("unable to find faction {f} as enemy when loading faction {faction_name}"); }
                         f_ref
                     }).collect();
                     if !allies.is_empty() || !enemies.is_empty() {
@@ -270,7 +270,7 @@ impl AppData {
         }).collect();
 
         if let Err(err) = self.do_action(&faction_replace) {
-            error!("unable to replace factions with allies and enemies: {}", err);
+            error!("unable to replace factions with allies and enemies: {err}");
         }
 
         Ok(())

@@ -29,7 +29,7 @@ impl ChildWindows {
 
     fn about ( &self, ctx: &Context ) {
         let window_title = fl!("about");
-        let title = format!("{} - {}", APP_NAME, window_title);  // can we make this a const?
+        let title = format!("{APP_NAME} - {window_title}");  // can we make this a const?
         let v_id = ViewportId::from_hash_of(&title);
         let show_about = self.show_about.clone();
         ctx.show_viewport_deferred(

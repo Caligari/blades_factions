@@ -1,6 +1,6 @@
 use std::slice::Iter;
 
-use eframe::egui::{Color32, ComboBox, Label, Margin, RichText, Sense, Stroke, Ui};
+use eframe::egui::{Color32, ComboBox, Frame, Label, Margin, RichText, ScrollArea, Sense, Stroke, Ui};
 use log::{debug, info};
 
 use crate::{app::EditResult, app_data::{AppData, DataIndex}, localize::fl, managed_list::{GenericRef, GenericRefList, ManagedList, Named, StringList}, sorting::Sorting};
@@ -174,7 +174,7 @@ pub fn show_edit_frame ( ui: &mut Ui, item_name: String, debug_name: &str, item_
 
         ui.vertical(|ui| {
             ui.horizontal(|ui| {
-                ui.label(RichText::new(item_name).heading().strong().underline());
+                ui.label(RichText::new(item_name.clone()).heading().strong().underline());
                 if item_info.show_save() {
                     ui.add_space(60.0);
                     if ui.button(fl!("edit_save")).clicked() {
@@ -185,10 +185,19 @@ pub fn show_edit_frame ( ui: &mut Ui, item_name: String, debug_name: &str, item_
             });
             ui.add_space(HEAD_SPACE);
 
-            eframe::egui::Frame::default()
-                .stroke(Stroke::new(STROKE_WIDTH, STROKE_COLOR))
-                .inner_margin(INNER_MARGIN)
-                .show(ui, contents);
+            // todo: why does this show a small sized window?
+            // ScrollArea::vertical()
+            //     .id_salt(item_name)
+            //     .auto_shrink([false, false])
+            //     // .max_height(height)
+            //     // .max_width(ui.available_width())
+            //     // .show(ui, contents);
+            //     .show(ui, |ui| {
+                    Frame::default()
+                        .stroke(Stroke::new(STROKE_WIDTH, STROKE_COLOR))
+                        .inner_margin(INNER_MARGIN)
+                        .show(ui, contents);
+            // });
         });
     });
 
