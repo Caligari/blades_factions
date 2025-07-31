@@ -155,7 +155,7 @@ pub const INNER_MARGIN: Margin = Margin::same(6);
 pub const FIELD_VERTICAL_SPACE: f32 = 10.0;
 pub const FIELD_HORIZONTAL_SPACE: f32 = 20.0;
 pub const DESCRIPTION_ROWS: usize = 2;
-pub const NOTES_ROWS: usize = 6;
+pub const NOTES_ROWS: usize = 4;
 
 
 pub trait ShowEdit {

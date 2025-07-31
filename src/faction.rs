@@ -131,12 +131,6 @@ impl ShowEdit for Faction {
                     );
 
                     ui.add_space(FIELD_VERTICAL_SPACE);
-                    ui.vertical(|ui| {
-                        ui.label(RichText::new(fl!("leader_heading")).small().weak());
-                        show_edit_item("leader", &mut self.leader, item_info.app_data().person_list(), ui);
-                    });
-
-                    ui.add_space(FIELD_VERTICAL_SPACE);
                     ui.horizontal(|ui| {
                         ui.vertical(|ui| {
                             ui.label(RichText::new(fl!("hq_heading")).small().weak());
@@ -151,21 +145,31 @@ impl ShowEdit for Faction {
                     });
 
                     ui.add_space(FIELD_VERTICAL_SPACE);
-                    ui.vertical(|ui| {
-                        ui.label(RichText::new(fl!("notables_heading")).small().weak());
-                        show_edit_list("notables", &mut self.notable, item_info.app_data().person_list(), ui);
+                    ui.horizontal(|ui| {
+                        ui.vertical(|ui| {
+                            ui.label(RichText::new(fl!("leader_heading")).small().weak());
+                            show_edit_item("leader", &mut self.leader, item_info.app_data().person_list(), ui);
+                        });
+
+                        ui.add_space(FIELD_HORIZONTAL_SPACE);
+                        ui.vertical(|ui| {
+                            ui.label(RichText::new(fl!("notables_heading")).small().weak());
+                            show_edit_list("notables", &mut self.notable, item_info.app_data().person_list(), ui);
+                        });
                     });
 
                     ui.add_space(FIELD_VERTICAL_SPACE);
-                    ui.vertical(|ui| {
-                        ui.label(RichText::new(fl!("allies_heading")).small().weak());
-                        show_edit_list("allies", &mut self.allies, item_info.app_data().faction_list(), ui);
-                    });
+                    ui.horizontal(|ui| {
+                        ui.vertical(|ui| {
+                            ui.label(RichText::new(fl!("allies_heading")).small().weak());
+                            show_edit_list("allies", &mut self.allies, item_info.app_data().faction_list(), ui);
+                        });
 
-                    ui.add_space(FIELD_VERTICAL_SPACE);
-                    ui.vertical(|ui| {
-                        ui.label(RichText::new(fl!("enemies_heading")).small().weak());
-                        show_edit_list("enemies", &mut self.enemies, item_info.app_data().faction_list(), ui);
+                        ui.add_space(FIELD_HORIZONTAL_SPACE);
+                        ui.vertical(|ui| {
+                            ui.label(RichText::new(fl!("enemies_heading")).small().weak());
+                            show_edit_list("enemies", &mut self.enemies, item_info.app_data().faction_list(), ui);
+                        });
                     });
 
                     ui.add_space(FIELD_VERTICAL_SPACE * 2.0);
