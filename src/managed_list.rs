@@ -3,7 +3,7 @@ use std::{collections::BTreeMap, marker::PhantomData, sync::Arc};
 use eframe::egui::{mutex::RwLock, RichText};
 use log::{debug, info, warn};
 
-use crate::{app_data::DataIndex, district::District, faction::Faction, person::Person, sorting::Sorting};
+use crate::{app_data::DataIndex, district::{District, DistrictStore}, faction::{Faction, FactionStore}, person::{Person, PersonStore}, sorting::Sorting};
 
 
 
@@ -285,6 +285,24 @@ impl<T: Clone + Named> ManagedList<T> {
         let mut list_copy: Vec<String> = self.list_index.keys().cloned().collect();
         list_copy.sort();  // ?? do we need a more sophisticated sort? For People Names, for example
         list_copy
+    }
+}
+
+impl From<&ManagedList<Person>> for Vec<PersonStore> {
+    fn from(value: &ManagedList<Person>) -> Self {
+        value.list.iter().map(PersonStore::from).collect()
+    }
+}
+
+impl From<&ManagedList<District>> for Vec<DistrictStore> {
+    fn from(value: &ManagedList<District>) -> Self {
+        value.list.iter().map(DistrictStore::from).collect()
+    }
+}
+
+impl From<&ManagedList<Faction>> for Vec<FactionStore> {
+    fn from(value: &ManagedList<Faction>) -> Self {
+        value.list.iter().map(FactionStore::from).collect()
     }
 }
 

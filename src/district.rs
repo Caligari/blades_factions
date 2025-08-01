@@ -134,7 +134,7 @@ impl ShowEdit for District {
 
 
 #[allow(dead_code)]
-#[derive(Default, Clone, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Default, Clone, PartialEq, Deserialize, Serialize)]
 pub struct DistrictStore {
     name: String,
     description: String,

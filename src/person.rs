@@ -92,7 +92,7 @@ impl ShowEdit for Person {
 
 
 #[allow(dead_code)]
-#[derive(Default, Clone, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Default, Clone, PartialEq, Deserialize, Serialize)]
 pub struct PersonStore {
     name: String,
     description: String,

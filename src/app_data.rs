@@ -1,12 +1,13 @@
-use std::path::Path;
+use std::{borrow::Borrow, path::Path};
 
-use anyhow::{Result, Ok, anyhow};
+use anyhow::{anyhow, Ok, Result};
 use log::{debug, error};
 use serde::{Deserialize, Serialize};
 
-use crate::{action::{Action, ActionNode}, app::load_from_pot, app_display::DisplayTable, district::{District, DistrictStore}, faction::{Faction, FactionStore}, managed_list::{DistrictRef, FactionRef, ManagedList, Named, PersonRef}, person::{Person, PersonStore}};
+use crate::{action::{Action, ActionNode}, app::{load_from_json, load_from_pot, save_to_json, save_to_pot}, app_display::DisplayTable, district::{District, DistrictStore}, faction::{Faction, FactionStore}, managed_list::{DistrictRef, FactionRef, ManagedList, Named, PersonRef}, person::{Person, PersonStore}};
 
 const DATA_EXTENSION: &str = "pot";
+const JSON_EXTENSION: &str = "json";
 
 
 #[allow(dead_code)]
@@ -166,31 +167,41 @@ impl AppData {
         self.factions.fetch(index).cloned()
     }
 
-    pub fn save_to_file ( &self ) {
-
+    /// This saves all data to a save file
+    pub fn save_to_file ( &self, file_path: &Path ) -> Result<()> {
+        save_data_to_file(&file_path.with_extension(DATA_EXTENSION), self)
     }
 
-    pub fn load_from_file ( file_path: &Path ) -> Result<AppData> {
-        load_save_data(&file_path.with_extension(DATA_EXTENSION))
-    }
-
-    // todo: actually we'd want to add this to the current data, and use the file name (_file_path: &Path)
-    pub fn import_from_json ( &mut self ) -> Result<()> {
-        #[derive(Deserialize)]
-        struct ImportData {
-            persons: Vec<PersonStore>,
-            districts: Vec<DistrictStore>,
-            factions: Vec<FactionStore>,
+    /// This exports all data to a JSON file
+    pub fn export_to_file ( &self, file_path: &Path ) -> Result<()> {
+        let save_data: SaveData1 = self.into();
+        if !save_data.validate() {
+            error!("unable to validate data to export ({}), version: {}", file_path.to_string_lossy(), save_data.save_version);
+            return Err(anyhow!("unable to validate export data ({}), version: {}", file_path.to_string_lossy(), save_data.save_version))
         }
+        save_to_json(&file_path.with_extension(JSON_EXTENSION), &save_data)
+    }
 
-        let data = include_str!("../test_data/test1.json");
-
-        let import: ImportData = serde_json::from_str(data)?;
+    /// This adds the loaded data to the current data
+    pub fn import_from_file ( &mut self, file_path: &Path ) -> Result<()> {
+        let import_data: SaveData1 = load_from_json(&file_path.with_extension(JSON_EXTENSION))?;
         debug!("imported {} people, {} districts, {} factions",
-                import.persons.len(), import.districts.len(), import.factions.len());
+                import_data.persons.len(), import_data.districts.len(), import_data.factions.len());
+        if !import_data.validate() {
+            error!("unable to validate imported data ({}), version: {}", file_path.to_string_lossy(), import_data.save_version);
+            return Err(anyhow!("unable to validate imported data ({}), version: {}", file_path.to_string_lossy(), import_data.save_version))
+        }
+        self.load_data(import_data)
+    }
 
+    /// This creates a new AppData from the loaded data
+    pub fn load_from_file ( file_path: &Path ) -> Result<AppData> {
+        save_data_from_file(&file_path.with_extension(DATA_EXTENSION))
+    }
+
+    fn load_data ( &mut self, save_data: SaveData1 ) -> Result<()> {  // !! Not using return??
         let mut post_districts: Vec<(String, Vec<String>)> = Vec::new();
-        let district_add = import.districts.into_iter().map(|d| {
+        let district_add = save_data.districts.into_iter().map(|d| {
             let (district, notable) = self.district_from_store(d);
             post_districts.push((district.name().to_string(), notable));
             Action::DistrictAdd(district)
@@ -200,7 +211,7 @@ impl AppData {
             error!("unable to add districts: {err}");
         }
 
-        let person_add = import.persons.into_iter().map(|p| {
+        let person_add = save_data.persons.into_iter().map(|p| {
             let person = self.person_from_store(p);
             Action::PersonAdd(person)
         }).collect();
@@ -232,9 +243,8 @@ impl AppData {
             error!("unable to replace districts with notables: {err}");
         }
 
-
         let mut post_factions: Vec<(String, Vec<String>, Vec<String>)> = Vec::new();
-        let faction_add = import.factions.into_iter().map(|f| {
+        let faction_add = save_data.factions.into_iter().map(|f| {
             let (faction, allies, enemies) = self.faction_from_store(f);
             post_factions.push((faction.name().to_string(), allies, enemies));
             Action::FactionAdd(faction)
@@ -274,6 +284,16 @@ impl AppData {
         }
 
         Ok(())
+    }
+
+    // todo: actually we'd want to add this to the current data, and use the file name (_file_path: &Path)
+    pub fn test_import_from_json ( &mut self ) -> Result<()> {
+        let data = include_str!("../test_data/test1.json");
+
+        let import: SaveData1 = serde_json::from_str(data)?;
+        debug!("imported {} people, {} districts, {} factions",
+                import.persons.len(), import.districts.len(), import.factions.len());
+        self.load_data(import)
     }
 
     fn person_from_store ( &self, p_store: PersonStore )-> Person {
@@ -331,7 +351,16 @@ impl AppData {
     }
 }
 
-fn load_save_data ( file_path: &Path ) -> Result<AppData> {
+fn save_data_to_file ( file_path: &Path, data: &AppData ) -> Result<()>{
+    let save_data: SaveData1 = data.into();
+    if save_data.validate() {
+        save_to_pot(file_path, &save_data)  // ?? should we report error here, to log?
+    } else {
+        Err(anyhow!("unable to validate save data - not saved"))
+    }
+}
+
+fn save_data_from_file ( file_path: &Path ) -> Result<AppData> {
     // load save data 1
     let data = load_from_pot::<SaveData1>(file_path)?;
     if data.validate() {
@@ -350,6 +379,9 @@ const SAVE1_VERSION: u16 = 1;
 #[derive(Debug, Serialize, Deserialize)]
 struct SaveData1 {
     save_version: u16,
+    persons: Vec<PersonStore>,
+    districts: Vec<DistrictStore>,
+    factions: Vec<FactionStore>,
 }
 
 impl SaveData1 {
@@ -359,19 +391,22 @@ impl SaveData1 {
 }
 
 impl From<SaveData1> for AppData {
-    fn from(_value: SaveData1) -> Self {
-        AppData {
-            persons: ManagedList::<Person>::default(),  // TODO
-            districts: ManagedList::<District>::default(),  // TODO
-            factions: ManagedList::<Faction>::default(),  // TODO
+    fn from(save_data: SaveData1) -> Self {
+        let mut app_data = AppData::default();
+        if let Err(e) =  app_data.load_data(save_data) {
+            error!("unable to load save version 1 data: {e}");
         }
+        app_data
     }
 }
 
 impl From<&AppData> for SaveData1 {
-    fn from(_value: &AppData) -> Self {
+    fn from(input_data: &AppData) -> Self {
         SaveData1 {
             save_version: SAVE1_VERSION,
+            persons: input_data.persons.borrow().into(),
+            districts: input_data.districts.borrow().into(),
+            factions: input_data.factions.borrow().into(),
         }
     }
 }

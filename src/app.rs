@@ -150,7 +150,7 @@ impl eframe::App for App {
                     // if completed
                     info!("resetting local data");
                     self.reset();
-                    if let Err(err) = self.data.import_from_json() {
+                    if let Err(err) = self.data.test_import_from_json() {
                         error!("importing json error: {err}");
                     }
 
@@ -595,6 +595,10 @@ enum AppStatus {
     ShowEditDistrict ( Option<DistrictRef>, RefCell<District> ),
     ShowEditPerson ( Option<PersonRef>, RefCell<Person> ),
     ShowEditFaction ( Option<FactionRef>, RefCell<Faction> ),
+    // Load,
+    // Save,
+    // Import,
+    // Export,
 }
 
 impl Display for AppStatus {
@@ -718,6 +722,7 @@ pub fn save_to_pot<T> ( file_path: &Path, data: &T ) -> anyhow::Result<()>
     let buf= pot::to_vec(data)?;
     let mut buf_writer = BufWriter::new(&file_handler);
     buf_writer.write_all(buf.as_slice())?;
+    buf_writer.flush()?;
     Ok(())
 }
 
@@ -729,5 +734,42 @@ pub fn load_from_pot<T> ( file_path: &Path ) -> anyhow::Result<T>
         .open(file_path)?;
     let buf_reader = BufReader::new(&file_handler);
     let data : T = pot::from_reader(buf_reader)?;
+    Ok(data)
+}
+
+// ---------------------------
+// Load and Save to POT files
+
+#[allow(dead_code)]
+pub fn save_to_json<T> ( file_path: &Path, data: &T ) -> anyhow::Result<()>
+    where T: Serialize {
+
+    if let Some(dir_path) = file_path.parent() {
+        create_dir_all(dir_path)?
+    }
+
+    if file_path.exists() {
+        fs::remove_file(file_path)?;
+    }
+
+    let file_handler = OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(file_path)?;
+
+    let mut buf_writer = BufWriter::new(&file_handler);
+    serde_json::to_writer(&mut buf_writer, data)?;
+    buf_writer.flush()?;
+    Ok(())
+}
+
+#[allow(dead_code)]
+pub fn load_from_json<T> ( file_path: &Path ) -> anyhow::Result<T>
+    where T: DeserializeOwned {
+        let file_handler = OpenOptions::new()
+        .read(true)
+        .open(file_path)?;
+    let buf_reader = BufReader::new(&file_handler);
+    let data : T = serde_json::from_reader(buf_reader)?;
     Ok(data)
 }
