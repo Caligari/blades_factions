@@ -14,6 +14,7 @@ const JSON_EXTENSION: &str = "json";
 // Default should be empty
 #[derive(Default)]
 pub struct AppData {
+    // todo: loaded file name stored here?
     persons: ManagedList<Person>,
     districts: ManagedList<District>,
     factions: ManagedList<Faction>,

@@ -1,4 +1,4 @@
-use std::{cell::RefCell, collections::BTreeMap, fmt::Display, fs::{self, create_dir_all, OpenOptions}, io::{BufReader, BufWriter, Write}, path::Path, sync::Arc};
+use std::{cell::RefCell, collections::BTreeMap, fmt::Display, fs::{self, create_dir_all, OpenOptions}, io::{BufReader, BufWriter, Write}, path::{Path, PathBuf}, sync::Arc};
 
 use directories_next::ProjectDirs;
 use eframe::{egui::{Align, Button, CentralPanel, Color32, Context, FontData, FontDefinitions, FontFamily, Label, Layout, Margin, MenuBar, RichText, Sense, Separator, Stroke, Theme, TopBottomPanel, Ui, ViewportCommand}, CreationContext, Frame};
@@ -6,6 +6,7 @@ use egui_extras::{Column, TableBuilder};
 use eframe::egui::FontFamily::Proportional;
 use eframe::egui::FontId;
 use eframe::egui::TextStyle::*;
+use egui_file_dialog::FileDialog;
 use enum_iterator::{all, cardinality, Sequence};
 use log::{debug, error, info};
 use serde::{de::DeserializeOwned, Serialize};
@@ -50,6 +51,8 @@ pub struct  App {
     message: Option<String>,
     child_windows: ChildWindows,
     todo_undo: TodoUndo,
+    file_dialog: FileDialog,  // this is here because we might want to persist some info
+    selected_file: Option<PathBuf>,  // todo: this probably should be just in the statuses?
 }
 
 impl App {
@@ -64,6 +67,8 @@ impl App {
             message: None,
             child_windows: ChildWindows::default(),
             todo_undo: TodoUndo::default(),
+            file_dialog: FileDialog::new(),
+            selected_file: None,
         }
     }
 
@@ -75,17 +80,47 @@ impl App {
         self.message = None;
         self.child_windows = ChildWindows::default();  // is this sufficient?
         self.todo_undo = TodoUndo::default();
+        // do we need file_dialog and/or selected_file to be reset?
     }
 
     fn show_top ( &mut self, ctx: &Context, _frame: &mut Frame ) {
         TopBottomPanel::top("top").show(ctx, |ui| {
             MenuBar::new().ui(ui, |ui| {
                 ui.with_layout(Layout::left_to_right(Align::Center), |ui| {
+                    // todo: when can we save/load?
+                    let save_load_enabled = matches!(self.status, AppStatus::Ready(_));  // only save from main list
                     ui.menu_button(fl!("menu"), |ui| {
                         if ui.button(fl!("menu_restart")).clicked() {
                             self.status = AppStatus::Starting;
                             self.message = None;
                             info!("Requested Restart");
+                        }
+                        ui.add(Separator::default().spacing(2.));
+                        if ui.add_enabled(save_load_enabled, Button::new(fl!("menu_load"))).clicked() {
+                            // TODO: load data
+                            // should that be window or full panel?
+                            info!("Requested Load");
+                        }
+                        if ui.add_enabled(save_load_enabled, Button::new(fl!("menu_save"))).clicked() {
+                            // TODO: save data
+                            // should that be window or full panel?
+                            info!("Requested Save");
+                        }
+                        if ui.add_enabled(save_load_enabled, Button::new(fl!("menu_save_as"))).clicked() {
+                            // TODO: save as data
+                            // should that be window or full panel?
+                            info!("Requested Save As");
+                        }
+                        ui.add(Separator::default().spacing(2.));
+                        if ui.add_enabled(save_load_enabled, Button::new(fl!("menu_import"))).clicked() {
+                            // TODO: import data
+                            // should that be window or full panel?
+                            info!("Requested Import");
+                        }
+                        if ui.add_enabled(save_load_enabled, Button::new(fl!("menu_export"))).clicked() {
+                            // TODO: export data
+                            // should that be window or full panel?
+                            info!("Requested Export");
                         }
                         ui.add(Separator::default().spacing(2.));
                         if ui.add_enabled(false, Button::new(fl!("menu_settings"))).clicked() {
