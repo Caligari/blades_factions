@@ -1,3 +1,4 @@
+# put stuff here
 main_factions = Factions
 main_persons = People
 main_districts = Districts
@@ -22,6 +23,7 @@ app_ready = Ready
 app_edit_itm = Editing {$itm}
 app_add_itm = Add New {$itm}
 app_create_itm = Creating New {$itm}
+app_loading = Loading
 name_heading = Name
 tier_heading = Tier
 hq_heading = HQ

@@ -1,24 +1,46 @@
-use std::{cell::RefCell, collections::BTreeMap, fmt::Display, fs::{self, create_dir_all, OpenOptions}, io::{BufReader, BufWriter, Write}, path::{Path, PathBuf}, sync::Arc};
+use std::{
+    cell::RefCell,
+    collections::BTreeMap,
+    fmt::Display,
+    fs::{self, OpenOptions, create_dir_all},
+    io::{BufReader, BufWriter, Write},
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 use directories_next::ProjectDirs;
-use eframe::{egui::{Align, Button, CentralPanel, Color32, Context, FontData, FontDefinitions, FontFamily, Label, Layout, Margin, MenuBar, RichText, Sense, Separator, Stroke, Theme, TopBottomPanel, Ui, ViewportCommand}, CreationContext, Frame};
-use egui_extras::{Column, TableBuilder};
 use eframe::egui::FontFamily::Proportional;
 use eframe::egui::FontId;
 use eframe::egui::TextStyle::*;
-use egui_file_dialog::FileDialog;
-use enum_iterator::{all, cardinality, Sequence};
+use eframe::{
+    CreationContext, Frame,
+    egui::{
+        Align, Button, CentralPanel, Color32, Context, FontData, FontDefinitions, FontFamily,
+        Label, Layout, Margin, MenuBar, RichText, Sense, Separator, Stroke, Theme, TopBottomPanel,
+        Ui, ViewportCommand,
+    },
+};
+use egui_extras::{Column, TableBuilder};
+use enum_iterator::{Sequence, all, cardinality};
 use log::{debug, error, info};
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 
-use crate::{action::{Action, ActionNode}, app_data::AppData, app_display::{ShowEdit, ShowEditInfo}, app_settings::AppSettings, child_windows::ChildWindows, district::District, faction::Faction, localize::fl, managed_list::{DistrictRef, FactionRef, Named, PersonRef}, person::Person, todo::TodoUndo};
-
-
-
+use crate::{
+    action::{Action, ActionNode},
+    app_data::AppData,
+    app_display::{ShowEdit, ShowEditInfo},
+    app_settings::AppSettings,
+    child_windows::ChildWindows,
+    district::District,
+    faction::Faction,
+    localize::fl,
+    managed_list::{DistrictRef, FactionRef, Named, PersonRef},
+    person::Person,
+    todo::TodoUndo,
+};
 
 const ZOOM: f32 = 1.0;
 pub const UI_PADDING: f32 = 8.0;
-
 
 // todo: localize this
 // probably could be one phrase?
@@ -26,23 +48,20 @@ pub const HELP_TEXT: &[&str] = &[
     "created by Liam Routt",
     "for use with Blades in the Dark",
     "",
-    "This utility allows you to track the various factions in your game.", "",
+    "This utility allows you to track the various factions in your game.",
+    "",
 ];
 
 // ? Can these be localized?
-pub const CHANGE_NOTES: &[&str] = &[
-    "0.1.0 - initial version",
-];
+pub const CHANGE_NOTES: &[&str] = &["0.1.0 - initial version"];
 
 // todo: localize this
 pub const FONT_NOTES: &[&str] = &[
-    "Using the Dihjauti font, by T. Christopher White, covered under the SIL Open Font License (http://scripts.sil.org/OFL)"
+    "Using the Dihjauti font, by T. Christopher White, covered under the SIL Open Font License (http://scripts.sil.org/OFL)",
 ];
 
-
-
 #[allow(dead_code)]
-pub struct  App {
+pub struct App {
     status: AppStatus,
     main_view: MainView,
     settings: AppSettings,
@@ -51,12 +70,16 @@ pub struct  App {
     message: Option<String>,
     child_windows: ChildWindows,
     todo_undo: TodoUndo,
-    file_dialog: FileDialog,  // this is here because we might want to persist some info
-    selected_file: Option<PathBuf>,  // todo: this probably should be just in the statuses?
+    // file_dialog: FileDialog,  // this is here because we might want to persist some info
+    selected_file: Option<PathBuf>, // todo: this probably should be just in the statuses?
 }
 
 impl App {
-    pub fn new ( settings: AppSettings, project_directories: ProjectDirs, cc: &CreationContext<'_> ) -> Self {
+    pub fn new(
+        settings: AppSettings,
+        project_directories: ProjectDirs,
+        cc: &CreationContext<'_>,
+    ) -> Self {
         configure_fonts(cc, ZOOM);
         App {
             settings,
@@ -67,28 +90,28 @@ impl App {
             message: None,
             child_windows: ChildWindows::default(),
             todo_undo: TodoUndo::default(),
-            file_dialog: FileDialog::new(),
+            // file_dialog: FileDialog::new(),
             selected_file: None,
         }
     }
 
-    fn reset ( &mut self ) {
+    fn reset(&mut self) {
         // do not reset: settings, project_directtories, status
         self.status = AppStatus::default();
         self.main_view = MainView::default();
         self.data = AppData::default();
         self.message = None;
-        self.child_windows = ChildWindows::default();  // is this sufficient?
+        self.child_windows = ChildWindows::default(); // is this sufficient?
         self.todo_undo = TodoUndo::default();
         // do we need file_dialog and/or selected_file to be reset?
     }
 
-    fn show_top ( &mut self, ctx: &Context, _frame: &mut Frame ) {
+    fn show_top(&mut self, ctx: &Context, _frame: &mut Frame) {
         TopBottomPanel::top("top").show(ctx, |ui| {
             MenuBar::new().ui(ui, |ui| {
                 ui.with_layout(Layout::left_to_right(Align::Center), |ui| {
                     // todo: when can we save/load?
-                    let save_load_enabled = matches!(self.status, AppStatus::Ready(_));  // only save from main list
+                    let save_load_enabled = matches!(self.status, AppStatus::Ready(_)); // only save from main list
                     ui.menu_button(fl!("menu"), |ui| {
                         if ui.button(fl!("menu_restart")).clicked() {
                             self.status = AppStatus::Starting;
@@ -96,34 +119,54 @@ impl App {
                             info!("Requested Restart");
                         }
                         ui.add(Separator::default().spacing(2.));
-                        if ui.add_enabled(save_load_enabled, Button::new(fl!("menu_load"))).clicked() {
+                        if ui
+                            .add_enabled(save_load_enabled, Button::new(fl!("menu_load")))
+                            .clicked()
+                        {
                             // TODO: load data
                             // should that be window or full panel?
                             info!("Requested Load");
+                            self.child_windows.start_file_dialog();
+                            self.status = AppStatus::Load;
                         }
-                        if ui.add_enabled(save_load_enabled, Button::new(fl!("menu_save"))).clicked() {
+                        if ui
+                            .add_enabled(save_load_enabled, Button::new(fl!("menu_save")))
+                            .clicked()
+                        {
                             // TODO: save data
                             // should that be window or full panel?
                             info!("Requested Save");
                         }
-                        if ui.add_enabled(save_load_enabled, Button::new(fl!("menu_save_as"))).clicked() {
+                        if ui
+                            .add_enabled(save_load_enabled, Button::new(fl!("menu_save_as")))
+                            .clicked()
+                        {
                             // TODO: save as data
                             // should that be window or full panel?
                             info!("Requested Save As");
                         }
                         ui.add(Separator::default().spacing(2.));
-                        if ui.add_enabled(save_load_enabled, Button::new(fl!("menu_import"))).clicked() {
+                        if ui
+                            .add_enabled(save_load_enabled, Button::new(fl!("menu_import")))
+                            .clicked()
+                        {
                             // TODO: import data
                             // should that be window or full panel?
                             info!("Requested Import");
                         }
-                        if ui.add_enabled(save_load_enabled, Button::new(fl!("menu_export"))).clicked() {
+                        if ui
+                            .add_enabled(save_load_enabled, Button::new(fl!("menu_export")))
+                            .clicked()
+                        {
                             // TODO: export data
                             // should that be window or full panel?
                             info!("Requested Export");
                         }
                         ui.add(Separator::default().spacing(2.));
-                        if ui.add_enabled(false, Button::new(fl!("menu_settings"))).clicked() {
+                        if ui
+                            .add_enabled(false, Button::new(fl!("menu_settings")))
+                            .clicked()
+                        {
                             // TODO: show/change settings
                             // should that be window or full panel?
                             info!("Requested Settings");
@@ -133,7 +176,6 @@ impl App {
                             info!("Requested Exit");
                             ctx.send_viewport_cmd(ViewportCommand::Close);
                         }
-
                     });
                     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                         if ui.button(fl!("about")).clicked() {
@@ -146,7 +188,7 @@ impl App {
         });
     }
 
-    fn show_footer ( &self, ctx: &Context ) {
+    fn show_footer(&self, ctx: &Context) {
         TopBottomPanel::bottom("footer").show(ctx, |ui| {
             ui.add_space(5.);
             ui.horizontal(|ui| {
@@ -154,7 +196,7 @@ impl App {
                 if let Some(message) = &self.message {
                     let error_message = RichText::new(fl!("app_error_err", err = message))
                         .background_color(Color32::RED)
-                        .color(Color32::WHITE);  // todo: check colors with theme
+                        .color(Color32::WHITE); // todo: check colors with theme
                     ui.label(error_message);
                     // do we need an "OK" button to clear the message?
                 }
@@ -167,7 +209,7 @@ impl App {
 #[allow(clippy::match_single_binding)]
 #[allow(unused_imports)]
 impl eframe::App for App {
-    fn update ( &mut self, ctx: &Context, frame: &mut Frame ) {
+    fn update(&mut self, ctx: &Context, frame: &mut Frame) {
         use AppStatus::*;
 
         ctx.set_visuals(self.settings.theme().default_visuals());
@@ -530,6 +572,21 @@ impl eframe::App for App {
                         }
                     } else { None }
                 }
+
+                Load => {
+                    // if not already starting, kick things off
+                    // info!("Starting")
+                    // if completed
+                    // info!("loading data");
+                    if let Some(selected) = self.child_windows.selected_file() {
+                        info!("selected file: {}", selected.to_string_lossy());
+                        // todo: carry out load
+                        // ?? do we reset the display?
+                        Some(Ready(RefCell::new(None)))
+                    } else { None }
+                }
+
+
             }
         }).inner {
             self.status = new_status;
@@ -542,9 +599,12 @@ impl eframe::App for App {
 }
 
 impl App {
-
-    fn show_select_views ( &self, ui: &mut Ui ) -> ViewRequest {
-        let select_color = if self.settings.theme() == Theme::Dark { Color32::LIGHT_GREEN } else { Color32::DARK_GREEN };
+    fn show_select_views(&self, ui: &mut Ui) -> ViewRequest {
+        let select_color = if self.settings.theme() == Theme::Dark {
+            Color32::LIGHT_GREEN
+        } else {
+            Color32::DARK_GREEN
+        };
         let mut new_request = ViewRequest::None;
         ui.horizontal(|ui| {
             for (num, view) in all::<MainView>().enumerate() {
@@ -565,7 +625,10 @@ impl App {
 
             ui.with_layout(Layout::right_to_left(Align::Max), |ui| {
                 let item = self.main_view.item_name();
-                if ui.add(Button::new(fl!("app_add_itm", itm = item.clone())).sense(Sense::click())).clicked() {
+                if ui
+                    .add(Button::new(fl!("app_add_itm", itm = item.clone())).sense(Sense::click()))
+                    .clicked()
+                {
                     info!("New {item} requested");
                     new_request = ViewRequest::NewItem;
                 }
@@ -575,7 +638,7 @@ impl App {
         new_request
     }
 
-    fn run_todo ( &mut self ) {
+    fn run_todo(&mut self) {
         if let Some(todo) = self.todo_undo.todo() {
             info!("carrying out todo");
             let result = self.data.do_action(&todo);
@@ -584,7 +647,7 @@ impl App {
                     info!("todo complete");
                     self.todo_undo.add_undo(undo);
                     // self.todo_undo.add_done(todo);  // todo: not sure this is what we need; is done for undo actions?
-                },
+                }
 
                 Err(err) => {
                     error!("unable to complete todo action: {err}");
@@ -595,7 +658,6 @@ impl App {
     }
 }
 
-
 // ===========================
 // ViewRequest
 
@@ -603,8 +665,8 @@ impl App {
 enum ViewRequest {
     #[default]
     None,
-    NewView ( MainView ),
-    NewItem,  // uses current view
+    NewView(MainView),
+    NewItem, // uses current view
 }
 
 // ===========================
@@ -617,7 +679,6 @@ pub enum EditResult {
     Ignore,
 }
 
-
 // ===========================
 // AppStatus
 
@@ -626,11 +687,11 @@ pub enum EditResult {
 enum AppStatus {
     #[default]
     Starting,
-    Ready ( RefCell<Option<usize>> ),
-    ShowEditDistrict ( Option<DistrictRef>, RefCell<District> ),
-    ShowEditPerson ( Option<PersonRef>, RefCell<Person> ),
-    ShowEditFaction ( Option<FactionRef>, RefCell<Faction> ),
-    // Load,
+    Ready(RefCell<Option<usize>>),
+    ShowEditDistrict(Option<DistrictRef>, RefCell<District>),
+    ShowEditPerson(Option<PersonRef>, RefCell<Person>),
+    ShowEditFaction(Option<FactionRef>, RefCell<Faction>),
+    Load,
     // Save,
     // Import,
     // Export,
@@ -640,34 +701,39 @@ impl Display for AppStatus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         use AppStatus::*;
 
-        write!(f, "{}", match self {
-            Starting => fl!("app_starting"),
-            Ready (..) => fl!("app_ready"),
-            ShowEditDistrict (ind, ..) => {
-                let item = fl!("main_item_district");
-                if ind.is_none() {
-                    fl!("app_create_itm", itm = item)
-                } else {
-                    fl!("app_edit_itm", itm = item)
+        write!(
+            f,
+            "{}",
+            match self {
+                Starting => fl!("app_starting"),
+                Ready(..) => fl!("app_ready"),
+                ShowEditDistrict(ind, ..) => {
+                    let item = fl!("main_item_district");
+                    if ind.is_none() {
+                        fl!("app_create_itm", itm = item)
+                    } else {
+                        fl!("app_edit_itm", itm = item)
+                    }
                 }
-            },
-            ShowEditPerson (ind, ..) => {
-                let item = fl!("main_item_person");
-                if ind.is_none() {
-                    fl!("app_create_itm", itm = item)
-                } else {
-                    fl!("app_edit_itm", itm = item)
+                ShowEditPerson(ind, ..) => {
+                    let item = fl!("main_item_person");
+                    if ind.is_none() {
+                        fl!("app_create_itm", itm = item)
+                    } else {
+                        fl!("app_edit_itm", itm = item)
+                    }
                 }
-            },
-            ShowEditFaction (ind, ..) => {
-                let item = fl!("main_item_faction");
-                if ind.is_none() {
-                    fl!("app_create_itm", itm = item)
-                } else {
-                    fl!("app_edit_itm", itm = item)
+                ShowEditFaction(ind, ..) => {
+                    let item = fl!("main_item_faction");
+                    if ind.is_none() {
+                        fl!("app_create_itm", itm = item)
+                    } else {
+                        fl!("app_edit_itm", itm = item)
+                    }
                 }
-            },
-        })
+                Load => fl!("app_loading"),
+            }
+        )
     }
 }
 
@@ -684,7 +750,7 @@ enum MainView {
 }
 
 impl MainView {
-    pub fn item_name ( &self ) -> String {
+    pub fn item_name(&self) -> String {
         use MainView::*;
 
         match self {
@@ -699,22 +765,35 @@ impl Display for MainView {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         use MainView::*;
 
-        write!(f, "{}", match self {
-            Factions => fl!("main_factions"),
-            Persons => fl!("main_persons"),
-            Districts => fl!("main_districts"),
-        })
+        write!(
+            f,
+            "{}",
+            match self {
+                Factions => fl!("main_factions"),
+                Persons => fl!("main_persons"),
+                Districts => fl!("main_districts"),
+            }
+        )
     }
 }
 
 // ===========================
 // Additional functions
 
-fn configure_fonts ( ctx: &CreationContext, zoom: f32 ) {
-	let mut fonts = FontDefinitions::default();
-	fonts.font_data.insert("dihjauti".to_string(), Arc::new(FontData::from_static(include_bytes!("../Dihjauti-Regular.otf"))));
-	fonts.families.get_mut(&FontFamily::Proportional).unwrap().insert(0, "dihjauti".to_owned());
-	ctx.egui_ctx.set_fonts(fonts);
+fn configure_fonts(ctx: &CreationContext, zoom: f32) {
+    let mut fonts = FontDefinitions::default();
+    fonts.font_data.insert(
+        "dihjauti".to_string(),
+        Arc::new(FontData::from_static(include_bytes!(
+            "../Dihjauti-Regular.otf"
+        ))),
+    );
+    fonts
+        .families
+        .get_mut(&FontFamily::Proportional)
+        .unwrap()
+        .insert(0, "dihjauti".to_owned());
+    ctx.egui_ctx.set_fonts(fonts);
 
     // Redefine text_styles
     let text_styles: BTreeMap<_, _> = [
@@ -725,22 +804,24 @@ fn configure_fonts ( ctx: &CreationContext, zoom: f32 ) {
         (Monospace, FontId::new(14.0, Proportional)),
         (Button, FontId::new(14.0, Proportional)),
         (Small, FontId::new(12.0, Proportional)),
-    ].into();
+    ]
+    .into();
 
     // Mutate global styles with new text styles
-    ctx.egui_ctx.all_styles_mut(move |style| style.text_styles = text_styles.clone());
+    ctx.egui_ctx
+        .all_styles_mut(move |style| style.text_styles = text_styles.clone());
 
     ctx.egui_ctx.set_zoom_factor(zoom);
 }
-
 
 // ---------------------------
 // Load and Save to POT files
 
 #[allow(dead_code)]
-pub fn save_to_pot<T> ( file_path: &Path, data: &T ) -> anyhow::Result<()>
-    where T: Serialize {
-
+pub fn save_to_pot<T>(file_path: &Path, data: &T) -> anyhow::Result<()>
+where
+    T: Serialize,
+{
     if let Some(dir_path) = file_path.parent() {
         create_dir_all(dir_path)?
     }
@@ -754,7 +835,7 @@ pub fn save_to_pot<T> ( file_path: &Path, data: &T ) -> anyhow::Result<()>
         .create_new(true)
         .open(file_path)?;
 
-    let buf= pot::to_vec(data)?;
+    let buf = pot::to_vec(data)?;
     let mut buf_writer = BufWriter::new(&file_handler);
     buf_writer.write_all(buf.as_slice())?;
     buf_writer.flush()?;
@@ -762,13 +843,13 @@ pub fn save_to_pot<T> ( file_path: &Path, data: &T ) -> anyhow::Result<()>
 }
 
 #[allow(dead_code)]
-pub fn load_from_pot<T> ( file_path: &Path ) -> anyhow::Result<T>
-    where T: DeserializeOwned {
-        let file_handler = OpenOptions::new()
-        .read(true)
-        .open(file_path)?;
+pub fn load_from_pot<T>(file_path: &Path) -> anyhow::Result<T>
+where
+    T: DeserializeOwned,
+{
+    let file_handler = OpenOptions::new().read(true).open(file_path)?;
     let buf_reader = BufReader::new(&file_handler);
-    let data : T = pot::from_reader(buf_reader)?;
+    let data: T = pot::from_reader(buf_reader)?;
     Ok(data)
 }
 
@@ -776,9 +857,10 @@ pub fn load_from_pot<T> ( file_path: &Path ) -> anyhow::Result<T>
 // Load and Save to POT files
 
 #[allow(dead_code)]
-pub fn save_to_json<T> ( file_path: &Path, data: &T ) -> anyhow::Result<()>
-    where T: Serialize {
-
+pub fn save_to_json<T>(file_path: &Path, data: &T) -> anyhow::Result<()>
+where
+    T: Serialize,
+{
     if let Some(dir_path) = file_path.parent() {
         create_dir_all(dir_path)?
     }
@@ -799,12 +881,12 @@ pub fn save_to_json<T> ( file_path: &Path, data: &T ) -> anyhow::Result<()>
 }
 
 #[allow(dead_code)]
-pub fn load_from_json<T> ( file_path: &Path ) -> anyhow::Result<T>
-    where T: DeserializeOwned {
-        let file_handler = OpenOptions::new()
-        .read(true)
-        .open(file_path)?;
+pub fn load_from_json<T>(file_path: &Path) -> anyhow::Result<T>
+where
+    T: DeserializeOwned,
+{
+    let file_handler = OpenOptions::new().read(true).open(file_path)?;
     let buf_reader = BufReader::new(&file_handler);
-    let data : T = serde_json::from_reader(buf_reader)?;
+    let data: T = serde_json::from_reader(buf_reader)?;
     Ok(data)
 }
