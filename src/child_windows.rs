@@ -1,11 +1,11 @@
-use std::{path::PathBuf, sync::Arc};
+use std::{fs::create_dir_all, path::PathBuf, sync::Arc};
 
 use eframe::egui::{
     Align, CentralPanel, Context, Layout, RichText, ScrollArea, ViewportBuilder, ViewportId,
     mutex::RwLock,
 };
-use egui_file_dialog::FileDialog;
-use log::{debug, info};
+use egui_file_dialog::{DialogState, FileDialog};
+use log::{debug, error, info};
 
 use crate::{
     APP_NAME,
@@ -30,14 +30,26 @@ impl ChildWindows {
     }
 
     /// show the file dialog
-    pub fn start_file_dialog(&mut self) {
+    pub fn start_file_dialog(&mut self, initial_directory: PathBuf) {
         // start dialog
         // todo: changes for type of file to select?
+        if let Err(e) = create_dir_all(initial_directory.clone()) {
+            // can fail; do we need Result?
+            error!(
+                "unable to create initial directory for file save [{}]: {}",
+                initial_directory.to_string_lossy(),
+                e
+            );
+        }
+
+        let config = self.file_dialog.config_mut();
+        config.initial_directory = initial_directory;
+
         info!("starting file dialog");
-        // let mut dialog = *self.file_dialog.read();
+
         self.file_dialog.pick_file();
         *self.show_file.write() = true;
-        *self.selected_file.write() = None; // start always resets selection?
+        *self.selected_file.write() = None;
     }
 
     pub fn selected_file(&self) -> Option<PathBuf> {
@@ -65,6 +77,12 @@ impl ChildWindows {
             *self.selected_file.write() = Some(path);
             *self.show_file.write() = false;
             info!("selected file, closing file dialog");
+        } else {
+            use DialogState::*;
+            if self.file_dialog.state() == Cancelled {
+                *self.selected_file.write() = Some(PathBuf::new());
+                *self.show_file.write() = false;
+            }
         }
     }
 

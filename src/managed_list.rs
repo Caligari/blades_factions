@@ -1,30 +1,32 @@
 use std::{collections::BTreeMap, marker::PhantomData, sync::Arc};
 
-use eframe::egui::{mutex::RwLock, RichText};
+use eframe::egui::{RichText, mutex::RwLock};
 use log::{debug, info, warn};
 
-use crate::{app_data::DataIndex, district::{District, DistrictStore}, faction::{Faction, FactionStore}, person::{Person, PersonStore}, sorting::Sorting};
-
-
-
-
+use crate::{
+    app_data::DataIndex,
+    district::{District, DistrictStore},
+    faction::{Faction, FactionStore},
+    person::{Person, PersonStore},
+    sorting::Sorting,
+};
 
 #[derive(Clone)]
-pub struct GenericRef<T: Clone + Named> ( Arc<RwLock<NamedIndex<T>>> );
+pub struct GenericRef<T: Clone + Named>(Arc<RwLock<NamedIndex<T>>>);
 
 impl<T: Clone + Named> GenericRef<T> {
-    pub fn has_index ( &self ) -> bool {
+    pub fn has_index(&self) -> bool {
         !matches!(self.0.read().index, DataIndex::Nothing)
     }
 
     // not public because noone should cache this, even accidentially
     /// Returns a transient index value that is only valid right now
-    fn index ( &self ) -> Option<usize> {
+    fn index(&self) -> Option<usize> {
         self.0.read().index.index()
     }
 
     /// Use extreme caution with the return value, as it can be changed later and you will not know
-    pub fn data_index ( &self ) -> DataIndex {
+    pub fn data_index(&self) -> DataIndex {
         self.0.read().index
     }
 
@@ -32,7 +34,7 @@ impl<T: Clone + Named> GenericRef<T> {
     //     self.0.read().index.into()
     // }
 
-    pub fn name ( &self ) -> Option<String> {
+    pub fn name(&self) -> Option<String> {
         self.0.read().name().map(|n| n.to_string())
     }
 }
@@ -54,18 +56,17 @@ pub type PersonRef = GenericRef<Person>;
 #[allow(dead_code)]
 pub type DistrictRef = GenericRef<District>;
 
-
 #[allow(dead_code)]
 #[derive(Default, Clone)]
 pub struct GenericRefList<T: Clone + Named> {
-    list: Vec<GenericRef<T>>,  // should this be a set? Not worth the pain? Requires ordering to not change, which we can't guarantee
+    list: Vec<GenericRef<T>>, // should this be a set? Not worth the pain? Requires ordering to not change, which we can't guarantee
     new: Option<String>,
     hovered: Option<String>,
 }
 
 #[allow(dead_code)]
 impl<T: Clone + Named> GenericRefList<T> {
-    pub fn from_list ( input_list: Vec<GenericRef<T>> ) -> Self {
+    pub fn from_list(input_list: Vec<GenericRef<T>>) -> Self {
         GenericRefList::<T> {
             list: input_list,
             new: None,
@@ -73,12 +74,12 @@ impl<T: Clone + Named> GenericRefList<T> {
         }
     }
 
-    pub fn list ( &self ) -> &Vec<GenericRef<T>> {
+    pub fn list(&self) -> &Vec<GenericRef<T>> {
         &self.list
     }
 
     /// This silently ignores duplicates
-    pub fn push ( &mut self, item: GenericRef<T> ) {
+    pub fn push(&mut self, item: GenericRef<T>) {
         if let Some(new_name) = item.name() {
             if !self.list.iter().any(|r| r.0.read().name == new_name) {
                 self.list.push(item);
@@ -86,25 +87,28 @@ impl<T: Clone + Named> GenericRefList<T> {
         }
     }
 
-    pub fn swap_remove ( &mut self, item_name: &str ) {  // ?? should return success?
-        let Some(index) = self.list.iter().position(|r| r.0.read().name == item_name )
-            else { warn!("failed to remove item >{item_name}> from GenericRefList"); return; };
+    pub fn swap_remove(&mut self, item_name: &str) {
+        // ?? should return success?
+        let Some(index) = self.list.iter().position(|r| r.0.read().name == item_name) else {
+            warn!("failed to remove item >{item_name}> from GenericRefList");
+            return;
+        };
         self.list.swap_remove(index);
     }
 
-    pub fn new_name ( &self ) -> Option<&str> {
+    pub fn new_name(&self) -> Option<&str> {
         self.new.as_deref()
     }
 
-    pub fn hovered_name ( &self ) -> Option<&str> {
+    pub fn hovered_name(&self) -> Option<&str> {
         self.hovered.as_deref()
     }
 
-    pub fn set_new ( &mut self, name: Option<&str> ) {
+    pub fn set_new(&mut self, name: Option<&str>) {
         self.new = name.map(|n| n.to_string());
     }
 
-    pub fn set_hovered ( &mut self, name: Option<String> ) {
+    pub fn set_hovered(&mut self, name: Option<String>) {
         self.hovered = name;
     }
 }
@@ -124,7 +128,6 @@ pub type PersonRefList = GenericRefList<Person>;
 #[allow(dead_code)]
 pub type DistrictRefList = GenericRefList<District>;
 
-
 #[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq)]
 pub struct NamedIndex<T: Clone + Named> {
@@ -135,13 +138,15 @@ pub struct NamedIndex<T: Clone + Named> {
 
 #[allow(dead_code)]
 impl<T: Clone + Named> NamedIndex<T> {
-    pub fn name ( &self ) -> Option<&str> {
+    pub fn name(&self) -> Option<&str> {
         if !matches!(self.index, DataIndex::Nothing) {
             Some(&self.name)
-        } else { None }
+        } else {
+            None
+        }
     }
 
-    fn index ( &self ) -> DataIndex {
+    fn index(&self) -> DataIndex {
         self.index
     }
 }
@@ -156,19 +161,25 @@ pub struct ManagedList<T: Clone + Named> {
 
 #[allow(dead_code)]
 impl<T: Clone + Named> ManagedList<T> {
-    pub fn len ( &self ) -> usize {
+    pub fn len(&self) -> usize {
         self.list.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.list.is_empty()
+    }
+
     /// Returns the reference to the new item
-    pub fn add ( &mut self, item: &T ) -> Option<GenericRef<T>> {
+    pub fn add(&mut self, item: &T) -> Option<GenericRef<T>> {
         let name = item.name().to_string();
         if !self.list_index.contains_key(&name) {
             let index = T::make_data_index(self.list.len());
             self.list.push(item.clone());
-            let named_index = GenericRef(
-                Arc::new(RwLock::new(NamedIndex { name: name.clone(), index, typ: PhantomData }))
-            );
+            let named_index = GenericRef(Arc::new(RwLock::new(NamedIndex {
+                name: name.clone(),
+                index,
+                typ: PhantomData,
+            })));
             self.list_index.insert(name, named_index.clone());
             Some(named_index)
         } else {
@@ -179,10 +190,11 @@ impl<T: Clone + Named> ManagedList<T> {
 
     // Should the list have a lock on it??
     /// Returns the old item which was removed, if it was present
-    pub fn remove ( &mut self, named_index: &GenericRef<T> ) -> Option<T> {
+    pub fn remove(&mut self, named_index: &GenericRef<T>) -> Option<T> {
         if named_index.has_index() {
-            let Some(index) = named_index.index()
-                else { panic!("asked to remove incorrect index from managed list"); };
+            let Some(index) = named_index.index() else {
+                panic!("asked to remove incorrect index from managed list");
+            };
 
             // process the list index, changing the indexes for the entries after this one
             for (s, i) in self.list_index.iter() {
@@ -197,8 +209,10 @@ impl<T: Clone + Named> ManagedList<T> {
                         info!("will remove");
                         ind.index = DataIndex::Nothing;
                         ind.name = "<Removed>".to_owned();
-                    } else { info!("ignoring"); }  // else it will not need to change
-                }  // else we do not need to change somethning which points to no data
+                    } else {
+                        info!("ignoring");
+                    } // else it will not need to change
+                } // else we do not need to change somethning which points to no data
             }
 
             // remove the element
@@ -213,12 +227,16 @@ impl<T: Clone + Named> ManagedList<T> {
 
     /// Returns the old item, if something was replaced
     /// Note: the reference name is updated as well
-    pub fn replace ( &mut self, index: &GenericRef<T>, new_item: T ) -> Option<T> {
+    pub fn replace(&mut self, index: &GenericRef<T>, new_item: T) -> Option<T> {
         if index.has_index() {
-            let Some(ind) = index.index()
-                else { unreachable!("no index found despite having an index (in replace)"); };
-            let Some(old_item) = self.list.get(ind).cloned()  // technically this should always return Some
-                else { unreachable!("unable to find managed_list item with functioning index"); };
+            let Some(ind) = index.index() else {
+                unreachable!("no index found despite having an index (in replace)");
+            };
+            let Some(old_item) = self.list.get(ind).cloned()
+            // technically this should always return Some
+            else {
+                unreachable!("unable to find managed_list item with functioning index");
+            };
             let new_name = new_item.name();
             let old_name = old_item.name();
             let same_name = new_name == old_name;
@@ -234,9 +252,14 @@ impl<T: Clone + Named> ManagedList<T> {
                     debug!("replacing {old_name} with {new_name}");
 
                     // insert into btree with new_name and index.clone()
-                    if self.list_index.insert(new_name.to_string(), index.clone()).is_none() { // returns an option<ref>
+                    if self
+                        .list_index
+                        .insert(new_name.to_string(), index.clone())
+                        .is_none()
+                    {
+                        // returns an option<ref>
                         // remove from btree based on index.0.name()
-                        self.list_index.remove(old_name);  // returns option<ref>
+                        self.list_index.remove(old_name); // returns option<ref>
                     } else {
                         unreachable!("updating list_index returned existing index!");
                     }
@@ -249,41 +272,46 @@ impl<T: Clone + Named> ManagedList<T> {
                 Some(old_item)
             }
         } else {
-            warn!("asked to replace an empty item");  // should this do an add using the old reference?
+            warn!("asked to replace an empty item"); // should this do an add using the old reference?
             None
         }
     }
 
     /// Returns the reference to the named item, if it exists
-    pub fn find ( &self, name: &str ) -> Option<GenericRef<T>> {
+    pub fn find(&self, name: &str) -> Option<GenericRef<T>> {
         self.list_index.get(name).cloned()
     }
 
     /// Returns a reference to the existing item, if it is present
-    pub fn fetch ( &self, index: &GenericRef<T> ) -> Option<&T> {
+    pub fn fetch(&self, index: &GenericRef<T>) -> Option<&T> {
         let index = index.index()?;
         self.list.get(index)
     }
 
-    pub fn item_ref_list ( &self ) -> Vec<(GenericRef<T>, &T)> {
-        self.list_index.iter().filter_map(|(_st, re)| {
-            if re.has_index() {
-                self.fetch(re).map(|item| (re.clone(), item))
-            } else { None }
-        }).collect()
+    pub fn item_ref_list(&self) -> Vec<(GenericRef<T>, &T)> {
+        self.list_index
+            .iter()
+            .filter_map(|(_st, re)| {
+                if re.has_index() {
+                    self.fetch(re).map(|item| (re.clone(), item))
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
 
-    pub fn get_sorting ( &self ) -> Sorting {
+    pub fn get_sorting(&self) -> Sorting {
         self.sorting
     }
 
-    pub fn set_sorting ( &mut self, index: usize ) {
+    pub fn set_sorting(&mut self, index: usize) {
         self.sorting.set_field(index);
     }
 
-    pub fn names_sorted ( &self ) -> Vec<String> {
+    pub fn names_sorted(&self) -> Vec<String> {
         let mut list_copy: Vec<String> = self.list_index.keys().cloned().collect();
-        list_copy.sort();  // ?? do we need a more sophisticated sort? For People Names, for example
+        list_copy.sort(); // ?? do we need a more sophisticated sort? For People Names, for example
         list_copy
     }
 }
@@ -306,19 +334,17 @@ impl From<&ManagedList<Faction>> for Vec<FactionStore> {
     }
 }
 
-
 // -------------------------------
 // Named
 
 #[allow(dead_code)]
 pub trait Named {
-    fn name ( &self ) -> &str;
-    fn make_data_index ( index: usize ) -> DataIndex;
-    fn fetch_data_index ( index: DataIndex ) -> Option<usize>;
-    fn display_fields ( &self ) -> Vec<String>;
-    fn display_headings ( ) -> Vec<RichText>;
+    fn name(&self) -> &str;
+    fn make_data_index(index: usize) -> DataIndex;
+    fn fetch_data_index(index: DataIndex) -> Option<usize>;
+    fn display_fields(&self) -> Vec<String>;
+    fn display_headings() -> Vec<RichText>;
 }
-
 
 // --------------------------------
 // StringList
@@ -326,14 +352,14 @@ pub trait Named {
 #[allow(dead_code)]
 #[derive(Default, Clone)]
 pub struct StringList {
-    list: Vec<String>,  // should this be a set? Not worth the pain? Requires ordering to not change, which we can't guarantee
+    list: Vec<String>, // should this be a set? Not worth the pain? Requires ordering to not change, which we can't guarantee
     new: Option<String>,
     hovered: Option<String>,
 }
 
 #[allow(dead_code)]
 impl StringList {
-    pub fn from_list ( input_list: Vec<String> ) -> Self {
+    pub fn from_list(input_list: Vec<String>) -> Self {
         StringList {
             list: input_list,
             new: None,
@@ -341,36 +367,39 @@ impl StringList {
         }
     }
 
-    pub fn list ( &self ) -> &Vec<String> {
+    pub fn list(&self) -> &Vec<String> {
         &self.list
     }
 
     /// This silently ignores duplicates
-    pub fn push ( &mut self, item: String ) {
+    pub fn push(&mut self, item: String) {
         if !self.list.contains(&item) {
             self.list.push(item);
         }
     }
 
-    pub fn swap_remove ( &mut self, item_name: &str ) {  // ?? should return success?
-        let Some(index) = self.list.iter().position(|r| r == item_name )
-            else { warn!("failed to remove item >{item_name}> from StringList"); return; };
+    pub fn swap_remove(&mut self, item_name: &str) {
+        // ?? should return success?
+        let Some(index) = self.list.iter().position(|r| r == item_name) else {
+            warn!("failed to remove item >{item_name}> from StringList");
+            return;
+        };
         self.list.swap_remove(index);
     }
 
-    pub fn new_name ( &mut self ) -> &mut Option<String> {
+    pub fn new_name(&mut self) -> &mut Option<String> {
         &mut self.new
     }
 
-    pub fn hovered_name ( &self ) -> Option<&str> {
+    pub fn hovered_name(&self) -> Option<&str> {
         self.hovered.as_deref()
     }
 
-    pub fn set_new ( &mut self, name: Option<String> ) {
+    pub fn set_new(&mut self, name: Option<String>) {
         self.new = name;
     }
 
-    pub fn set_hovered ( &mut self, name: Option<String> ) {
+    pub fn set_hovered(&mut self, name: Option<String>) {
         self.hovered = name;
     }
 }
@@ -381,7 +410,6 @@ impl PartialEq for StringList {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
 
@@ -389,61 +417,71 @@ mod tests {
 
     use log::LevelFilter;
 
-    use crate::{district::District, managed_list::{ManagedList, Named}};
+    use crate::{
+        district::District,
+        managed_list::{ManagedList, Named},
+    };
 
     // TODO: add tests with replace and find
 
     #[test]
-    fn basic_managed_list () {
+    fn basic_managed_list() {
         // setup_logger().expect("log did not start");
         let mut m_list = ManagedList::<District>::default();
 
         let item1 = District::new("Test1");
-        let Some(item1_ref) = m_list.add(&item1)
-            else { panic!("error on add item1"); };
+        let Some(item1_ref) = m_list.add(&item1) else {
+            panic!("error on add item1");
+        };
         assert_eq!(m_list.len(), 1);
 
         let item2 = District::new("Test2");
-        let Some(_item2_ref) = m_list.add(&item2)
-            else { panic!("error on add item2"); };
+        let Some(_item2_ref) = m_list.add(&item2) else {
+            panic!("error on add item2");
+        };
         assert_eq!(m_list.len(), 2);
 
         let found1 = m_list.fetch(&item1_ref);
         assert!(found1.is_some(), "found item 1 is empty");
         assert_eq!(found1.unwrap().name(), "Test1");
 
-        let Some(found2_ref) = m_list.find("Test2")
-            else { panic!("unable to find item2 in list"); };
+        let Some(found2_ref) = m_list.find("Test2") else {
+            panic!("unable to find item2 in list");
+        };
         let found2 = m_list.fetch(&found2_ref);
         assert!(found2.is_some(), "found item 2 is empty");
         assert_eq!(found2.unwrap().name(), "Test2");
 
         let new_item1 = District::new("New1");
-        let Some(old1) = m_list.replace(&item1_ref, new_item1)
-            else { panic!("unable to replace item 1"); };
+        let Some(old1) = m_list.replace(&item1_ref, new_item1) else {
+            panic!("unable to replace item 1");
+        };
         assert_eq!(old1.name(), "Test1");
         assert!(m_list.fetch(&item1_ref).is_some());
         assert_eq!(m_list.fetch(&item1_ref).unwrap().name(), "New1");
     }
 
     #[test]
-    fn remove_managed_list () {
+    fn remove_managed_list() {
         // setup_logger().expect("log did not start");
         let mut m_list = ManagedList::<District>::default();
 
         let item1 = District::new("Test1");
-        let Some(item1_ref) = m_list.add(&item1)
-            else { panic!("error on add item1"); };
+        let Some(item1_ref) = m_list.add(&item1) else {
+            panic!("error on add item1");
+        };
         assert_eq!(m_list.len(), 1);
 
         let item2 = District::new("Test2");
-        let Some(item2_ref) = m_list.add(&item2)
-            else { panic!("error on add item2"); };
+        let Some(item2_ref) = m_list.add(&item2) else {
+            panic!("error on add item2");
+        };
         assert_eq!(m_list.len(), 2);
 
         let item3 = District::new("Test3");
-        let Some(item3_ref) = m_list.add(&item3)
-            else { panic!("error on add item3"); };
+        let Some(item3_ref) = m_list.add(&item3) else {
+            panic!("error on add item3");
+        };
         assert_eq!(m_list.len(), 3);
 
         let remove1 = m_list.remove(&item2_ref);
@@ -467,18 +505,17 @@ mod tests {
         assert_eq!(found3.unwrap().name(), "Test3");
     }
 
-
     #[allow(dead_code)]
-    fn setup_logger ( ) -> Result<(), fern::InitError> {
+    fn setup_logger() -> Result<(), fern::InitError> {
         const LOG_FILE: &str = "factions_test_output.log";
-        let _ = fs::remove_file(LOG_FILE);  // !! ignoring possible real errors
+        let _ = fs::remove_file(LOG_FILE); // !! ignoring possible real errors
         fern::Dispatch::new()
             .format(|out, message, record| {
                 out.finish(format_args!(
                     "[{:.5}][{}]: {}",
                     // "[{}][{}] {}",
-                        // "[{}]:[{}][{}] {}",
-                        // humantime::format_rfc3339_seconds(SystemTime::now()),
+                    // "[{}]:[{}][{}] {}",
+                    // humantime::format_rfc3339_seconds(SystemTime::now()),
                     record.level(),
                     record.target(),
                     message
@@ -491,5 +528,4 @@ mod tests {
             .apply()?;
         Ok(())
     }
-
 }

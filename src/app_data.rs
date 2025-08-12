@@ -1,14 +1,21 @@
 use std::{borrow::Borrow, path::Path};
 
-use anyhow::{anyhow, Ok, Result};
+use anyhow::{Ok, Result, anyhow};
 use log::{debug, error};
 use serde::{Deserialize, Serialize};
 
-use crate::{action::{Action, ActionNode}, app::{load_from_json, load_from_pot, save_to_json, save_to_pot}, app_display::DisplayTable, district::{District, DistrictStore}, faction::{Faction, FactionStore}, managed_list::{DistrictRef, FactionRef, ManagedList, Named, PersonRef}, person::{Person, PersonStore}};
+use crate::{
+    action::{Action, ActionNode},
+    app::{load_from_json, load_from_pot, save_to_json, save_to_pot},
+    app_display::DisplayTable,
+    district::{District, DistrictStore},
+    faction::{Faction, FactionStore},
+    managed_list::{DistrictRef, FactionRef, ManagedList, Named, PersonRef},
+    person::{Person, PersonStore},
+};
 
 const DATA_EXTENSION: &str = "pot";
 const JSON_EXTENSION: &str = "json";
-
 
 #[allow(dead_code)]
 // Default should be empty
@@ -23,7 +30,7 @@ pub struct AppData {
 #[allow(dead_code)]
 impl AppData {
     /// Takes a node, and creates the node that will reverse the actions taken
-    pub fn do_action ( &mut self, actions: &ActionNode ) -> Result<ActionNode> {
+    pub fn do_action(&mut self, actions: &ActionNode) -> Result<ActionNode> {
         use Action::*;
 
         let mut return_node = ActionNode::default();
@@ -34,58 +41,60 @@ impl AppData {
             // do action
             //    can we fail?
             match action {
-                DistrictAdd( district ) => {
+                DistrictAdd(district) => {
                     if let Some(district_ref) = self.districts.add(district) {
                         return_node.push_back(DistrictRemove(district_ref));
-                    }  // silently ignore if can't be added
+                    } // silently ignore if can't be added
                 }
 
-                DistrictRemove( district_ref ) => {
+                DistrictRemove(district_ref) => {
                     if let Some(district) = self.districts.remove(district_ref) {
                         return_node.push_back(DistrictAdd(district));
-                    }  // silently ignore if this wasn't in the list when we removed it
+                    } // silently ignore if this wasn't in the list when we removed it
                 }
 
-                DistrictReplace( district_ref, district ) => {
-                    if let Some(old_district) = self.districts.replace(district_ref, district.clone()) {
+                DistrictReplace(district_ref, district) => {
+                    if let Some(old_district) =
+                        self.districts.replace(district_ref, district.clone())
+                    {
                         return_node.push_back(DistrictReplace(district_ref.clone(), old_district));
-                    }  // silently ignore if no replacement was possible?
+                    } // silently ignore if no replacement was possible?
                 }
 
-                PersonAdd( person ) => {
+                PersonAdd(person) => {
                     if let Some(person_ref) = self.persons.add(person) {
                         return_node.push_back(PersonRemove(person_ref));
-                    }  // silently ignore if can't be added
+                    } // silently ignore if can't be added
                 }
 
-                PersonRemove( person_ref ) => {
+                PersonRemove(person_ref) => {
                     if let Some(person) = self.persons.remove(person_ref) {
                         return_node.push_back(PersonAdd(person));
-                    }  // silently ignore if this wasn't in the list when we removed it
+                    } // silently ignore if this wasn't in the list when we removed it
                 }
 
-                PersonReplace( person_ref, person ) => {
+                PersonReplace(person_ref, person) => {
                     if let Some(old_person) = self.persons.replace(person_ref, person.clone()) {
                         return_node.push_back(PersonReplace(person_ref.clone(), old_person));
-                    }  // silently ignore if no replacement was possible?
+                    } // silently ignore if no replacement was possible?
                 }
 
-                FactionAdd( faction ) => {
+                FactionAdd(faction) => {
                     if let Some(faction_ref) = self.factions.add(faction) {
                         return_node.push_back(FactionRemove(faction_ref));
-                    }  // silently ignore if can't be added
+                    } // silently ignore if can't be added
                 }
 
-                FactionRemove( faction_ref ) => {
+                FactionRemove(faction_ref) => {
                     if let Some(faction) = self.factions.remove(faction_ref) {
                         return_node.push_back(FactionAdd(faction));
-                    }  // silently ignore if this wasn't in the list when we removed it
+                    } // silently ignore if this wasn't in the list when we removed it
                 }
 
-                FactionReplace( faction_ref, faction ) => {
+                FactionReplace(faction_ref, faction) => {
                     if let Some(old_faction) = self.factions.replace(faction_ref, faction.clone()) {
                         return_node.push_back(FactionReplace(faction_ref.clone(), old_faction));
-                    }  // silently ignore if no replacement was possible?
+                    } // silently ignore if no replacement was possible?
                 }
             }
         }
@@ -93,129 +102,162 @@ impl AppData {
         Ok(return_node)
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.districts.is_empty() && self.persons.is_empty() && self.factions.is_empty()
+    }
+
     // todo: precalc and cache this?
-    pub fn persons_display_table ( &self ) -> DisplayTable {
+    pub fn persons_display_table(&self) -> DisplayTable {
         DisplayTable::from(&self.persons)
     }
 
     // todo: precalc and cache this?
-    pub fn districts_display_table ( &self ) -> DisplayTable {
+    pub fn districts_display_table(&self) -> DisplayTable {
         DisplayTable::from(&self.districts)
     }
 
     // todo: precalc and cache this?
-    pub fn factions_display_table ( &self ) -> DisplayTable {
+    pub fn factions_display_table(&self) -> DisplayTable {
         DisplayTable::from(&self.factions)
     }
 
-    pub fn person_list ( &self ) -> &ManagedList<Person> {
+    pub fn person_list(&self) -> &ManagedList<Person> {
         &self.persons
     }
 
-    pub fn district_list ( &self ) -> &ManagedList<District> {
+    pub fn district_list(&self) -> &ManagedList<District> {
         &self.districts
     }
 
-    pub fn faction_list ( &self ) -> &ManagedList<Faction> {
+    pub fn faction_list(&self) -> &ManagedList<Faction> {
         &self.factions
     }
 
-    pub fn persons_names ( &self ) -> Vec<String> {
+    pub fn persons_names(&self) -> Vec<String> {
         self.persons.names_sorted()
     }
 
-    pub fn districts_names ( &self ) -> Vec<String> {
+    pub fn districts_names(&self) -> Vec<String> {
         self.districts.names_sorted()
     }
 
-    pub fn factions_names ( &self ) -> Vec<String> {
+    pub fn factions_names(&self) -> Vec<String> {
         self.factions.names_sorted()
     }
 
-    pub fn set_persons_sort ( &mut self, index: usize ) {
+    pub fn set_persons_sort(&mut self, index: usize) {
         self.persons.set_sorting(index);
     }
 
-    pub fn set_districts_sort ( &mut self, index: usize ) {
+    pub fn set_districts_sort(&mut self, index: usize) {
         self.districts.set_sorting(index);
     }
 
-    pub fn set_factions_sort ( &mut self, index: usize ) {
+    pub fn set_factions_sort(&mut self, index: usize) {
         self.factions.set_sorting(index);
     }
 
-    pub fn find_district ( &self, name: &str ) -> Option<DistrictRef> {
+    pub fn find_district(&self, name: &str) -> Option<DistrictRef> {
         self.districts.find(name)
     }
 
-    pub fn clone_district ( &self, index: &DistrictRef ) -> Option<District> {
+    pub fn clone_district(&self, index: &DistrictRef) -> Option<District> {
         self.districts.fetch(index).cloned()
     }
 
-    pub fn find_person ( &self, name: &str ) -> Option<PersonRef> {
+    pub fn find_person(&self, name: &str) -> Option<PersonRef> {
         self.persons.find(name)
     }
 
-    pub fn clone_person ( &self, index: &PersonRef ) -> Option<Person> {
+    pub fn clone_person(&self, index: &PersonRef) -> Option<Person> {
         self.persons.fetch(index).cloned()
     }
 
-    pub fn find_faction ( &self, name: &str ) -> Option<FactionRef> {
+    pub fn find_faction(&self, name: &str) -> Option<FactionRef> {
         self.factions.find(name)
     }
 
-    pub fn clone_faction ( &self, index: &FactionRef ) -> Option<Faction> {
+    pub fn clone_faction(&self, index: &FactionRef) -> Option<Faction> {
         self.factions.fetch(index).cloned()
     }
 
     /// This saves all data to a save file
-    pub fn save_to_file ( &self, file_path: &Path ) -> Result<()> {
+    pub fn save_to_file(&self, file_path: &Path) -> Result<()> {
         save_data_to_file(&file_path.with_extension(DATA_EXTENSION), self)
     }
 
     /// This exports all data to a JSON file
-    pub fn export_to_file ( &self, file_path: &Path ) -> Result<()> {
+    pub fn export_to_file(&self, file_path: &Path) -> Result<()> {
         let save_data: SaveData1 = self.into();
         if !save_data.validate() {
-            error!("unable to validate data to export ({}), version: {}", file_path.to_string_lossy(), save_data.save_version);
-            return Err(anyhow!("unable to validate export data ({}), version: {}", file_path.to_string_lossy(), save_data.save_version))
+            error!(
+                "unable to validate data to export ({}), version: {}",
+                file_path.to_string_lossy(),
+                save_data.save_version
+            );
+            return Err(anyhow!(
+                "unable to validate export data ({}), version: {}",
+                file_path.to_string_lossy(),
+                save_data.save_version
+            ));
         }
         save_to_json(&file_path.with_extension(JSON_EXTENSION), &save_data)
     }
 
     /// This adds the loaded data to the current data
-    pub fn import_from_file ( &mut self, file_path: &Path ) -> Result<()> {
+    pub fn import_from_file(&mut self, file_path: &Path) -> Result<()> {
         let import_data: SaveData1 = load_from_json(&file_path.with_extension(JSON_EXTENSION))?;
-        debug!("imported {} people, {} districts, {} factions",
-                import_data.persons.len(), import_data.districts.len(), import_data.factions.len());
+        debug!(
+            "imported {} people, {} districts, {} factions",
+            import_data.persons.len(),
+            import_data.districts.len(),
+            import_data.factions.len()
+        );
         if !import_data.validate() {
-            error!("unable to validate imported data ({}), version: {}", file_path.to_string_lossy(), import_data.save_version);
-            return Err(anyhow!("unable to validate imported data ({}), version: {}", file_path.to_string_lossy(), import_data.save_version))
+            error!(
+                "unable to validate imported data ({}), version: {}",
+                file_path.to_string_lossy(),
+                import_data.save_version
+            );
+            return Err(anyhow!(
+                "unable to validate imported data ({}), version: {}",
+                file_path.to_string_lossy(),
+                import_data.save_version
+            ));
         }
         self.load_data(import_data)
     }
 
-    /// This creates a new AppData from the loaded data
-    pub fn load_from_file ( file_path: &Path ) -> Result<AppData> {
-        save_data_from_file(&file_path.with_extension(DATA_EXTENSION))
+    /// This creates a new AppData after loading data from the file path
+    pub fn load_from_file(file_path: &Path) -> Result<AppData> {
+        save_data_from_file(file_path) // .with_extension(DATA_EXTENSION)
     }
 
-    fn load_data ( &mut self, save_data: SaveData1 ) -> Result<()> {  // !! Not using return??
+    fn load_data(&mut self, save_data: SaveData1) -> Result<()> {
+        // !! Not using return??
         let mut post_districts: Vec<(String, Vec<String>)> = Vec::new();
-        let district_add = save_data.districts.into_iter().map(|d| {
-            let (district, notable) = self.district_from_store(d);
-            post_districts.push((district.name().to_string(), notable));
-            Action::DistrictAdd(district)
-        }).collect();
+        let district_add = save_data
+            .districts
+            .into_iter()
+            .map(|d| {
+                let (district, notable) = self.district_from_store(d);
+                post_districts.push((district.name().to_string(), notable));
+                Action::DistrictAdd(district)
+            })
+            .collect();
 
         if let Err(err) = self.do_action(&district_add) {
             error!("unable to add districts: {err}");
         }
 
-        let person_add = save_data.persons.into_iter().map(|p| {
-            let person = self.person_from_store(p);
-            Action::PersonAdd(person)
-        }).collect();
+        let person_add = save_data
+            .persons
+            .into_iter()
+            .map(|p| {
+                let person = self.person_from_store(p);
+                Action::PersonAdd(person)
+            })
+            .collect();
 
         if let Err(err) = self.do_action(&person_add) {
             error!("unable to add persons: {err}");
@@ -245,11 +287,15 @@ impl AppData {
         }
 
         let mut post_factions: Vec<(String, Vec<String>, Vec<String>)> = Vec::new();
-        let faction_add = save_data.factions.into_iter().map(|f| {
-            let (faction, allies, enemies) = self.faction_from_store(f);
-            post_factions.push((faction.name().to_string(), allies, enemies));
-            Action::FactionAdd(faction)
-        }).collect();
+        let faction_add = save_data
+            .factions
+            .into_iter()
+            .map(|f| {
+                let (faction, allies, enemies) = self.faction_from_store(f);
+                post_factions.push((faction.name().to_string(), allies, enemies));
+                Action::FactionAdd(faction)
+            })
+            .collect();
 
         if let Err(err) = self.do_action(&faction_add) {
             error!("unable to add factions: {err}");
@@ -288,16 +334,20 @@ impl AppData {
     }
 
     // todo: actually we'd want to add this to the current data, and use the file name (_file_path: &Path)
-    pub fn test_import_from_json ( &mut self ) -> Result<()> {
+    pub fn test_import_from_json(&mut self) -> Result<()> {
         let data = include_str!("../test_data/test1.json");
 
         let import: SaveData1 = serde_json::from_str(data)?;
-        debug!("imported {} people, {} districts, {} factions",
-                import.persons.len(), import.districts.len(), import.factions.len());
+        debug!(
+            "imported {} people, {} districts, {} factions",
+            import.persons.len(),
+            import.districts.len(),
+            import.factions.len()
+        );
         self.load_data(import)
     }
 
-    fn person_from_store ( &self, p_store: PersonStore )-> Person {
+    fn person_from_store(&self, p_store: PersonStore) -> Person {
         let person: Person = (&p_store).into();
         // todo: convert references
 
@@ -305,44 +355,76 @@ impl AppData {
     }
 
     /// Returns list of notable Person Strings
-    fn district_from_store ( &self, d_store: DistrictStore )-> (District, Vec<String>) {
+    fn district_from_store(&self, d_store: DistrictStore) -> (District, Vec<String>) {
         let district: District = (&d_store).into();
         // todo: convert references
 
         (district, d_store.notable)
     }
 
-    fn faction_from_store ( &self, f_store: FactionStore )-> (Faction, Vec<String>, Vec<String>) {
+    fn faction_from_store(&self, f_store: FactionStore) -> (Faction, Vec<String>, Vec<String>) {
         let mut faction: Faction = (&f_store).into();
         // todo: convert references
         // hq (option district)
         if let Some(hq) = f_store.hq {
             let hq_ref = self.districts.find(&hq);
-            if hq_ref.is_none() { error!("unable to find district {} as hq when loading faction {}", hq, faction.name()); }
+            if hq_ref.is_none() {
+                error!(
+                    "unable to find district {} as hq when loading faction {}",
+                    hq,
+                    faction.name()
+                );
+            }
             faction.set_hq(hq_ref);
         }
 
         // turf (vec district)
-        let turf = f_store.turf.into_iter().filter_map(|d| {
-            let d_ref = self.districts.find(&d);
-            if d_ref.is_none() { error!("unable to find district {} as turf when loading faction {}", d, faction.name()); }
-            d_ref
-        }).collect();
+        let turf = f_store
+            .turf
+            .into_iter()
+            .filter_map(|d| {
+                let d_ref = self.districts.find(&d);
+                if d_ref.is_none() {
+                    error!(
+                        "unable to find district {} as turf when loading faction {}",
+                        d,
+                        faction.name()
+                    );
+                }
+                d_ref
+            })
+            .collect();
         faction.set_turf(turf);
 
         // leader (option person)
         if let Some(leader) = f_store.leader {
             let leader_ref = self.persons.find(&leader);
-            if leader_ref.is_none() { error!("unable to find person {} as leader when loading faction {}", leader, faction.name()); }
+            if leader_ref.is_none() {
+                error!(
+                    "unable to find person {} as leader when loading faction {}",
+                    leader,
+                    faction.name()
+                );
+            }
             faction.set_leader(leader_ref);
         }
 
         // notable (vec person)
-        let notable = f_store.notable.into_iter().filter_map(|p| {
-            let p_ref = self.persons.find(&p);
-            if p_ref.is_none() { error!("unable to find person {} as notable when loading faction {}", p, faction.name()); }
-            p_ref
-        }).collect();
+        let notable = f_store
+            .notable
+            .into_iter()
+            .filter_map(|p| {
+                let p_ref = self.persons.find(&p);
+                if p_ref.is_none() {
+                    error!(
+                        "unable to find person {} as notable when loading faction {}",
+                        p,
+                        faction.name()
+                    );
+                }
+                p_ref
+            })
+            .collect();
         faction.set_notable(notable);
 
         // allies (vec faction)
@@ -352,16 +434,16 @@ impl AppData {
     }
 }
 
-fn save_data_to_file ( file_path: &Path, data: &AppData ) -> Result<()>{
+fn save_data_to_file(file_path: &Path, data: &AppData) -> Result<()> {
     let save_data: SaveData1 = data.into();
     if save_data.validate() {
-        save_to_pot(file_path, &save_data)  // ?? should we report error here, to log?
+        save_to_pot(file_path, &save_data) // ?? should we report error here, to log?
     } else {
         Err(anyhow!("unable to validate save data - not saved"))
     }
 }
 
-fn save_data_from_file ( file_path: &Path ) -> Result<AppData> {
+fn save_data_from_file(file_path: &Path) -> Result<AppData> {
     // load save data 1
     let data = load_from_pot::<SaveData1>(file_path)?;
     if data.validate() {
@@ -386,7 +468,7 @@ struct SaveData1 {
 }
 
 impl SaveData1 {
-    fn validate ( &self ) -> bool {
+    fn validate(&self) -> bool {
         self.save_version == SAVE1_VERSION
     }
 }
@@ -394,7 +476,7 @@ impl SaveData1 {
 impl From<SaveData1> for AppData {
     fn from(save_data: SaveData1) -> Self {
         let mut app_data = AppData::default();
-        if let Err(e) =  app_data.load_data(save_data) {
+        if let Err(e) = app_data.load_data(save_data) {
             error!("unable to load save version 1 data: {e}");
         }
         app_data
@@ -412,7 +494,6 @@ impl From<&AppData> for SaveData1 {
     }
 }
 
-
 // ----------------------------------------
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
@@ -424,13 +505,13 @@ pub enum DataIndex {
 }
 
 impl DataIndex {
-    pub fn index ( &self ) -> Option<usize> {
+    pub fn index(&self) -> Option<usize> {
         match self {
-            DataIndex::DistrictIndex(i) |
-            DataIndex::FactionIndex(i) |
-            DataIndex::PersonIndex(i) => Some(*i),
+            DataIndex::DistrictIndex(i)
+            | DataIndex::FactionIndex(i)
+            | DataIndex::PersonIndex(i) => Some(*i),
 
-            _ => None
+            _ => None,
         }
     }
 }

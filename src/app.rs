@@ -1,6 +1,7 @@
 use std::{
     cell::RefCell,
     collections::BTreeMap,
+    ffi::OsStr,
     fmt::Display,
     fs::{self, OpenOptions, create_dir_all},
     io::{BufReader, BufWriter, Write},
@@ -41,6 +42,10 @@ use crate::{
 
 const ZOOM: f32 = 1.0;
 pub const UI_PADDING: f32 = 8.0;
+const ERROR_SPACE: f32 = 16.0;
+
+const ERROR_BACKGROUND: Color32 = Color32::from_rgb(255, 190, 190);
+const ERROR_FOREGROUND: Color32 = Color32::DARK_RED;
 
 // todo: localize this
 // probably could be one phrase?
@@ -70,8 +75,6 @@ pub struct App {
     message: Option<String>,
     child_windows: ChildWindows,
     todo_undo: TodoUndo,
-    // file_dialog: FileDialog,  // this is here because we might want to persist some info
-    selected_file: Option<PathBuf>, // todo: this probably should be just in the statuses?
 }
 
 impl App {
@@ -90,8 +93,6 @@ impl App {
             message: None,
             child_windows: ChildWindows::default(),
             todo_undo: TodoUndo::default(),
-            // file_dialog: FileDialog::new(),
-            selected_file: None,
         }
     }
 
@@ -103,15 +104,15 @@ impl App {
         self.message = None;
         self.child_windows = ChildWindows::default(); // is this sufficient?
         self.todo_undo = TodoUndo::default();
-        // do we need file_dialog and/or selected_file to be reset?
     }
 
     fn show_top(&mut self, ctx: &Context, _frame: &mut Frame) {
         TopBottomPanel::top("top").show(ctx, |ui| {
             MenuBar::new().ui(ui, |ui| {
                 ui.with_layout(Layout::left_to_right(Align::Center), |ui| {
-                    // todo: when can we save/load?
-                    let save_load_enabled = matches!(self.status, AppStatus::Ready(_)); // only save from main list
+                    // when can we save/load?
+                    let load_enabled = matches!(self.status, AppStatus::Ready(_)); // only save from main list
+                    let save_enabled = load_enabled && !self.data.is_empty();
                     ui.menu_button(fl!("menu"), |ui| {
                         if ui.button(fl!("menu_restart")).clicked() {
                             self.status = AppStatus::Starting;
@@ -120,46 +121,42 @@ impl App {
                         }
                         ui.add(Separator::default().spacing(2.));
                         if ui
-                            .add_enabled(save_load_enabled, Button::new(fl!("menu_load")))
+                            .add_enabled(load_enabled, Button::new(fl!("menu_load")))
                             .clicked()
                         {
-                            // TODO: load data
-                            // should that be window or full panel?
                             info!("Requested Load");
-                            self.child_windows.start_file_dialog();
+                            self.child_windows.start_file_dialog(
+                                self.project_directories.data_dir().to_path_buf(),
+                            );
                             self.status = AppStatus::Load;
                         }
                         if ui
-                            .add_enabled(save_load_enabled, Button::new(fl!("menu_save")))
+                            .add_enabled(save_enabled, Button::new(fl!("menu_save")))
                             .clicked()
                         {
                             // TODO: save data
-                            // should that be window or full panel?
                             info!("Requested Save");
                         }
                         if ui
-                            .add_enabled(save_load_enabled, Button::new(fl!("menu_save_as")))
+                            .add_enabled(save_enabled, Button::new(fl!("menu_save_as")))
                             .clicked()
                         {
                             // TODO: save as data
-                            // should that be window or full panel?
                             info!("Requested Save As");
                         }
                         ui.add(Separator::default().spacing(2.));
                         if ui
-                            .add_enabled(save_load_enabled, Button::new(fl!("menu_import")))
+                            .add_enabled(load_enabled, Button::new(fl!("menu_import")))
                             .clicked()
                         {
                             // TODO: import data
-                            // should that be window or full panel?
                             info!("Requested Import");
                         }
                         if ui
-                            .add_enabled(save_load_enabled, Button::new(fl!("menu_export")))
+                            .add_enabled(save_enabled, Button::new(fl!("menu_export")))
                             .clicked()
                         {
                             // TODO: export data
-                            // should that be window or full panel?
                             info!("Requested Export");
                         }
                         ui.add(Separator::default().spacing(2.));
@@ -188,17 +185,25 @@ impl App {
         });
     }
 
-    fn show_footer(&self, ctx: &Context) {
+    fn show_footer(&mut self, ctx: &Context) {
         TopBottomPanel::bottom("footer").show(ctx, |ui| {
             ui.add_space(5.);
             ui.horizontal(|ui| {
                 ui.label(self.status.to_string());
                 if let Some(message) = &self.message {
                     let error_message = RichText::new(fl!("app_error_err", err = message))
-                        .background_color(Color32::RED)
-                        .color(Color32::WHITE); // todo: check colors with theme
+                        .strong()
+                        .background_color(ERROR_BACKGROUND)
+                        .color(ERROR_FOREGROUND); // todo: check colors with theme
                     ui.label(error_message);
-                    // do we need an "OK" button to clear the message?
+                    // todo: we need an "OK" button to clear the message?
+                    ui.add_space(ERROR_SPACE);
+                    if ui
+                        .button(RichText::new(fl!("acknowledge_error")).color(ERROR_FOREGROUND))
+                        .clicked()
+                    {
+                        self.message = None;
+                    }
                 }
             });
         });
@@ -574,14 +579,27 @@ impl eframe::App for App {
                 }
 
                 Load => {
-                    // if not already starting, kick things off
-                    // info!("Starting")
-                    // if completed
-                    // info!("loading data");
                     if let Some(selected) = self.child_windows.selected_file() {
-                        info!("selected file: {}", selected.to_string_lossy());
-                        // todo: carry out load
-                        // ?? do we reset the display?
+                        if selected.exists() {  // checks for blank file selected, indicating cancel
+                            // process file
+                            info!("selected file: {}", selected.to_string_lossy());
+
+                            match AppData::load_from_file(selected.as_path()) {
+                                Ok(data) => {
+                                    self.data = data;
+                                    self.main_view = MainView::default();
+                                    info!("loaded data from {}", selected.to_string_lossy());
+                                }
+
+                                Err(e) => {
+                                    let file = selected.file_name().map_or(OsStr::new("<no file>").to_string_lossy(), |f| f.to_string_lossy());
+                                    // let message = format!("{}, when loading file [{file}]", e);
+                                    let message = format!("Unable to load save file [{file}]");
+                                    self.message = Some(message);
+                                    error!("Error on file load for [{}]: {}", selected.to_string_lossy(), e);
+                                }
+                            }
+                        } else { info!("no load file selected - ignoring"); }
                         Some(Ready(RefCell::new(None)))
                     } else { None }
                 }
@@ -822,6 +840,8 @@ pub fn save_to_pot<T>(file_path: &Path, data: &T) -> anyhow::Result<()>
 where
     T: Serialize,
 {
+    use anyhow::Context;
+
     if let Some(dir_path) = file_path.parent() {
         create_dir_all(dir_path)?
     }
@@ -833,7 +853,13 @@ where
     let file_handler = OpenOptions::new()
         .write(true)
         .create_new(true)
-        .open(file_path)?;
+        .open(file_path)
+        .with_context(|| {
+            format!(
+                "Failed to create save file [{}]",
+                file_path.to_string_lossy()
+            )
+        })?;
 
     let buf = pot::to_vec(data)?;
     let mut buf_writer = BufWriter::new(&file_handler);
@@ -847,7 +873,12 @@ pub fn load_from_pot<T>(file_path: &Path) -> anyhow::Result<T>
 where
     T: DeserializeOwned,
 {
-    let file_handler = OpenOptions::new().read(true).open(file_path)?;
+    use anyhow::Context;
+
+    let file_handler = OpenOptions::new()
+        .read(true)
+        .open(file_path)
+        .with_context(|| format!("Failed to open save file [{}]", file_path.to_string_lossy()))?;
     let buf_reader = BufReader::new(&file_handler);
     let data: T = pot::from_reader(buf_reader)?;
     Ok(data)
@@ -861,6 +892,8 @@ pub fn save_to_json<T>(file_path: &Path, data: &T) -> anyhow::Result<()>
 where
     T: Serialize,
 {
+    use anyhow::Context;
+
     if let Some(dir_path) = file_path.parent() {
         create_dir_all(dir_path)?
     }
@@ -872,7 +905,13 @@ where
     let file_handler = OpenOptions::new()
         .write(true)
         .create_new(true)
-        .open(file_path)?;
+        .open(file_path)
+        .with_context(|| {
+            format!(
+                "Failed to create export file [{}]",
+                file_path.to_string_lossy()
+            )
+        })?;
 
     let mut buf_writer = BufWriter::new(&file_handler);
     serde_json::to_writer(&mut buf_writer, data)?;
@@ -885,7 +924,17 @@ pub fn load_from_json<T>(file_path: &Path) -> anyhow::Result<T>
 where
     T: DeserializeOwned,
 {
-    let file_handler = OpenOptions::new().read(true).open(file_path)?;
+    use anyhow::Context;
+
+    let file_handler = OpenOptions::new()
+        .read(true)
+        .open(file_path)
+        .with_context(|| {
+            format!(
+                "Failed to open import file [{}]",
+                file_path.to_string_lossy()
+            )
+        })?;
     let buf_reader = BufReader::new(&file_handler);
     let data: T = serde_json::from_reader(buf_reader)?;
     Ok(data)
