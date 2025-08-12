@@ -1,4 +1,7 @@
-use std::{borrow::Borrow, path::Path};
+use std::{
+    borrow::Borrow,
+    path::{Path, PathBuf},
+};
 
 use anyhow::{Ok, Result, anyhow};
 use log::{debug, error};
@@ -21,7 +24,7 @@ const JSON_EXTENSION: &str = "json";
 // Default should be empty
 #[derive(Default)]
 pub struct AppData {
-    // todo: loaded file name stored here?
+    loaded_from: Option<PathBuf>,
     persons: ManagedList<Person>,
     districts: ManagedList<District>,
     factions: ManagedList<Faction>,
@@ -111,6 +114,14 @@ impl AppData {
         DisplayTable::from(&self.persons)
     }
 
+    pub fn set_loaded_from(&mut self, maybe_file: Option<PathBuf>) {
+        self.loaded_from = maybe_file;
+    }
+
+    pub fn get_loaded_from(&self) -> Option<PathBuf> {
+        self.loaded_from.clone()
+    }
+
     // todo: precalc and cache this?
     pub fn districts_display_table(&self) -> DisplayTable {
         DisplayTable::from(&self.districts)
@@ -182,8 +193,8 @@ impl AppData {
     }
 
     /// This saves all data to a save file
-    pub fn save_to_file(&self, file_path: &Path) -> Result<()> {
-        save_data_to_file(&file_path.with_extension(DATA_EXTENSION), self)
+    pub fn save_to_file(&mut self, file_path: &Path) -> Result<()> {
+        save_data_to_file(file_path, self)
     }
 
     /// This exports all data to a JSON file
@@ -448,7 +459,8 @@ fn save_data_from_file(file_path: &Path) -> Result<AppData> {
     let data = load_from_pot::<SaveData1>(file_path)?;
     if data.validate() {
         // convert to AppData
-        let ret = data.into();
+        let mut ret: AppData = data.into();
+        ret.loaded_from = Some(file_path.to_path_buf());
         Ok(ret)
     } else {
         Err(anyhow!("unable to validate save data"))

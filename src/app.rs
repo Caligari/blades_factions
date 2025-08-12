@@ -31,7 +31,7 @@ use crate::{
     app_data::AppData,
     app_display::{ShowEdit, ShowEditInfo},
     app_settings::AppSettings,
-    child_windows::ChildWindows,
+    child_windows::{ChildWindows, FileDialogType},
     district::District,
     faction::Faction,
     localize::fl,
@@ -112,7 +112,8 @@ impl App {
                 ui.with_layout(Layout::left_to_right(Align::Center), |ui| {
                     // when can we save/load?
                     let load_enabled = matches!(self.status, AppStatus::Ready(_)); // only save from main list
-                    let save_enabled = load_enabled && !self.data.is_empty();
+                    let save_as_enabled = load_enabled && !self.data.is_empty();
+
                     ui.menu_button(fl!("menu"), |ui| {
                         if ui.button(fl!("menu_restart")).clicked() {
                             self.status = AppStatus::Starting;
@@ -126,23 +127,41 @@ impl App {
                         {
                             info!("Requested Load");
                             self.child_windows.start_file_dialog(
+                                FileDialogType::Load,
                                 self.project_directories.data_dir().to_path_buf(),
                             );
                             self.status = AppStatus::Load;
                         }
                         if ui
-                            .add_enabled(save_enabled, Button::new(fl!("menu_save")))
+                            .add_enabled(save_as_enabled, Button::new(fl!("menu_save")))
                             .clicked()
                         {
                             // TODO: save data
                             info!("Requested Save");
+                            if self.data.get_loaded_from().is_some() {
+                                info!("Doing SaveTo");
+                                self.status = AppStatus::SaveTo;
+                            } else {
+                                info!("Forced SaveAs -> no loaded file data present");
+                                // todo: provide default name?
+                                self.child_windows.start_file_dialog(
+                                    FileDialogType::Save,
+                                    self.project_directories.data_dir().to_path_buf(),
+                                );
+                                self.status = AppStatus::SaveAs;
+                            }
                         }
                         if ui
-                            .add_enabled(save_enabled, Button::new(fl!("menu_save_as")))
+                            .add_enabled(save_as_enabled, Button::new(fl!("menu_save_as")))
                             .clicked()
                         {
-                            // TODO: save as data
+                            // TODO: save as data - provide default name?
                             info!("Requested Save As");
+                            self.child_windows.start_file_dialog(
+                                FileDialogType::Save,
+                                self.project_directories.data_dir().to_path_buf(),
+                            );
+                            self.status = AppStatus::SaveAs;
                         }
                         ui.add(Separator::default().spacing(2.));
                         if ui
@@ -153,7 +172,7 @@ impl App {
                             info!("Requested Import");
                         }
                         if ui
-                            .add_enabled(save_enabled, Button::new(fl!("menu_export")))
+                            .add_enabled(save_as_enabled, Button::new(fl!("menu_export")))
                             .clicked()
                         {
                             // TODO: export data
@@ -190,6 +209,11 @@ impl App {
             ui.add_space(5.);
             ui.horizontal(|ui| {
                 ui.label(self.status.to_string());
+                if let Some(file) = self.data.get_loaded_from()
+                    && let Some(name) = file.file_stem()
+                {
+                    ui.label(RichText::new(format!("({})", name.to_string_lossy())).italics());
+                }
                 if let Some(message) = &self.message {
                     let error_message = RichText::new(fl!("app_error_err", err = message))
                         .strong()
@@ -428,7 +452,6 @@ impl eframe::App for App {
                             }
                         }
                     }
-
                 }
 
                 ShowEditDistrict( index_ref, district, ) => {
@@ -604,6 +627,55 @@ impl eframe::App for App {
                     } else { None }
                 }
 
+                SaveAs => {
+                    if let Some(selected) = self.child_windows.selected_file() {
+                        if !selected.as_os_str().is_empty() {  // checks for blank file selected, indicating cancel
+                            // process file
+                            info!("selected file: {}", selected.to_string_lossy());
+
+                            match self.data.save_to_file(selected.as_path()) {
+                                Ok(()) => {
+                                    info!("saved data to {}", selected.to_string_lossy());
+                                    self.data.set_loaded_from(Some(selected));
+                                }
+
+                                Err(e) => {
+                                    let file = selected.file_name().map_or(OsStr::new("<no file>").to_string_lossy(), |f| f.to_string_lossy());
+                                    // let message = format!("{}, when loading file [{file}]", e);
+                                    let message = format!("Unable to save data to file [{file}]");
+                                    self.message = Some(message);
+                                    error!("Error on save file for [{}]: {}", selected.to_string_lossy(), e);
+                                }
+                            }
+                        } else { info!("no save file selected - ignoring"); }
+                        Some(Ready(RefCell::new(None)))
+                    } else { None }
+                }
+
+                SaveTo => {
+                    if let Some(selected) = self.data.get_loaded_from() {
+                        if !selected.as_os_str().is_empty() {  // checks for blank file selected, indicating cancel
+                            // process file
+                            info!("saving to file: {}", selected.to_string_lossy());
+
+                            match self.data.save_to_file(selected.as_path()) {
+                                Ok(()) => {
+                                    info!("saved data to {}", selected.to_string_lossy());
+                                }
+
+                                Err(e) => {
+                                    let file = selected.file_name().map_or(OsStr::new("<no file>").to_string_lossy(), |f| f.to_string_lossy());
+                                    // let message = format!("{}, when loading file [{file}]", e);
+                                    let message = format!("Unable to save data to file [{file}]");
+                                    self.message = Some(message);
+                                    error!("Error on save file for [{}]: {}", selected.to_string_lossy(), e);
+                                }
+                            }
+                        } else { error!("data has no save file - unable to save"); }
+                        Some(Ready(RefCell::new(None)))
+                    } else { None }
+                }
+
 
             }
         }).inner {
@@ -710,9 +782,10 @@ enum AppStatus {
     ShowEditPerson(Option<PersonRef>, RefCell<Person>),
     ShowEditFaction(Option<FactionRef>, RefCell<Faction>),
     Load,
-    // Save,
-    // Import,
-    // Export,
+    SaveTo, // No file dialog, use existing save file name
+    SaveAs, // use file dialog to get file name
+            // Import,
+            // Export,
 }
 
 impl Display for AppStatus {
@@ -750,6 +823,8 @@ impl Display for AppStatus {
                     }
                 }
                 Load => fl!("app_loading"),
+                SaveAs => fl!("app_saving"),
+                SaveTo => fl!("app_saving"),
             }
         )
     }

@@ -30,7 +30,7 @@ impl ChildWindows {
     }
 
     /// show the file dialog
-    pub fn start_file_dialog(&mut self, initial_directory: PathBuf) {
+    pub fn start_file_dialog(&mut self, dialog_type: FileDialogType, initial_directory: PathBuf) {
         // start dialog
         // todo: changes for type of file to select?
         if let Err(e) = create_dir_all(initial_directory.clone()) {
@@ -47,7 +47,11 @@ impl ChildWindows {
 
         info!("starting file dialog");
 
-        self.file_dialog.pick_file();
+        match dialog_type {
+            FileDialogType::Load => self.file_dialog.pick_file(),
+            FileDialogType::Save => self.file_dialog.save_file(),
+        }
+
         *self.show_file.write() = true;
         *self.selected_file.write() = None;
     }
@@ -131,4 +135,12 @@ impl ChildWindows {
             },
         );
     }
+}
+
+// ---------------------
+// FileDialogType
+
+pub enum FileDialogType {
+    Load,
+    Save,
 }

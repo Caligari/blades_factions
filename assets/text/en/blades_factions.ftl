@@ -24,6 +24,7 @@ app_edit_itm = Editing {$itm}
 app_add_itm = Add New {$itm}
 app_create_itm = Creating New {$itm}
 app_loading = Loading
+app_saving = Saving
 name_heading = Name
 tier_heading = Tier
 hq_heading = HQ
