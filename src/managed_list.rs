@@ -80,10 +80,10 @@ impl<T: Clone + Named> GenericRefList<T> {
 
     /// This silently ignores duplicates
     pub fn push(&mut self, item: GenericRef<T>) {
-        if let Some(new_name) = item.name() {
-            if !self.list.iter().any(|r| r.0.read().name == new_name) {
-                self.list.push(item);
-            }
+        if let Some(new_name) = item.name()
+            && !self.list.iter().any(|r| r.0.read().name == new_name)
+        {
+            self.list.push(item);
         }
     }
 

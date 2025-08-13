@@ -30,7 +30,12 @@ impl ChildWindows {
     }
 
     /// show the file dialog
-    pub fn start_file_dialog(&mut self, dialog_type: FileDialogType, initial_directory: PathBuf) {
+    pub fn start_file_dialog(
+        &mut self,
+        dialog_type: FileDialogType,
+        target_type: FileTarget,
+        initial_directory: PathBuf,
+    ) {
         // start dialog
         // todo: changes for type of file to select?
         if let Err(e) = create_dir_all(initial_directory.clone()) {
@@ -140,7 +145,17 @@ impl ChildWindows {
 // ---------------------
 // FileDialogType
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FileDialogType {
     Load,
     Save,
+}
+
+// ---------------------
+// FileDialogType
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FileTarget {
+    Internal,
+    Export,
 }

@@ -1,8 +1,6 @@
 use std::slice::Iter;
 
-use eframe::egui::{
-    Color32, ComboBox, Frame, Label, Margin, RichText, ScrollArea, Sense, Stroke, Ui,
-};
+use eframe::egui::{Color32, ComboBox, Frame, Label, Margin, RichText, Sense, Stroke, Ui};
 use log::{debug, info};
 
 use crate::{
@@ -300,10 +298,10 @@ pub fn show_edit_list<T: Named + Clone>(
 
                 let item_label = {
                     let mut item_label = RichText::new(item_name.clone());
-                    if let Some(hovered_name) = this_list.hovered_name() {
-                        if hovered_name == item_name {
-                            item_label = item_label.color(Color32::DARK_RED).strikethrough();
-                        }
+                    if let Some(hovered_name) = this_list.hovered_name()
+                        && hovered_name == item_name
+                    {
+                        item_label = item_label.color(Color32::DARK_RED).strikethrough();
                     }
                     item_label
                 };
@@ -394,10 +392,10 @@ pub fn show_edit_stringlist_italics(name: &str, this_list: &mut StringList, ui: 
 
             let item_label = {
                 let mut item_label = RichText::new(item.clone()).italics();
-                if let Some(hovered_name) = this_list.hovered_name() {
-                    if hovered_name == item {
-                        item_label = item_label.color(Color32::DARK_RED).strikethrough();
-                    }
+                if let Some(hovered_name) = this_list.hovered_name()
+                    && hovered_name == item
+                {
+                    item_label = item_label.color(Color32::DARK_RED).strikethrough();
                 }
                 item_label
             };

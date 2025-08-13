@@ -5,7 +5,7 @@ use std::{
     fmt::Display,
     fs::{self, OpenOptions, create_dir_all},
     io::{BufReader, BufWriter, Write},
-    path::{Path, PathBuf},
+    path::Path,
     sync::Arc,
 };
 
@@ -31,7 +31,7 @@ use crate::{
     app_data::AppData,
     app_display::{ShowEdit, ShowEditInfo},
     app_settings::AppSettings,
-    child_windows::{ChildWindows, FileDialogType},
+    child_windows::{ChildWindows, FileDialogType, FileTarget},
     district::District,
     faction::Faction,
     localize::fl,
@@ -128,6 +128,7 @@ impl App {
                             info!("Requested Load");
                             self.child_windows.start_file_dialog(
                                 FileDialogType::Load,
+                                FileTarget::Internal,
                                 self.project_directories.data_dir().to_path_buf(),
                             );
                             self.status = AppStatus::Load;
@@ -146,6 +147,7 @@ impl App {
                                 // todo: provide default name?
                                 self.child_windows.start_file_dialog(
                                     FileDialogType::Save,
+                                    FileTarget::Internal,
                                     self.project_directories.data_dir().to_path_buf(),
                                 );
                                 self.status = AppStatus::SaveAs;
@@ -159,6 +161,7 @@ impl App {
                             info!("Requested Save As");
                             self.child_windows.start_file_dialog(
                                 FileDialogType::Save,
+                                FileTarget::Internal,
                                 self.project_directories.data_dir().to_path_buf(),
                             );
                             self.status = AppStatus::SaveAs;
@@ -170,6 +173,12 @@ impl App {
                         {
                             // TODO: import data
                             info!("Requested Import");
+                            self.child_windows.start_file_dialog(
+                                FileDialogType::Load,
+                                FileTarget::Export,
+                                self.project_directories.data_dir().to_path_buf(),
+                            );
+                            self.status = AppStatus::Import;
                         }
                         if ui
                             .add_enabled(save_as_enabled, Button::new(fl!("menu_export")))
@@ -177,6 +186,12 @@ impl App {
                         {
                             // TODO: export data
                             info!("Requested Export");
+                            self.child_windows.start_file_dialog(
+                                FileDialogType::Save,
+                                FileTarget::Export,
+                                self.project_directories.data_dir().to_path_buf(),
+                            );
+                            self.status = AppStatus::Export;
                         }
                         ui.add(Separator::default().spacing(2.));
                         if ui
@@ -603,7 +618,7 @@ impl eframe::App for App {
 
                 Load => {
                     if let Some(selected) = self.child_windows.selected_file() {
-                        if selected.exists() {  // checks for blank file selected, indicating cancel
+                        if !selected.as_os_str().is_empty() {  // checks for blank file selected, indicating cancel
                             // process file
                             info!("selected file: {}", selected.to_string_lossy());
 
@@ -672,6 +687,55 @@ impl eframe::App for App {
                                 }
                             }
                         } else { error!("data has no save file - unable to save"); }
+                        Some(Ready(RefCell::new(None)))
+                    } else { None }
+                }
+
+                Import => {
+                    if let Some(selected) = self.child_windows.selected_file() {
+                        if !selected.as_os_str().is_empty() {  // checks for blank file selected, indicating cancel
+                            // process file
+                            info!("selected file: {}", selected.to_string_lossy());
+
+                            match self.data.import_from_file(selected.as_path()) {
+                                Ok(()) => {
+                                    self.main_view = MainView::default();
+                                    info!("imported data from {}", selected.to_string_lossy());
+                                }
+
+                                Err(e) => {
+                                    let file = selected.file_name().map_or(OsStr::new("<no file>").to_string_lossy(), |f| f.to_string_lossy());
+                                    // let message = format!("{}, when loading file [{file}]", e);
+                                    let message = format!("Unable to import data from [{file}]");
+                                    self.message = Some(message);
+                                    error!("Error on data import from [{}]: {}", selected.to_string_lossy(), e);
+                                }
+                            }
+                        } else { info!("no import file selected - ignoring"); }
+                        Some(Ready(RefCell::new(None)))
+                    } else { None }
+                }
+
+                Export => {
+                    if let Some(selected) = self.child_windows.selected_file() {
+                        if !selected.as_os_str().is_empty() {  // checks for blank file selected, indicating cancel
+                            // process file
+                            info!("selected file: {}", selected.to_string_lossy());
+
+                            match self.data.export_to_file(selected.as_path()) {
+                                Ok(()) => {
+                                    info!("exported data to {}", selected.to_string_lossy());
+                                }
+
+                                Err(e) => {
+                                    let file = selected.file_name().map_or(OsStr::new("<no file>").to_string_lossy(), |f| f.to_string_lossy());
+                                    // let message = format!("{}, when loading file [{file}]", e);
+                                    let message = format!("Unable to export data to file [{file}]");
+                                    self.message = Some(message);
+                                    error!("Error on data export to [{}]: {}", selected.to_string_lossy(), e);
+                                }
+                            }
+                        } else { info!("no export file selected - ignoring"); }
                         Some(Ready(RefCell::new(None)))
                     } else { None }
                 }
@@ -784,8 +848,8 @@ enum AppStatus {
     Load,
     SaveTo, // No file dialog, use existing save file name
     SaveAs, // use file dialog to get file name
-            // Import,
-            // Export,
+    Import,
+    Export,
 }
 
 impl Display for AppStatus {
@@ -825,6 +889,8 @@ impl Display for AppStatus {
                 Load => fl!("app_loading"),
                 SaveAs => fl!("app_saving"),
                 SaveTo => fl!("app_saving"),
+                Import => fl!("app_importing"),
+                Export => fl!("app_exporting"),
             }
         )
     }
