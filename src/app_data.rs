@@ -470,9 +470,11 @@ fn save_data_from_file(file_path: &Path) -> Result<AppData> {
 // ====================
 // SaveData1
 const SAVE1_VERSION: u16 = 1;
+const SAVE_SCHEMA: &str = "BladesFactionsData";
 
 #[derive(Debug, Serialize, Deserialize)]
 struct SaveData1 {
+    save_schema: String,
     save_version: u16,
     persons: Vec<PersonStore>,
     districts: Vec<DistrictStore>,
@@ -481,7 +483,7 @@ struct SaveData1 {
 
 impl SaveData1 {
     fn validate(&self) -> bool {
-        self.save_version == SAVE1_VERSION
+        self.save_schema == SAVE_SCHEMA && self.save_version == SAVE1_VERSION
     }
 }
 
@@ -498,6 +500,7 @@ impl From<SaveData1> for AppData {
 impl From<&AppData> for SaveData1 {
     fn from(input_data: &AppData) -> Self {
         SaveData1 {
+            save_schema: SAVE_SCHEMA.to_string(),
             save_version: SAVE1_VERSION,
             persons: input_data.persons.borrow().into(),
             districts: input_data.districts.borrow().into(),

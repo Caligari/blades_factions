@@ -4,11 +4,12 @@ use std::{
     ffi::OsStr,
     fmt::Display,
     fs::{self, OpenOptions, create_dir_all},
-    io::{BufReader, BufWriter, Write},
+    io::{BufReader, BufWriter, Read, Write},
     path::Path,
     sync::Arc,
 };
 
+use anyhow::anyhow;
 use directories_next::ProjectDirs;
 use eframe::egui::FontFamily::Proportional;
 use eframe::egui::FontId;
@@ -271,9 +272,6 @@ impl eframe::App for App {
                     // if completed
                     info!("resetting local data");
                     self.reset();
-                    if let Err(err) = self.data.test_import_from_json() {
-                        error!("importing json error: {err}");
-                    }
 
                     info!("Starting => Ready");
                     Some(Ready(RefCell::new(None)))
@@ -638,6 +636,7 @@ impl eframe::App for App {
                                 }
                             }
                         } else { info!("no load file selected - ignoring"); }
+                        info!("Loading => Ready");
                         Some(Ready(RefCell::new(None)))
                     } else { None }
                 }
@@ -663,6 +662,7 @@ impl eframe::App for App {
                                 }
                             }
                         } else { info!("no save file selected - ignoring"); }
+                        info!("SaveAs => Ready");
                         Some(Ready(RefCell::new(None)))
                     } else { None }
                 }
@@ -687,6 +687,7 @@ impl eframe::App for App {
                                 }
                             }
                         } else { error!("data has no save file - unable to save"); }
+                        info!("SaveTo => Ready");
                         Some(Ready(RefCell::new(None)))
                     } else { None }
                 }
@@ -712,6 +713,7 @@ impl eframe::App for App {
                                 }
                             }
                         } else { info!("no import file selected - ignoring"); }
+                        info!("Import => Ready");
                         Some(Ready(RefCell::new(None)))
                     } else { None }
                 }
@@ -736,6 +738,7 @@ impl eframe::App for App {
                                 }
                             }
                         } else { info!("no export file selected - ignoring"); }
+                        info!("Export => Ready");
                         Some(Ready(RefCell::new(None)))
                     } else { None }
                 }
@@ -975,6 +978,7 @@ fn configure_fonts(ctx: &CreationContext, zoom: f32) {
 
 // ---------------------------
 // Load and Save to POT files
+const SAVE_FILE_ID: &[u8] = &[0x2b, 0x4a]; // magic number
 
 #[allow(dead_code)]
 pub fn save_to_pot<T>(file_path: &Path, data: &T) -> anyhow::Result<()>
@@ -1002,7 +1006,8 @@ where
             )
         })?;
 
-    let buf = pot::to_vec(data)?;
+    let mut buf = pot::to_vec(data)?;
+    buf.splice(0..0, SAVE_FILE_ID.iter().cloned());
     let mut buf_writer = BufWriter::new(&file_handler);
     buf_writer.write_all(buf.as_slice())?;
     buf_writer.flush()?;
@@ -1020,7 +1025,15 @@ where
         .read(true)
         .open(file_path)
         .with_context(|| format!("Failed to open save file [{}]", file_path.to_string_lossy()))?;
-    let buf_reader = BufReader::new(&file_handler);
+    let mut buf_reader = BufReader::new(&file_handler);
+    let mut check_id = [0u8, 0u8];
+    buf_reader.read_exact(&mut check_id)?;
+    if check_id != SAVE_FILE_ID {
+        return Err(anyhow!(
+            "File [{}] does not have expected SAVE_FILE_ID",
+            file_path.to_string_lossy()
+        ));
+    }
     let data: T = pot::from_reader(buf_reader)?;
     Ok(data)
 }

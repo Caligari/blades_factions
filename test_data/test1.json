@@ -1,47 +1,35 @@
 {
+  "save_schema": "BladesFactionsData",
   "save_version": 1,
   "persons": [
     {
       "name": "Edwina Eaton",
       "description": "Pariatur exercitation ullamco mollit et nulla labore irure id enim aute cupidatat consectetur consectetur officia. Ad in ullamco voluptate sint exercitation labore. Laboris qui irure commodo dolor laboris pariatur quis. Minim labore mollit cillum culpa amet occaecat elit id fugiat excepteur. Tempor dolore incididunt ut aute eiusmod reprehenderit laboris culpa duis. Sunt anim reprehenderit proident magna sint reprehenderit aliquip officia excepteur ut aliqua ad sint pariatur. Aliqua laboris ad ad officia Lorem.\r\n",
-      "personality": [
-        "dolor",
-        "laboris",
-        "sit"
-      ],
+      "personality": ["dolor", "laboris", "sit"],
       "notes": "Commodo eiusmod reprehenderit irure consectetur elit duis aliquip enim id labore sit est. Lorem anim sint pariatur ullamco pariatur nostrud sunt laborum voluptate sit amet. Ad eiusmod consectetur veniam irure ex.\r\n"
     },
     {
       "name": "Reese Bradford",
       "description": "Irure excepteur aliquip non deserunt ut commodo cillum esse. Do non labore eu consequat. Aliqua adipisicing sit anim velit est cillum consectetur aliquip do magna veniam do esse excepteur. Enim consectetur ut quis veniam pariatur ut dolore amet ex pariatur eiusmod consectetur quis.\r\n",
-      "personality": [
-        "ea"
-      ],
+      "personality": ["ea"],
       "notes": "Ad consequat duis tempor laboris voluptate nostrud non veniam qui id adipisicing id pariatur. Consequat sunt Lorem ea occaecat nostrud nostrud fugiat deserunt consequat mollit. Ad veniam elit cillum elit cillum officia cillum sunt do veniam quis id. Consequat cillum sunt quis Lorem dolore.\r\n"
     },
     {
       "name": "Moss Baldwin",
       "description": "Ut reprehenderit sit quis nulla dolor elit veniam eu. Officia enim excepteur ullamco deserunt anim nostrud. Dolore excepteur est cillum magna ea eu. Aute mollit tempor laboris cillum qui anim ea culpa officia.\r\n",
-      "personality": [
-        "Lorem"
-      ],
+      "personality": ["Lorem"],
       "notes": "Mollit elit nostrud in mollit nostrud voluptate voluptate velit occaecat dolor aute non. Officia est enim aliqua proident ullamco ad. Eu sint aute in nisi aute sunt enim eiusmod enim do. Excepteur amet nisi anim dolor ea culpa consectetur nisi culpa proident cillum veniam. Proident in ea excepteur occaecat exercitation officia deserunt deserunt minim id ea. Officia ex aliquip consequat cillum est adipisicing occaecat consequat. Voluptate tempor proident minim culpa qui non Lorem est aliquip non amet sit consequat.\r\n"
     },
     {
       "name": "Terrie Rios",
       "description": "Laborum aliqua enim ex consequat. Lorem ipsum velit ut cupidatat ipsum consectetur aliqua irure mollit voluptate nulla nisi. Voluptate eiusmod nulla consequat aliqua aliqua voluptate id.\r\n",
-      "personality": [
-        "magna",
-        "fugiat"
-      ],
+      "personality": ["magna", "fugiat"],
       "notes": "Exercitation minim ut consequat consequat adipisicing occaecat Lorem mollit ipsum consequat magna quis officia irure. Ex pariatur sunt laboris fugiat. Dolore sit eiusmod nostrud cillum eu irure deserunt laborum laboris nulla veniam et et enim. Dolor tempor duis id ullamco fugiat velit quis dolor.\r\n"
     },
     {
       "name": "Billie Pollard",
       "description": "Laborum Lorem aliquip fugiat nostrud anim do. Commodo ipsum sit velit ad veniam minim do. Officia incididunt aliqua qui mollit eiusmod anim Lorem proident fugiat dolore anim anim irure aliqua.\r\n",
-      "personality": [
-        "consequat"
-      ],
+      "personality": ["consequat"],
       "notes": "Sint irure sunt incididunt esse. Ipsum irure sit fugiat duis labore reprehenderit et pariatur laboris proident et. Mollit amet ea aliqua pariatur et enim dolor ad tempor qui anim ea elit. In aute sint dolor reprehenderit nostrud qui id sint amet in aute velit ullamco. Nulla anim qui proident id qui. Dolore exercitation deserunt id occaecat nostrud ex ad cupidatat exercitation fugiat labore ea ullamco.\r\n"
     },
     {
@@ -53,72 +41,49 @@
     {
       "name": "Tammie Strickland",
       "description": "Eiusmod anim anim mollit occaecat ullamco amet minim nulla aute quis esse fugiat sint ipsum. Reprehenderit cupidatat ut eiusmod exercitation id esse culpa laboris ea quis proident nisi incididunt. Velit nisi deserunt cupidatat incididunt officia in labore ipsum elit et ut. Ex culpa ut duis cillum irure eu.\r\n",
-      "personality": [
-        "qui",
-        "sit"
-      ],
+      "personality": ["qui", "sit"],
       "notes": "Id nostrud veniam adipisicing ex aliquip reprehenderit. Dolor voluptate deserunt laboris dolor voluptate non ullamco minim magna aute. Nostrud sunt voluptate magna ea elit officia esse mollit do esse enim sunt veniam do.\r\n"
     },
     {
       "name": "Bobbi Mcfarland",
       "description": "Eiusmod exercitation cillum quis dolore eiusmod esse nisi minim eiusmod. Ipsum ad ex nulla proident occaecat Lorem. Elit proident consequat amet cillum tempor nulla nostrud excepteur do id ullamco sit. Id incididunt non sunt exercitation mollit veniam amet dolor dolor. Quis eiusmod laboris sunt qui incididunt. Adipisicing commodo sit qui voluptate deserunt quis eiusmod reprehenderit incididunt aliquip aliquip deserunt qui consequat. Aute esse ad esse amet elit.\r\n",
-      "personality": [
-        "incididunt"
-      ],
+      "personality": ["incididunt"],
       "notes": "Ipsum anim eiusmod adipisicing ex esse id Lorem voluptate sint fugiat mollit cupidatat. Nulla aliqua do ut commodo laboris dolor nisi sunt anim elit. Anim proident excepteur nostrud excepteur ad quis et dolore nostrud velit dolore. Nulla ut officia consectetur dolore sint pariatur sunt aliqua eu ad anim sunt. Eiusmod nulla ad id quis reprehenderit. Minim pariatur sunt sit quis ex proident culpa ex aute nisi nisi.\r\n"
     },
     {
       "name": "Chavez Randall",
       "description": "Labore consequat quis consequat aute adipisicing eiusmod esse velit sint enim proident sunt ipsum laboris. Adipisicing reprehenderit est cupidatat magna et adipisicing quis enim ipsum et nisi dolore. Laboris labore aute laborum est do est ad aute. Aute duis irure incididunt occaecat eiusmod veniam ex ea ad. Commodo sit nulla incididunt minim consectetur incididunt enim enim veniam consequat laboris ut.\r\n",
-      "personality": [
-        "sunt",
-        "proident"
-      ],
+      "personality": ["sunt", "proident"],
       "notes": "Cillum ut culpa ad et minim mollit exercitation. Id magna dolor reprehenderit cillum proident consectetur cillum labore ullamco eu aliqua sint laboris. Commodo est fugiat pariatur commodo dolore cupidatat occaecat. Pariatur labore esse consectetur nisi ex non cillum qui fugiat. Culpa esse duis in duis deserunt pariatur reprehenderit dolor reprehenderit adipisicing. Exercitation voluptate aliquip nulla cupidatat non do.\r\n"
     },
     {
       "name": "Contreras Shannon",
       "description": "Lorem pariatur Lorem reprehenderit incididunt dolor dolore reprehenderit adipisicing occaecat deserunt tempor sit dolor. Labore duis quis commodo nulla elit Lorem consequat excepteur. Officia culpa duis irure consequat voluptate.\r\n",
-      "personality": [
-        "excepteur",
-        "ex"
-      ],
+      "personality": ["excepteur", "ex"],
       "notes": "Pariatur magna ullamco deserunt cupidatat reprehenderit in elit proident proident consectetur pariatur id. Exercitation adipisicing ullamco esse nulla dolore Lorem pariatur do culpa commodo ullamco cupidatat. Lorem ad exercitation aute culpa laborum incididunt eiusmod. Adipisicing ad ullamco labore exercitation sit nisi. Esse aliquip aute est pariatur ullamco tempor ipsum qui. Id sint eu aliqua officia culpa ad quis.\r\n"
     },
     {
       "name": "Clark Freeman",
       "description": "Fugiat est do nisi ullamco Lorem ullamco cupidatat consectetur amet. Tempor excepteur minim ea ex. Aliqua mollit exercitation consectetur amet est est quis. Enim voluptate esse irure proident consectetur deserunt. Fugiat fugiat sit et nulla ullamco veniam ad cupidatat occaecat enim sit. Sint nisi eu ipsum voluptate tempor laboris.\r\n",
-      "personality": [
-        "cillum",
-        "fugiat",
-        "anim"
-      ],
+      "personality": ["cillum", "fugiat", "anim"],
       "notes": "Pariatur voluptate ea officia est. Ipsum officia occaecat voluptate consectetur et ad. Labore exercitation dolor aute eu. Fugiat nisi magna ut laborum proident consequat eiusmod irure dolore. Qui ullamco irure ullamco eiusmod quis in eiusmod.\r\n"
     },
     {
       "name": "Georgia Moore",
       "description": "Labore minim fugiat ea ea exercitation non ipsum. Aliqua nulla deserunt deserunt ad deserunt ut minim magna Lorem. Exercitation nulla amet dolore fugiat nisi magna ad id dolor nisi nostrud proident reprehenderit.\r\n",
-      "personality": [
-        "laboris",
-        "non"
-      ],
+      "personality": ["laboris", "non"],
       "notes": "Aliqua id nisi ea laborum consequat nostrud excepteur. Velit culpa reprehenderit laborum proident pariatur consequat officia anim do eu enim mollit nostrud eiusmod. Occaecat mollit laborum reprehenderit consequat cillum eu ullamco enim sunt. Elit ad pariatur officia eu officia commodo incididunt nostrud ullamco et. Ullamco ipsum dolore enim laboris dolor id adipisicing ad. Sint cillum ea ut officia cupidatat et deserunt adipisicing.\r\n"
     },
     {
       "name": "Louise Navarro",
       "description": "Quis id tempor est culpa mollit sit ullamco exercitation. Veniam consequat minim labore qui voluptate ad sint tempor in. Non duis magna commodo cupidatat. Esse velit dolore voluptate anim commodo eu est consectetur ad excepteur aliquip ullamco minim. Consequat do aliqua ad ea aliqua nulla id Lorem.\r\n",
-      "personality": [
-        "id"
-      ],
+      "personality": ["id"],
       "notes": "Incididunt laborum aliquip et aliqua id esse nulla mollit consequat velit duis. Officia aliqua ea sunt officia amet consequat duis duis tempor ut et. Lorem sit ea laboris occaecat tempor sit proident.\r\n"
     },
     {
       "name": "Madeleine Hays",
       "description": "Ut irure incididunt cillum elit velit cillum exercitation nostrud Lorem amet est pariatur. Adipisicing sunt fugiat reprehenderit nulla. Occaecat laboris voluptate culpa Lorem ipsum cillum veniam eiusmod exercitation ullamco.\r\n",
-      "personality": [
-        "nulla",
-        "dolor"
-      ],
+      "personality": ["nulla", "dolor"],
       "notes": "Consequat mollit elit nostrud aliquip sint voluptate. Aute ipsum anim anim aliquip minim ex. Enim velit excepteur pariatur elit labore incididunt voluptate. Elit amet amet irure do ullamco. Quis nulla qui sunt magna eu sunt aliqua sint tempor eu. Labore ad magna eu sunt pariatur et ea elit consectetur deserunt ullamco quis occaecat cupidatat.\r\n"
     },
     {
@@ -136,28 +101,19 @@
     {
       "name": "Dillard Wilkins",
       "description": "Sunt dolore laboris aliqua est ipsum sit magna occaecat consectetur. Ex ullamco eiusmod nulla irure aute laboris reprehenderit sunt ut ea. Et magna ut ipsum ipsum deserunt et. Velit fugiat eu dolore magna anim officia duis ipsum nulla ea irure occaecat nisi proident. Eiusmod fugiat commodo Lorem commodo nulla fugiat tempor deserunt quis quis incididunt dolore. Ut incididunt minim duis proident tempor minim eu.\r\n",
-      "personality": [
-        "reprehenderit",
-        "adipisicing"
-      ],
+      "personality": ["reprehenderit", "adipisicing"],
       "notes": "Voluptate culpa nisi sunt occaecat Lorem. Culpa veniam incididunt quis ex dolore officia non. Mollit ut anim ad consequat aliqua ad sunt. Non proident dolore exercitation do voluptate eu est cillum minim adipisicing. Exercitation adipisicing sit elit commodo laboris in reprehenderit laborum consectetur velit cillum aliqua et veniam. Et reprehenderit do tempor ea do esse sunt ea non ullamco sunt do sunt. Eu incididunt enim amet nisi non aliqua irure quis laborum eiusmod consectetur aliqua.\r\n"
     },
     {
       "name": "Elsa Robinson",
       "description": "Duis consectetur non aliquip aliqua aliquip. Officia eu commodo dolor cupidatat dolor fugiat et magna cupidatat magna. Est dolore ea ut esse consectetur enim occaecat ea in tempor dolore irure excepteur. Ad ea pariatur magna tempor cillum veniam reprehenderit amet labore ad ea ad incididunt pariatur. Duis duis do consequat labore consequat nulla exercitation adipisicing pariatur proident.\r\n",
-      "personality": [
-        "labore"
-      ],
+      "personality": ["labore"],
       "notes": "Id deserunt voluptate dolor enim consectetur consectetur est magna enim duis consectetur. Occaecat veniam incididunt culpa aute. Pariatur anim sint id dolore incididunt commodo. Veniam nulla voluptate commodo anim minim deserunt eiusmod anim occaecat dolore ipsum nisi. Amet esse minim tempor proident non anim occaecat sit. Non fugiat et fugiat sunt excepteur aliqua incididunt voluptate.\r\n"
     },
     {
       "name": "Pollard Carlson",
       "description": "Ipsum labore voluptate esse elit sunt ullamco. Voluptate ea commodo enim laboris tempor tempor deserunt veniam. Exercitation dolore nisi ea aliquip ullamco amet elit mollit id labore ea laboris consectetur aliqua. Magna excepteur quis aliquip ex aliqua eu fugiat deserunt aliqua sit duis occaecat. In dolor amet laboris sit culpa ut.\r\n",
-      "personality": [
-        "cillum",
-        "ea",
-        "ullamco"
-      ],
+      "personality": ["cillum", "ea", "ullamco"],
       "notes": "Dolore fugiat occaecat occaecat non consequat. Aliqua officia et aliqua officia est qui cupidatat consectetur. Laboris consequat proident ex dolor consequat sint sint et non incididunt ullamco. Cillum eu non excepteur ea incididunt velit. Anim nulla fugiat deserunt ex voluptate minim.\r\n"
     },
     {
@@ -169,43 +125,31 @@
     {
       "name": "Andrews Bauer",
       "description": "Labore sunt reprehenderit irure excepteur reprehenderit quis fugiat. Ad magna irure ad ullamco anim consequat Lorem aliqua velit et. Cupidatat fugiat in aliquip excepteur laboris non. Consequat aute ipsum fugiat culpa est enim consequat proident esse quis eu. Eiusmod excepteur sunt eiusmod officia sint ut.\r\n",
-      "personality": [
-        "qui"
-      ],
+      "personality": ["qui"],
       "notes": "Eiusmod velit deserunt commodo anim et ut ut do duis commodo incididunt pariatur sint sit. Amet consequat sit minim ea est. Voluptate consectetur Lorem incididunt quis magna occaecat reprehenderit ex magna sit. Anim sint et proident culpa duis aute cillum fugiat do cillum culpa. Non anim mollit sunt ipsum cupidatat ad nostrud in minim laborum.\r\n"
     },
     {
       "name": "Frances Burnett",
       "description": "Dolor aliquip culpa nulla amet in ut veniam voluptate et Lorem cupidatat qui cupidatat. Ea cupidatat magna aliqua et. Est sit irure minim dolore nostrud deserunt nisi exercitation nisi. Ex fugiat ex ad voluptate labore. Proident ad ut ullamco velit consequat deserunt dolore pariatur consequat magna incididunt excepteur esse quis. Do nostrud eiusmod dolore ea et ullamco voluptate deserunt id cillum et ipsum. Non pariatur labore dolor enim laboris cillum pariatur officia sint.\r\n",
-      "personality": [
-        "amet",
-        "ea",
-        "occaecat"
-      ],
+      "personality": ["amet", "ea", "occaecat"],
       "notes": "Sint mollit aute mollit labore est aute nostrud culpa nostrud Lorem. Commodo dolore pariatur sit qui cupidatat amet. Aute tempor magna elit irure consequat deserunt incididunt magna incididunt id adipisicing enim. Lorem sit nulla eu exercitation occaecat in veniam excepteur eiusmod ipsum proident et. Tempor cupidatat nisi reprehenderit qui cillum nostrud reprehenderit mollit et amet fugiat Lorem consectetur officia. Aliqua enim officia consectetur nostrud commodo minim non veniam Lorem ea.\r\n"
     },
     {
       "name": "Shirley Jennings",
       "description": "Tempor eiusmod voluptate aute consectetur esse eiusmod laborum nisi in. Laborum et nostrud anim id eiusmod nostrud cupidatat elit aute sit. Ullamco nostrud pariatur nisi cillum tempor ad qui reprehenderit consectetur voluptate esse deserunt.\r\n",
-      "personality": [
-        "deserunt"
-      ],
+      "personality": ["deserunt"],
       "notes": "Ea aliqua eiusmod duis minim dolor do cupidatat irure tempor occaecat fugiat irure culpa non. Aliquip Lorem officia consequat elit eu exercitation cupidatat irure aute. Dolore ad ipsum mollit id Lorem fugiat ea esse mollit.\r\n"
     },
     {
       "name": "Amie Vance",
       "description": "Dolore enim excepteur labore do Lorem ea eu aute do qui voluptate. Aute tempor commodo laboris est. Id eiusmod ad ex ipsum voluptate ad sunt qui laboris magna dolor est anim. Magna cillum commodo est culpa. Amet esse dolore aliqua incididunt sunt adipisicing. Cillum ullamco quis qui velit duis ullamco velit amet veniam.\r\n",
-      "personality": [
-        "cillum"
-      ],
+      "personality": ["cillum"],
       "notes": "Dolore sunt velit excepteur exercitation tempor veniam fugiat dolore et in. Officia magna incididunt ex laboris cupidatat mollit nisi. Ullamco tempor qui deserunt labore et mollit aliquip labore amet veniam in. Exercitation ut minim eiusmod pariatur. Dolore aliquip occaecat dolore mollit exercitation est esse excepteur ullamco.\r\n"
     },
     {
       "name": "Alston Leblanc",
       "description": "Ut anim anim aute consequat dolor id. Fugiat dolor eiusmod dolor amet consectetur duis aliquip eu esse labore occaecat. Non occaecat mollit aute ullamco duis do ipsum laborum. Ex ipsum ipsum laborum voluptate irure sint et sunt eu nulla id minim deserunt.\r\n",
-      "personality": [
-        "adipisicing"
-      ],
+      "personality": ["adipisicing"],
       "notes": "Occaecat nisi irure et minim eu minim magna in nisi sunt nostrud. Sint minim do irure tempor duis ut laboris fugiat eiusmod minim velit ex dolor. Mollit magna anim et labore minim ut magna esse esse enim ut id nisi. Exercitation sunt sunt officia occaecat. Cillum do anim culpa et nostrud irure ea quis excepteur. Ea do sint in veniam minim laborum laboris ullamco Lorem nisi sit nisi proident.\r\n"
     },
     {
@@ -217,71 +161,49 @@
     {
       "name": "Cecilia Shields",
       "description": "Amet nulla elit magna ea sit enim magna aute aute sit officia. Ex eiusmod consectetur qui ullamco deserunt culpa in sint est elit. Laborum labore aute aliqua in proident. Amet sunt culpa officia deserunt tempor. Pariatur consectetur aute id minim veniam reprehenderit cillum officia deserunt consequat elit ullamco. Id enim enim ipsum aliquip laboris excepteur dolor aliqua aliquip ea sit dolor occaecat.\r\n",
-      "personality": [
-        "cupidatat"
-      ],
+      "personality": ["cupidatat"],
       "notes": "Amet qui sunt aliqua est voluptate aliquip in sit deserunt mollit. Et magna tempor dolor officia proident ullamco ipsum qui ad esse aliquip proident. Aliqua ad et qui aliquip exercitation.\r\n"
     },
     {
       "name": "Knowles Morton",
       "description": "Reprehenderit nulla esse adipisicing commodo enim sunt amet qui fugiat commodo consectetur consequat non. Ut reprehenderit eiusmod tempor velit labore irure reprehenderit id et aliqua enim non officia. Voluptate commodo id cupidatat aliqua. Tempor non do do dolor. Sunt Lorem ullamco veniam eu tempor veniam occaecat. Excepteur mollit minim pariatur duis do pariatur irure ipsum fugiat mollit.\r\n",
-      "personality": [
-        "aute",
-        "exercitation",
-        "ad"
-      ],
+      "personality": ["aute", "exercitation", "ad"],
       "notes": "Duis pariatur dolore cillum ipsum eu ea sit pariatur labore proident id. Mollit pariatur id consequat eu et duis laboris exercitation ullamco. Enim commodo aliquip esse enim aliqua fugiat reprehenderit aute ex. Ad ea nulla labore consequat officia. Nisi minim cillum culpa id. Dolore exercitation cupidatat consequat nostrud.\r\n"
     },
     {
       "name": "Charmaine Hale",
       "description": "Nostrud occaecat est eiusmod ut nisi officia do officia adipisicing. Adipisicing magna dolore voluptate adipisicing qui non incididunt proident. Aute Lorem nostrud do pariatur consectetur sunt esse cupidatat excepteur sint reprehenderit. Nisi non cupidatat excepteur voluptate. Consequat esse duis voluptate proident laboris duis occaecat. Deserunt excepteur aliquip mollit occaecat eiusmod culpa quis irure magna ullamco deserunt. Minim irure aliqua do sit incididunt anim adipisicing id.\r\n",
-      "personality": [
-        "veniam"
-      ],
+      "personality": ["veniam"],
       "notes": "Excepteur eu dolor magna aliqua ullamco dolor proident. Culpa eu sint irure do consectetur occaecat voluptate ullamco minim sunt do do. Incididunt Lorem sunt laboris Lorem culpa veniam incididunt consequat. Occaecat irure fugiat exercitation elit. Non nostrud elit sint amet magna enim incididunt est in.\r\n"
     },
     {
       "name": "Young May",
       "description": "Non ipsum culpa qui ex nostrud pariatur cillum. Eiusmod adipisicing commodo anim do et dolor irure in est nisi. Lorem nisi incididunt enim consequat. Occaecat cillum Lorem cillum ea anim exercitation magna duis pariatur ipsum proident ad.\r\n",
-      "personality": [
-        "laboris"
-      ],
+      "personality": ["laboris"],
       "notes": "Reprehenderit est sint magna commodo pariatur enim id. Ex mollit nostrud occaecat commodo duis in voluptate pariatur commodo ex eu amet aliquip. Pariatur ea mollit mollit pariatur qui cillum. Laborum occaecat fugiat velit ipsum exercitation et minim incididunt nostrud eu do.\r\n"
     },
     {
       "name": "Fern Rhodes",
       "description": "Anim est ea fugiat enim qui id velit occaecat est. Commodo ad Lorem nisi amet laborum nisi velit ipsum velit pariatur incididunt tempor excepteur. Ipsum non sunt enim cillum labore sunt tempor cillum minim. Labore aliqua sunt elit amet adipisicing esse. Culpa eu proident nulla incididunt minim ex dolore.\r\n",
-      "personality": [
-        "esse",
-        "ex"
-      ],
+      "personality": ["esse", "ex"],
       "notes": "Sit consectetur amet sit duis magna excepteur laboris mollit. Aute aliquip elit irure aute. Adipisicing aliqua exercitation cupidatat proident enim anim dolor deserunt voluptate ad do laborum.\r\n"
     },
     {
       "name": "Eleanor Garza",
       "description": "Nulla et laboris et laborum minim incididunt. Sunt aliquip occaecat ex deserunt. Sunt ex occaecat ullamco dolor commodo occaecat reprehenderit aliquip proident culpa aute duis. Tempor aliqua duis adipisicing officia. Veniam anim ea aute amet do magna. Nostrud consequat eu fugiat qui est magna exercitation eu tempor ad aute aute ea.\r\n",
-      "personality": [
-        "adipisicing",
-        "anim",
-        "veniam"
-      ],
+      "personality": ["adipisicing", "anim", "veniam"],
       "notes": "In pariatur aliquip aute anim sint nulla fugiat non ullamco sunt nisi magna. Laborum sunt aliqua cillum laboris excepteur minim aliquip voluptate excepteur. Cupidatat exercitation laborum dolor Lorem cupidatat nisi irure proident dolor irure non ullamco. Ullamco nostrud aute pariatur deserunt consectetur. Voluptate laborum velit aliqua irure id ut officia id cupidatat ipsum officia id commodo.\r\n"
     },
     {
       "name": "Taylor Michael",
       "description": "Pariatur nulla do incididunt consectetur adipisicing cillum fugiat ullamco. Aute reprehenderit pariatur nisi mollit minim. Excepteur labore nostrud laborum fugiat magna voluptate.\r\n",
-      "personality": [
-        "cillum",
-        "et"
-      ],
+      "personality": ["cillum", "et"],
       "notes": "Id non velit ea ullamco dolore ea enim non. Mollit incididunt quis magna elit non in voluptate eu et mollit sunt tempor consequat. Enim eiusmod esse ullamco nulla deserunt sunt in veniam cupidatat excepteur consequat duis. Voluptate tempor ex elit nostrud ullamco incididunt mollit qui. Irure qui ipsum aliqua consectetur irure fugiat officia eu anim adipisicing velit voluptate. Nulla sunt laborum sint sunt quis fugiat fugiat ipsum fugiat proident sint commodo.\r\n"
     },
     {
       "name": "Kramer Reed",
       "description": "Incididunt culpa fugiat dolor eu labore aute in ex non excepteur cupidatat ullamco laborum. Commodo deserunt officia officia tempor qui. Veniam eu id aute esse minim mollit.\r\n",
-      "personality": [
-        "est"
-      ],
+      "personality": ["est"],
       "notes": "Non magna minim sit ex minim. Adipisicing culpa nisi anim dolore consequat nulla excepteur duis culpa elit ea non. Commodo dolore tempor consequat consectetur proident officia excepteur proident qui. Laboris ex ea velit velit sit commodo quis pariatur proident elit sit velit nisi commodo. Consectetur eiusmod sunt laboris consequat occaecat minim elit exercitation labore. Incididunt pariatur magna Lorem pariatur deserunt ex ex ullamco excepteur eiusmod occaecat deserunt.\r\n"
     },
     {
@@ -293,52 +215,37 @@
     {
       "name": "Barry Shaw",
       "description": "Exercitation adipisicing magna labore adipisicing ea dolor dolor esse excepteur occaecat. Consectetur id enim laborum amet aliqua ex amet cupidatat dolor quis. Tempor reprehenderit cupidatat exercitation est officia ad dolore elit nulla consequat laborum. Velit ullamco magna nostrud quis eiusmod velit et fugiat velit consequat.\r\n",
-      "personality": [
-        "ut",
-        "consectetur"
-      ],
+      "personality": ["ut", "consectetur"],
       "notes": "Mollit duis ut dolore ea ad ut. Consequat enim commodo eu sit non fugiat consequat fugiat anim. Laborum elit laboris ad ut.\r\n"
     },
     {
       "name": "Elba Jacobs",
       "description": "Est ut quis ex excepteur pariatur quis. Nulla sint consequat consectetur do excepteur anim nisi mollit. Officia cillum labore irure aliquip magna qui ad ut nulla culpa qui officia excepteur fugiat. Ad fugiat aliqua in anim mollit fugiat est esse tempor voluptate adipisicing enim.\r\n",
-      "personality": [
-        "esse",
-        "pariatur"
-      ],
+      "personality": ["esse", "pariatur"],
       "notes": "Esse qui officia dolore veniam pariatur ipsum excepteur cillum. Cillum amet do aliquip ea aute qui. Excepteur commodo commodo ullamco est aliquip cillum reprehenderit culpa irure pariatur occaecat. Id adipisicing excepteur labore est laboris ullamco.\r\n"
     },
     {
       "name": "Lucas House",
       "description": "Ad esse aute quis ut dolore ex irure do aliqua. Ipsum ad magna veniam dolor. Eu laboris ullamco mollit amet cupidatat aute irure.\r\n",
-      "personality": [
-        "amet"
-      ],
+      "personality": ["amet"],
       "notes": "Non nulla duis nisi incididunt veniam ipsum commodo consectetur pariatur. Id veniam veniam enim labore tempor amet. Cupidatat exercitation id officia veniam exercitation ex cillum culpa occaecat.\r\n"
     },
     {
       "name": "Dunn Santiago",
       "description": "Excepteur eu nulla occaecat consectetur. Culpa ea ut fugiat enim cupidatat aliquip eu. Eiusmod ex duis qui enim fugiat anim ea aliquip. Esse officia cillum commodo reprehenderit voluptate eu reprehenderit pariatur in consectetur pariatur proident. Minim labore culpa aute ea dolore enim commodo laborum.\r\n",
-      "personality": [
-        "ad",
-        "velit"
-      ],
+      "personality": ["ad", "velit"],
       "notes": "Elit exercitation incididunt consequat cupidatat in commodo commodo. Proident ea do sint sint mollit in. Commodo minim aliqua non mollit sit sunt. Ea duis ad labore ea do deserunt velit enim cupidatat velit adipisicing. Officia pariatur sit non cillum deserunt laboris. Mollit voluptate aute do ullamco ut elit fugiat in enim consectetur.\r\n"
     },
     {
       "name": "Goff Hebert",
       "description": "Commodo pariatur voluptate deserunt excepteur anim sint sit laboris incididunt laboris non ex ad veniam. Lorem tempor ullamco duis reprehenderit veniam est nostrud et anim commodo. Ullamco ex mollit duis in tempor dolor amet enim tempor aute. Culpa veniam do et ullamco sint qui qui mollit Lorem et non est laborum. Cupidatat eu non nisi cillum eiusmod quis esse cillum. Velit culpa eu est occaecat exercitation et labore aute veniam ullamco reprehenderit ut.\r\n",
-      "personality": [
-        "irure"
-      ],
+      "personality": ["irure"],
       "notes": "Aliquip occaecat veniam duis adipisicing amet laborum aliqua excepteur mollit. Aliqua sunt fugiat consectetur quis pariatur ex ad sint. Labore esse ullamco amet magna id. Eu nulla pariatur sint ea ipsum voluptate ipsum enim voluptate adipisicing duis esse nostrud occaecat.\r\n"
     },
     {
       "name": "Rita Parker",
       "description": "Eu anim aliqua nostrud do voluptate do qui sint veniam magna irure. Voluptate consectetur ad ut consequat officia. Lorem fugiat ad Lorem cillum aliqua consectetur ipsum veniam fugiat sunt mollit amet.\r\n",
-      "personality": [
-        "velit"
-      ],
+      "personality": ["velit"],
       "notes": "Deserunt qui ut Lorem dolor velit irure cupidatat commodo adipisicing duis nisi velit. Ex tempor dolor duis sit nisi et sunt ea in. Enim sit ex ea officia exercitation voluptate non pariatur ullamco mollit anim anim.\r\n"
     },
     {
@@ -356,9 +263,7 @@
     {
       "name": "Dodson Hooper",
       "description": "Ipsum reprehenderit minim aute consequat minim esse esse tempor commodo nostrud amet exercitation. Aute consectetur labore esse do enim. Do tempor ad ad labore Lorem qui in ea. Pariatur enim minim ex incididunt officia. Consequat exercitation deserunt mollit esse ipsum nisi ea dolore tempor anim irure minim. Ut irure nulla consectetur laboris sit dolore ad in cillum id veniam dolor velit.\r\n",
-      "personality": [
-        "cillum"
-      ],
+      "personality": ["cillum"],
       "notes": "Nulla ex dolore do laboris voluptate duis Lorem enim consectetur sunt est ut. Mollit occaecat ad deserunt nulla in do minim nostrud mollit adipisicing irure minim proident nulla. Cillum fugiat culpa eu aliqua et et. Eu nostrud elit voluptate cupidatat mollit nisi velit consequat cupidatat non officia labore aliquip mollit. Sunt elit et adipisicing duis velit proident ipsum qui Lorem anim tempor velit ut quis. Nisi aliquip ut consectetur et irure cillum.\r\n"
     },
     {
@@ -376,9 +281,7 @@
     {
       "name": "Calhoun Sanders",
       "description": "Mollit mollit consectetur elit ad et exercitation eu officia anim pariatur nostrud nisi amet. Proident enim cupidatat et fugiat sint do dolore eu dolor adipisicing esse commodo deserunt. Occaecat dolore commodo deserunt laboris fugiat eu eiusmod dolore aliqua est veniam cupidatat proident. Id aliqua irure mollit dolore sit tempor nostrud deserunt velit sit deserunt irure Lorem deserunt. Minim dolor tempor cillum sit ad fugiat ipsum sint. Cupidatat ex enim aute est excepteur.\r\n",
-      "personality": [
-        "dolor"
-      ],
+      "personality": ["dolor"],
       "notes": "Irure officia cillum anim anim excepteur ex exercitation labore commodo consequat nostrud excepteur. Eu nostrud ex laboris cupidatat laboris commodo pariatur mollit laboris nisi dolor amet id exercitation. Irure dolore labore mollit sit aliqua ea ut. Consequat est enim adipisicing Lorem dolor magna. Ut mollit aute magna nostrud velit cillum.\r\n"
     }
   ],
