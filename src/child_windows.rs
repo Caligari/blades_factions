@@ -4,23 +4,34 @@ use eframe::egui::{
     Align, CentralPanel, Context, Layout, RichText, ScrollArea, ViewportBuilder, ViewportId,
     mutex::RwLock,
 };
-use egui_file_dialog::{DialogState, FileDialog};
+use egui_file_dialog::{DialogState, FileDialog, OpeningMode};
 use log::{debug, error, info};
 
 use crate::{
     APP_NAME,
     app::{CHANGE_NOTES, FONT_NOTES, HELP_TEXT, UI_PADDING},
+    app_data::{JSON_EXTENSION, SAVE_EXTENSION},
     localize::fl,
 };
 
 // TODO: add settings panel?
 
-#[derive(Default)]
 pub struct ChildWindows {
     show_about: Arc<RwLock<bool>>,
-    show_file: Arc<RwLock<bool>>,
-    file_dialog: FileDialog,
+    file_dialog_internal: FileDialogControl,
+    file_dialog_export: FileDialogControl,
     selected_file: Arc<RwLock<Option<PathBuf>>>,
+}
+
+impl Default for ChildWindows {
+    fn default() -> Self {
+        ChildWindows {
+            show_about: Arc::default(),
+            file_dialog_internal: FileDialogControl::new(FileTarget::Internal),
+            file_dialog_export: FileDialogControl::new(FileTarget::Export),
+            selected_file: Arc::default(),
+        }
+    }
 }
 
 impl ChildWindows {
@@ -34,10 +45,14 @@ impl ChildWindows {
         &mut self,
         dialog_type: FileDialogType,
         target_type: FileTarget,
-        initial_directory: PathBuf,
+        initial_directory: PathBuf, // should this be here, or passed at create?
     ) {
         // start dialog
-        // todo: changes for type of file to select?
+        let dialog_control = match target_type {
+            FileTarget::Internal => &mut self.file_dialog_internal,
+            FileTarget::Export => &mut self.file_dialog_export,
+        };
+
         if let Err(e) = create_dir_all(initial_directory.clone()) {
             // can fail; do we need Result?
             error!(
@@ -47,17 +62,18 @@ impl ChildWindows {
             );
         }
 
-        let config = self.file_dialog.config_mut();
+        let config = dialog_control.dialog.config_mut();
         config.initial_directory = initial_directory;
 
         info!("starting file dialog");
 
         match dialog_type {
-            FileDialogType::Load => self.file_dialog.pick_file(),
-            FileDialogType::Save => self.file_dialog.save_file(),
+            FileDialogType::Load => dialog_control.dialog.pick_file(),
+            FileDialogType::Save => dialog_control.dialog.save_file(),
         }
 
-        *self.show_file.write() = true;
+        dialog_control.current_mode = Some(dialog_type);
+        *dialog_control.show_dialog.write() = true;
         *self.selected_file.write() = None;
     }
 
@@ -73,25 +89,11 @@ impl ChildWindows {
             self.about(ctx);
         }
 
-        let file_value = *self.show_file.read();
-        if file_value {
-            self.file_select(ctx);
+        if let Some(new_file) = self.file_dialog_internal.update(ctx) {
+            *self.selected_file.write() = new_file;
         }
-    }
-
-    fn file_select(&mut self, ctx: &Context) {
-        self.file_dialog.update(ctx);
-
-        if let Some(path) = self.file_dialog.take_picked() {
-            *self.selected_file.write() = Some(path);
-            *self.show_file.write() = false;
-            info!("selected file, closing file dialog");
-        } else {
-            use DialogState::*;
-            if self.file_dialog.state() == Cancelled {
-                *self.selected_file.write() = Some(PathBuf::new());
-                *self.show_file.write() = false;
-            }
+        if let Some(new_file) = self.file_dialog_export.update(ctx) {
+            *self.selected_file.write() = new_file;
         }
     }
 
@@ -158,4 +160,96 @@ pub enum FileDialogType {
 pub enum FileTarget {
     Internal,
     Export,
+}
+
+// ---------------------
+// File Dialog Control
+
+struct FileDialogControl {
+    show_dialog: Arc<RwLock<bool>>,
+    dialog: FileDialog,
+    target: FileTarget,
+    current_mode: Option<FileDialogType>,
+}
+
+impl FileDialogControl {
+    pub fn new(target: FileTarget) -> Self {
+        // todo: position, etc
+        // default_pos
+        // default_size
+        // max_size
+        // anchor
+        // resizeable
+        //
+        let dialog = match target {
+            FileTarget::Internal => FileDialog::new()
+                .opening_mode(OpeningMode::AlwaysInitialDir)
+                .default_file_name(fl!("default_internal_file").as_str())
+                .allow_file_overwrite(false)
+                .add_file_filter_extensions(
+                    fl!("file_dialog_save_files").as_str(),
+                    vec![SAVE_EXTENSION],
+                )
+                .add_save_extension(fl!("file_dialog_save_file").as_str(), SAVE_EXTENSION)
+                .default_file_filter(fl!("file_dialog_save_files").as_str())
+                .default_save_extension(fl!("file_dialog_save_file").as_str())
+                .allow_path_edit_to_save_file_without_extension(true)
+                .load_via_thread(true),
+            FileTarget::Export => FileDialog::new()
+                .opening_mode(OpeningMode::LastPickedDir)
+                .default_file_name(fl!("default_export_file").as_str())
+                .allow_file_overwrite(true)
+                .add_file_filter_extensions(
+                    fl!("file_dialog_export_files").as_str(),
+                    vec![JSON_EXTENSION],
+                )
+                .add_save_extension(fl!("file_dialog_export_file").as_str(), JSON_EXTENSION)
+                .default_file_filter(fl!("file_dialog_export_files").as_str())
+                .default_save_extension(fl!("file_dialog_export_file").as_str())
+                .allow_path_edit_to_save_file_without_extension(true)
+                .load_via_thread(true),
+        };
+
+        FileDialogControl {
+            show_dialog: Arc::default(),
+            dialog,
+            target,
+            current_mode: None,
+        }
+    }
+
+    fn update(&mut self, ctx: &Context) -> Option<Option<PathBuf>> {
+        if *self.show_dialog.read() {
+            self.dialog.update(ctx);
+
+            if let Some(path) = self.dialog.take_picked() {
+                info!("selected file, closing file dialog");
+                // add extension if needed
+                let path = if self.current_mode == Some(FileDialogType::Save)
+                    && path.extension().is_none()
+                {
+                    path.with_extension(match self.target {
+                        FileTarget::Internal => SAVE_EXTENSION,
+                        FileTarget::Export => JSON_EXTENSION,
+                    })
+                } else {
+                    path
+                };
+                *self.show_dialog.write() = false;
+                self.current_mode = None;
+                Some(Some(path))
+            } else {
+                use DialogState::*;
+                if self.dialog.state() == Cancelled {
+                    *self.show_dialog.write() = false;
+                    self.current_mode = None;
+                    Some(Some(PathBuf::new()))
+                } else {
+                    Some(None)
+                }
+            }
+        } else {
+            None
+        }
+    }
 }

@@ -17,8 +17,8 @@ use crate::{
     person::{Person, PersonStore},
 };
 
-const DATA_EXTENSION: &str = "pot";
-const JSON_EXTENSION: &str = "json";
+pub const SAVE_EXTENSION: &str = "pot";
+pub const JSON_EXTENSION: &str = "json";
 
 #[allow(dead_code)]
 // Default should be empty
