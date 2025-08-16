@@ -291,7 +291,7 @@ pub fn show_edit_list<T: Named + Clone>(
         let mut hovered = None;
         for item in this_list.list().clone() {
             // this should not be able to point to nothing, but it might?
-            if let Some(item_name) = item.name() {
+            if let Some(item_name) = item.display_name() {
                 if !first {
                     ui.label(", ");
                 }
@@ -307,8 +307,9 @@ pub fn show_edit_list<T: Named + Clone>(
                 };
                 let resp = ui.add(Label::new(item_label).sense(Sense::click()));
                 if resp.clicked() {
-                    info!("deleting {item_name} from list {name}");
-                    this_list.swap_remove(&item_name);
+                    let item_id = item.name().unwrap_or_default();
+                    info!("deleting {item_id} from list {name}");
+                    this_list.swap_remove(&item_id);
                 } else if resp.hovered() {
                     hovered = Some(item_name.clone());
                 }

@@ -42,6 +42,7 @@ notables_heading = Notables
 allies_heading = Allies
 enemies_heading = Enemies
 personality_heading = Personality
+summary_heading = Summary
 edit_save = Save
 acknowledge_error = Dismiss
 default_export_file = export

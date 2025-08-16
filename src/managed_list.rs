@@ -37,6 +37,10 @@ impl<T: Clone + Named> GenericRef<T> {
     pub fn name(&self) -> Option<String> {
         self.0.read().name().map(|n| n.to_string())
     }
+
+    pub fn display_name(&self) -> Option<String> {
+        self.0.read().display_name().map(|n| n.to_string())
+    }
 }
 
 impl<T: Clone + Named + PartialEq> PartialEq for GenericRef<T> {
@@ -132,6 +136,7 @@ pub type DistrictRefList = GenericRefList<District>;
 #[derive(Debug, Clone, PartialEq)]
 pub struct NamedIndex<T: Clone + Named> {
     name: String,
+    display_name: String,
     index: DataIndex,
     typ: PhantomData<T>,
 }
@@ -141,6 +146,14 @@ impl<T: Clone + Named> NamedIndex<T> {
     pub fn name(&self) -> Option<&str> {
         if !matches!(self.index, DataIndex::Nothing) {
             Some(&self.name)
+        } else {
+            None
+        }
+    }
+
+    pub fn display_name(&self) -> Option<&str> {
+        if !matches!(self.index, DataIndex::Nothing) {
+            Some(&self.display_name)
         } else {
             None
         }
@@ -172,11 +185,13 @@ impl<T: Clone + Named> ManagedList<T> {
     /// Returns the reference to the new item
     pub fn add(&mut self, item: &T) -> Option<GenericRef<T>> {
         let name = item.name().to_string();
+        let display_name = item.display_name();
         if !self.list_index.contains_key(&name) {
             let index = T::make_data_index(self.list.len());
             self.list.push(item.clone());
             let named_index = GenericRef(Arc::new(RwLock::new(NamedIndex {
                 name: name.clone(),
+                display_name,
                 index,
                 typ: PhantomData,
             })));
@@ -240,6 +255,13 @@ impl<T: Clone + Named> ManagedList<T> {
             let new_name = new_item.name();
             let old_name = old_item.name();
             let same_name = new_name == old_name;
+            let new_display = new_item.display_name();
+            let old_display: String = old_item.display_name();
+            let same_display = new_display == old_display;
+
+            if !same_display {
+                index.0.write().display_name = new_display;
+            }
 
             if !same_name && self.list_index.contains_key(new_name) {
                 warn!("unable to replace {old_name} with {new_name}, as it is alreay present");
@@ -340,6 +362,7 @@ impl From<&ManagedList<Faction>> for Vec<FactionStore> {
 #[allow(dead_code)]
 pub trait Named {
     fn name(&self) -> &str;
+    fn display_name(&self) -> String;
     fn make_data_index(index: usize) -> DataIndex;
     fn fetch_data_index(index: DataIndex) -> Option<usize>;
     fn display_fields(&self) -> Vec<String>;
