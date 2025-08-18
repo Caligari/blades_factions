@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use anyhow::{Result, Ok, anyhow};
+use anyhow::{Ok, Result, anyhow};
 use log::info;
 use serde::{Deserialize, Serialize};
 
@@ -9,7 +9,6 @@ use crate::app::{load_from_pot, save_to_pot};
 const SETTINGS_NAME: &str = "settings";
 const SETTINGS_EXTENSION: &str = "pot";
 
-
 // TODO: Should include settings panel
 
 #[derive(Debug, Clone)]
@@ -17,22 +16,28 @@ pub struct AppSettings {
     theme: eframe::egui::Theme,
 }
 
+// todo: load on start
+
 #[allow(dead_code)]
 impl AppSettings {
-    pub fn theme ( &self ) -> eframe::egui::Theme {
+    pub fn theme(&self) -> eframe::egui::Theme {
         self.theme
     }
 
-    pub fn save_to_file ( &self, config_path: &Path ) -> anyhow::Result<()> {
-        let file_path = config_path.with_file_name(SETTINGS_NAME).with_extension(SETTINGS_EXTENSION);
+    pub fn save_to_file(&self, config_path: &Path) -> anyhow::Result<()> {
+        let file_path = config_path
+            .with_file_name(SETTINGS_NAME)
+            .with_extension(SETTINGS_EXTENSION);
         let settings: SaveSettings1 = self.into();
         info!("Saving settings to file in {}", config_path.display());
         save_to_pot(&file_path, &settings)
     }
 
     // Create settings by loading from the settings file in the passed config directory
-    pub fn load_from_file ( config_path: &Path ) -> Result<AppSettings> {
-        let file_path = config_path.with_file_name(SETTINGS_NAME).with_extension(SETTINGS_EXTENSION);
+    pub fn load_from_file(config_path: &Path) -> Result<AppSettings> {
+        let file_path = config_path
+            .with_file_name(SETTINGS_NAME)
+            .with_extension(SETTINGS_EXTENSION);
         info!("Attempting to load settings from {}", file_path.display());
         load_settings(&file_path)
     }
@@ -46,7 +51,7 @@ impl Default for AppSettings {
     }
 }
 
-fn load_settings ( file_path: &Path ) -> Result<AppSettings> {
+fn load_settings(file_path: &Path) -> Result<AppSettings> {
     // load save settings 1
     let data = load_from_pot::<SaveSettings1>(file_path)?;
     if data.validate() {
@@ -69,7 +74,7 @@ struct SaveSettings1 {
 }
 
 impl SaveSettings1 {
-    fn validate ( &self ) -> bool {
+    fn validate(&self) -> bool {
         self.save_version == SAVE1_VERSION
     }
 }
@@ -90,7 +95,6 @@ impl From<&AppSettings> for SaveSettings1 {
         }
     }
 }
-
 
 // -----------------------------
 // eGUI Theme Save

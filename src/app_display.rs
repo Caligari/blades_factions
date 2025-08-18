@@ -1,6 +1,6 @@
 use std::slice::Iter;
 
-use eframe::egui::{Color32, ComboBox, Frame, Label, Margin, RichText, Sense, Stroke, Ui};
+use eframe::egui::{Color32, ComboBox, Frame, Key, Label, Margin, RichText, Sense, Stroke, Ui};
 use log::{debug, info};
 
 use crate::{
@@ -425,10 +425,18 @@ pub fn show_edit_stringlist_italics(name: &str, this_list: &mut StringList, ui: 
             .as_mut()
             .map(|n| ui.text_edit_singleline(n))
         {
+            resp.request_focus();
             let new_name = this_list.new_name().clone().unwrap();
-            if resp.lost_focus() && !new_name.is_empty() {
+            let (done, exit) = {
+                let done = ui.input(|i| i.key_pressed(Key::Enter));
+                let exit = ui.input(|i| i.key_pressed(Key::Escape));
+                (done, exit)
+            };
+            if done || (resp.lost_focus() && !new_name.is_empty()) {
                 info!("adding {new_name} to list {name}");
                 this_list.push(new_name.to_string());
+                this_list.set_new(Some(String::new())); // add another one?
+            } else if exit {
                 this_list.set_new(None);
             }
         } else {
