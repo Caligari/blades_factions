@@ -5,6 +5,7 @@ use log::{debug, info, warn};
 
 use crate::{
     app_data::DataIndex,
+    app_display::NewStringStatus,
     district::{District, DistrictStore},
     faction::{Faction, FactionStore},
     person::{Person, PersonStore},
@@ -376,7 +377,7 @@ pub trait Named {
 #[derive(Default, Clone)]
 pub struct StringList {
     list: Vec<String>, // should this be a set? Not worth the pain? Requires ordering to not change, which we can't guarantee
-    new: Option<String>,
+    new: NewStringStatus,
     hovered: Option<String>,
 }
 
@@ -385,7 +386,7 @@ impl StringList {
     pub fn from_list(input_list: Vec<String>) -> Self {
         StringList {
             list: input_list,
-            new: None,
+            new: NewStringStatus::NoItem,
             hovered: None,
         }
     }
@@ -410,7 +411,7 @@ impl StringList {
         self.list.swap_remove(index);
     }
 
-    pub fn new_name(&mut self) -> &mut Option<String> {
+    pub fn new_name(&mut self) -> &mut NewStringStatus {
         &mut self.new
     }
 
@@ -418,7 +419,7 @@ impl StringList {
         self.hovered.as_deref()
     }
 
-    pub fn set_new(&mut self, name: Option<String>) {
+    pub fn set_new(&mut self, name: NewStringStatus) {
         self.new = name;
     }
 

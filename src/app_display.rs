@@ -1,6 +1,8 @@
 use std::slice::Iter;
 
-use eframe::egui::{Color32, ComboBox, Frame, Key, Label, Margin, RichText, Sense, Stroke, Ui};
+use eframe::egui::{
+    Color32, ComboBox, Frame, Key, Label, Margin, Modifiers, RichText, Sense, Stroke, Ui,
+};
 use log::{debug, info};
 
 use crate::{
@@ -420,34 +422,53 @@ pub fn show_edit_stringlist_italics(name: &str, this_list: &mut StringList, ui: 
             ui.label(RichText::new(", ").italics());
         }
 
-        if let Some(resp) = this_list
-            .new_name()
-            .as_mut()
-            .map(|n| ui.text_edit_singleline(n))
-        {
-            resp.request_focus();
-            let new_name = this_list.new_name().clone().unwrap();
-            let (done, exit) = {
-                let done = ui.input(|i| i.key_pressed(Key::Enter));
-                let exit = ui.input(|i| i.key_pressed(Key::Escape));
-                (done, exit)
-            };
-            if done || (resp.lost_focus() && !new_name.is_empty()) {
-                info!("adding {new_name} to list {name}");
-                this_list.push(new_name.to_string());
-                this_list.set_new(Some(String::new())); // add another one?
-            } else if exit {
-                this_list.set_new(None);
+        match this_list.new_name() {
+            NewStringStatus::Requested => {
+                let mut new_item = String::new();
+                let resp = ui.text_edit_singleline(&mut new_item);
+                resp.request_focus();
+                this_list.set_new(NewStringStatus::Showing(new_item));
             }
-        } else {
-            // no new name
-            if ui
-                .add(Label::new(RichText::new("+").strong()).sense(Sense::click()))
-                .clicked()
-            {
-                info!("requested add item for {name}");
-                this_list.set_new(Some(String::new()));
+
+            NewStringStatus::Showing(item) => {
+                let resp = ui.text_edit_singleline(item);
+                let new_name = item.clone();
+                let done = ui.input(|i| i.key_pressed(Key::Enter)); // can we consume these?
+                let exit = ui.input(|i| i.key_pressed(Key::Escape));
+                if resp.lost_focus() {
+                    if new_name.is_empty() || exit {
+                        info!("lost focus, exiting item creation");
+                        this_list.set_new(NewStringStatus::NoItem);
+                        ui.input_mut(|i| i.consume_key(Modifiers::NONE, Key::Escape));
+                    } else if done {
+                        info!("leaving, adding {new_name} to list {name}");
+                        this_list.push(new_name.to_string());
+                        this_list.set_new(NewStringStatus::Requested); // add another one?
+                        ui.input_mut(|i| i.consume_key(Modifiers::NONE, Key::Enter));
+                    }
+                }
+            }
+
+            NewStringStatus::NoItem => {
+                // no new name
+                if ui
+                    .add(Label::new(RichText::new("+").strong()).sense(Sense::click()))
+                    .clicked()
+                {
+                    info!("requested add item for {name}");
+                    this_list.set_new(NewStringStatus::Requested);
+                }
             }
         }
     });
+}
+
+// ----------------------
+// NewItemStatus
+#[derive(Debug, Clone, Default, PartialEq)]
+pub enum NewStringStatus {
+    #[default]
+    NoItem,
+    Requested, // could include a timer here of some sort
+    Showing(String),
 }
