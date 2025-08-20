@@ -14,7 +14,7 @@ use crate::{
     district::{District, DistrictStore},
     faction::{Faction, FactionStore},
     managed_list::{DistrictRef, FactionRef, ManagedList, Named, PersonRef},
-    person::{Person, PersonStore},
+    person::{Person, PersonStore1, PersonStore2},
 };
 
 pub const SAVE_EXTENSION: &str = "pot";
@@ -199,7 +199,7 @@ impl AppData {
 
     /// This exports all data to a JSON file
     pub fn export_to_file(&self, file_path: &Path) -> Result<()> {
-        let save_data: SaveData1 = self.into();
+        let save_data: SaveData2 = self.into();
         if !save_data.validate() {
             error!(
                 "unable to validate data to export ({}), version: {}",
@@ -217,7 +217,23 @@ impl AppData {
 
     /// This adds the loaded data to the current data
     pub fn import_from_file(&mut self, file_path: &Path) -> Result<()> {
-        let import_data: SaveData1 = load_from_json(&file_path.with_extension(JSON_EXTENSION))?;
+        // SAVEDATA2 !!!!!!!!!
+        //
+        //
+        let import_data: SaveData2 = {
+            // try 2
+            match load_from_json::<SaveData2>(&file_path.with_extension(JSON_EXTENSION)) {
+                Result::Ok(save2) => save2,
+                Err(_) => {
+                    // try 1
+                    let save1: SaveData1 =
+                        load_from_json(&file_path.with_extension(JSON_EXTENSION))?;
+                    save1.into()
+                }
+            }
+        };
+
+        // let import_data: SaveData1 = load_from_json(&file_path.with_extension(JSON_EXTENSION))?;
         debug!(
             "imported {} people, {} districts, {} factions",
             import_data.persons.len(),
@@ -244,8 +260,9 @@ impl AppData {
         save_data_from_file(file_path) // .with_extension(DATA_EXTENSION)
     }
 
-    fn load_data(&mut self, save_data: SaveData1) -> Result<()> {
+    fn load_data(&mut self, save_data: impl Into<SaveData2>) -> Result<()> {
         // !! Not using return??
+        let save_data: SaveData2 = save_data.into();
         let mut post_districts: Vec<(String, Vec<String>)> = Vec::new();
         let district_add = save_data
             .districts
@@ -348,7 +365,24 @@ impl AppData {
     pub fn test_import_from_json(&mut self) -> Result<()> {
         let data = include_str!("../test_data/test1.json");
 
-        let import: SaveData1 = serde_json::from_str(data)?;
+        // SAVEDATA2!!!!!!!
+        //
+        //
+        //
+        //
+        let import: SaveData2 = {
+            // try 2
+            match serde_json::from_str::<SaveData2>(data) {
+                Result::Ok(save2) => save2,
+                Err(_) => {
+                    // try 1
+                    let save1: SaveData1 = serde_json::from_str(data)?;
+                    save1.into()
+                }
+            }
+        };
+
+        // let import: SaveData1 = serde_json::from_str(data)?;
         debug!(
             "imported {} people, {} districts, {} factions",
             import.persons.len(),
@@ -358,9 +392,20 @@ impl AppData {
         self.load_data(import)
     }
 
-    fn person_from_store(&self, p_store: PersonStore) -> Person {
-        let person: Person = (&p_store).into();
+    fn person_from_store(&self, p_store: PersonStore2) -> Person {
+        let mut person: Person = (&p_store).into();
         // todo: convert references
+        if let Some(found_in) = p_store.found_in {
+            let found_in_ref = self.districts.find(&found_in);
+            if found_in_ref.is_none() {
+                error!(
+                    "unable to find district {} as found_in when loading person {}",
+                    found_in,
+                    person.name()
+                );
+            }
+            person.set_found_in(found_in_ref);
+        }
 
         person
     }
@@ -446,7 +491,7 @@ impl AppData {
 }
 
 fn save_data_to_file(file_path: &Path, data: &AppData) -> Result<()> {
-    let save_data: SaveData1 = data.into();
+    let save_data: SaveData2 = data.into();
     if save_data.validate() {
         save_to_pot(file_path, &save_data) // ?? should we report error here, to log?
     } else {
@@ -455,8 +500,22 @@ fn save_data_to_file(file_path: &Path, data: &AppData) -> Result<()> {
 }
 
 fn save_data_from_file(file_path: &Path) -> Result<AppData> {
+    // load save data 2!!!!!!!!!!!
+    //
+    let data: SaveData2 = {
+        // try 2
+        match load_from_pot::<SaveData2>(file_path) {
+            Result::Ok(save2) => save2,
+            Err(_) => {
+                // try 1
+                let save1: SaveData1 = load_from_pot(file_path)?;
+                save1.into()
+            }
+        }
+    };
+
     // load save data 1
-    let data = load_from_pot::<SaveData1>(file_path)?;
+    // let data = load_from_pot::<SaveData1>(file_path)?;
     if data.validate() {
         // convert to AppData
         let mut ret: AppData = data.into();
@@ -467,16 +526,72 @@ fn save_data_from_file(file_path: &Path) -> Result<AppData> {
     }
 }
 
+// Save data
+const SAVE_SCHEMA: &str = "BladesFactionsData";
+
+// ====================
+// SaveData2
+const SAVE2_VERSION: u16 = 2;
+
+#[derive(Debug, Serialize, Deserialize)]
+struct SaveData2 {
+    save_schema: String,
+    save_version: u16,
+    persons: Vec<PersonStore2>,
+    districts: Vec<DistrictStore>,
+    factions: Vec<FactionStore>,
+}
+
+impl SaveData2 {
+    fn validate(&self) -> bool {
+        self.save_schema == SAVE_SCHEMA && self.save_version == SAVE2_VERSION
+    }
+}
+
+impl From<SaveData2> for AppData {
+    fn from(save_data: SaveData2) -> Self {
+        let mut app_data = AppData::default();
+        if let Err(e) = app_data.load_data(save_data) {
+            error!("unable to load save version 2 data: {e}");
+        }
+        app_data
+    }
+}
+
+impl From<&AppData> for SaveData2 {
+    fn from(input_data: &AppData) -> Self {
+        SaveData2 {
+            save_schema: SAVE_SCHEMA.to_string(),
+            save_version: SAVE2_VERSION,
+            persons: input_data.persons.borrow().into(),
+            districts: input_data.districts.borrow().into(),
+            factions: input_data.factions.borrow().into(),
+        }
+    }
+}
+
+impl From<SaveData1> for SaveData2 {
+    fn from(save_data1: SaveData1) -> Self {
+        assert!(save_data1.validate()); // This is too extreme, but we want to check the version and scheme before loading the data
+        SaveData2 {
+            save_schema: save_data1.save_schema,
+            save_version: save_data1.save_version,
+            persons: save_data1.persons.into_iter().map(|p| p.into()).collect(),
+            districts: save_data1.districts,
+            factions: save_data1.factions,
+        }
+    }
+}
+
 // ====================
 // SaveData1
 const SAVE1_VERSION: u16 = 1;
-const SAVE_SCHEMA: &str = "BladesFactionsData";
 
 #[derive(Debug, Serialize, Deserialize)]
 struct SaveData1 {
     save_schema: String,
     save_version: u16,
-    persons: Vec<PersonStore>,
+    persons: Vec<PersonStore1>,
     districts: Vec<DistrictStore>,
     factions: Vec<FactionStore>,
 }

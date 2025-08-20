@@ -1,4 +1,5 @@
 use eframe::egui::{Color32, RichText, TextEdit, TextStyle, Ui};
+use log::warn;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -9,19 +10,29 @@ use crate::{
         ShowEditInfo, show_edit_frame, show_edit_stringlist_italics,
     },
     localize::fl,
-    managed_list::{Named, StringList},
+    managed_list::{DistrictRef, Named, StringList},
 };
 
 #[derive(Default, Clone, PartialEq)]
 pub struct Person {
     name: String,
     summary: String,
+    found_in: Option<DistrictRef>,
     description: String,
     personality: StringList, // just 3?
     notes: String,
     // connections?
     // faction?
     // home?
+}
+
+impl Person {
+    pub fn set_found_in(&mut self, found_in: Option<DistrictRef>) {
+        if self.found_in.is_some() {
+            warn!("replacing found_in of {} when it is not empty", self.name);
+        }
+        self.found_in = found_in;
+    }
 }
 
 impl Named for Person {
@@ -112,9 +123,63 @@ impl ShowEdit for Person {
     }
 }
 
+// ---------------
+// PersonStore version 2
 #[allow(dead_code)]
 #[derive(Debug, Default, Clone, PartialEq, Deserialize, Serialize)]
-pub struct PersonStore {
+pub struct PersonStore2 {
+    name: String,
+    summary: String,
+    pub found_in: Option<String>, // district name
+    description: String,
+    personality: Vec<String>,
+    notes: String,
+}
+
+impl From<&Person> for PersonStore2 {
+    fn from(from_person: &Person) -> Self {
+        PersonStore2 {
+            name: from_person.name.clone(),
+            summary: from_person.summary.clone(),
+            found_in: from_person.found_in.as_ref().and_then(|i| i.name()),
+            description: from_person.description.clone(),
+            personality: from_person.personality.list().to_vec(),
+            notes: from_person.notes.clone(),
+        }
+    }
+}
+
+impl From<PersonStore1> for PersonStore2 {
+    fn from(from_store: PersonStore1) -> Self {
+        PersonStore2 {
+            name: from_store.name,
+            summary: from_store.summary,
+            found_in: None,
+            description: from_store.description,
+            personality: from_store.personality,
+            notes: from_store.notes,
+        }
+    }
+}
+
+impl From<&PersonStore2> for Person {
+    fn from(from_store: &PersonStore2) -> Self {
+        Person {
+            name: from_store.name.clone(),
+            summary: from_store.summary.clone(),
+            found_in: None, // added after creation
+            description: from_store.description.clone(),
+            personality: StringList::from_list(from_store.personality.clone()),
+            notes: from_store.notes.clone(),
+        }
+    }
+}
+
+// ---------------
+// PersonStore version 1
+#[allow(dead_code)]
+#[derive(Debug, Default, Clone, PartialEq, Deserialize, Serialize)]
+pub struct PersonStore1 {
     name: String,
     summary: String,
     description: String,
@@ -122,9 +187,9 @@ pub struct PersonStore {
     notes: String,
 }
 
-impl From<&Person> for PersonStore {
+impl From<&Person> for PersonStore1 {
     fn from(from_person: &Person) -> Self {
-        PersonStore {
+        PersonStore1 {
             name: from_person.name.clone(),
             summary: from_person.summary.clone(),
             description: from_person.description.clone(),
@@ -134,11 +199,12 @@ impl From<&Person> for PersonStore {
     }
 }
 
-impl From<&PersonStore> for Person {
-    fn from(from_store: &PersonStore) -> Self {
+impl From<&PersonStore1> for Person {
+    fn from(from_store: &PersonStore1) -> Self {
         Person {
             name: from_store.name.clone(),
             summary: from_store.summary.clone(),
+            found_in: None,
             description: from_store.description.clone(),
             personality: StringList::from_list(from_store.personality.clone()),
             notes: from_store.notes.clone(),

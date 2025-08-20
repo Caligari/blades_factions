@@ -8,7 +8,7 @@ use crate::{
     app_display::NewStringStatus,
     district::{District, DistrictStore},
     faction::{Faction, FactionStore},
-    person::{Person, PersonStore},
+    person::{Person, PersonStore1, PersonStore2},
     sorting::Sorting,
 };
 
@@ -339,9 +339,15 @@ impl<T: Clone + Named> ManagedList<T> {
     }
 }
 
-impl From<&ManagedList<Person>> for Vec<PersonStore> {
+impl From<&ManagedList<Person>> for Vec<PersonStore2> {
     fn from(value: &ManagedList<Person>) -> Self {
-        value.list.iter().map(PersonStore::from).collect()
+        value.list.iter().map(PersonStore2::from).collect()
+    }
+}
+
+impl From<&ManagedList<Person>> for Vec<PersonStore1> {
+    fn from(value: &ManagedList<Person>) -> Self {
+        value.list.iter().map(PersonStore1::from).collect()
     }
 }
 
