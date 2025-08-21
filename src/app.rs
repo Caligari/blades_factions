@@ -3,7 +3,7 @@ use std::{
     collections::BTreeMap,
     ffi::OsStr,
     fmt::Display,
-    fs::{self, OpenOptions, create_dir_all},
+    fs::{self, File, OpenOptions, create_dir_all},
     io::{BufReader, BufWriter, Read, Write},
     path::Path,
     sync::Arc,
@@ -1036,6 +1036,22 @@ where
     }
     let data: T = pot::from_reader(buf_reader)?;
     Ok(data)
+}
+
+// NEEDS WORK
+pub fn load_data_from_file(file_handle: &File) -> anyhow::Result<(u16, BufReader<&File>)> {
+    let mut buf_reader = BufReader::new(file_handle);
+    let mut check_id = [0u8, 0u8];
+    buf_reader.read_exact(&mut check_id)?;
+    if check_id != SAVE_FILE_ID {
+        return Err(anyhow!("File does not have expected SAVE_FILE_ID")); // file name? pass up?
+    }
+    let mut check_save_version = [0u8, 0u8];
+    buf_reader.read_exact(&mut check_save_version);
+    let save_version = 1; // check save version, converted
+    // validate save version
+    // pass remaining data and save version (back?) to app data
+    Ok((save_version, buf_reader))
 }
 
 // ---------------------------

@@ -505,25 +505,40 @@ fn save_data_from_file(file_path: &Path) -> Result<AppData> {
     let data: SaveData2 = {
         // try 2
         match load_from_pot::<SaveData2>(file_path) {
-            Result::Ok(save2) => save2,
+            Result::Ok(save2) => {
+                if save2.validate() {
+                    Ok(save2)
+                } else {
+                    let save1: SaveData1 = load_from_pot(file_path)?;
+                    if save1.validate() {
+                        Ok(save1.into())
+                    } else {
+                        Err(anyhow::anyhow!("Unable to read and validate save file"))
+                    }
+                }
+            }
             Err(_) => {
                 // try 1
                 let save1: SaveData1 = load_from_pot(file_path)?;
-                save1.into()
+                if save1.validate() {
+                    Ok(save1.into())
+                } else {
+                    Err(anyhow::anyhow!("Unable to read and validate save file"))
+                }
             }
         }
-    };
+    }?;
 
     // load save data 1
     // let data = load_from_pot::<SaveData1>(file_path)?;
-    if data.validate() {
-        // convert to AppData
-        let mut ret: AppData = data.into();
-        ret.loaded_from = Some(file_path.to_path_buf());
-        Ok(ret)
-    } else {
-        Err(anyhow!("unable to validate save data"))
-    }
+    // if data.validate() {
+    // convert to AppData
+    let mut ret: AppData = data.into();
+    ret.loaded_from = Some(file_path.to_path_buf());
+    Ok(ret)
+    // } else {
+    //     Err(anyhow!("unable to validate save data"))
+    // }
 }
 
 // Save data
