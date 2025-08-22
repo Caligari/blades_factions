@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     action::{Action, ActionNode},
-    app::{load_from_json, load_from_pot, save_to_json, save_to_pot},
+    app::{load_from_json, load_from_save, save_to_json, save_to_save},
     app_display::DisplayTable,
     district::{District, DistrictStore},
     faction::{Faction, FactionStore},
@@ -17,7 +17,7 @@ use crate::{
     person::{Person, PersonStore1, PersonStore2},
 };
 
-pub const SAVE_EXTENSION: &str = "pot";
+pub const SAVE_EXTENSION: &str = "bfsav";
 pub const JSON_EXTENSION: &str = "json";
 
 #[allow(dead_code)]
@@ -217,9 +217,6 @@ impl AppData {
 
     /// This adds the loaded data to the current data
     pub fn import_from_file(&mut self, file_path: &Path) -> Result<()> {
-        // SAVEDATA2 !!!!!!!!!
-        //
-        //
         let import_data: SaveData2 = {
             // try 2
             match load_from_json::<SaveData2>(&file_path.with_extension(JSON_EXTENSION)) {
@@ -233,7 +230,6 @@ impl AppData {
             }
         };
 
-        // let import_data: SaveData1 = load_from_json(&file_path.with_extension(JSON_EXTENSION))?;
         debug!(
             "imported {} people, {} districts, {} factions",
             import_data.persons.len(),
@@ -365,11 +361,6 @@ impl AppData {
     pub fn test_import_from_json(&mut self) -> Result<()> {
         let data = include_str!("../test_data/test1.json");
 
-        // SAVEDATA2!!!!!!!
-        //
-        //
-        //
-        //
         let import: SaveData2 = {
             // try 2
             match serde_json::from_str::<SaveData2>(data) {
@@ -382,7 +373,6 @@ impl AppData {
             }
         };
 
-        // let import: SaveData1 = serde_json::from_str(data)?;
         debug!(
             "imported {} people, {} districts, {} factions",
             import.persons.len(),
@@ -493,56 +483,47 @@ impl AppData {
 fn save_data_to_file(file_path: &Path, data: &AppData) -> Result<()> {
     let save_data: SaveData2 = data.into();
     if save_data.validate() {
-        save_to_pot(file_path, &save_data) // ?? should we report error here, to log?
+        let buffer = pot::to_vec::<SaveData2>(&save_data)?;
+        save_to_save(file_path, save_data.save_version, buffer)
     } else {
         Err(anyhow!("unable to validate save data - not saved"))
     }
 }
 
 fn save_data_from_file(file_path: &Path) -> Result<AppData> {
-    // load save data 2!!!!!!!!!!!
-    //
-    let data: SaveData2 = {
-        // try 2
-        match load_from_pot::<SaveData2>(file_path) {
-            Result::Ok(save2) => {
-                if save2.validate() {
-                    Ok(save2)
-                } else {
-                    let save1: SaveData1 = load_from_pot(file_path)?;
-                    if save1.validate() {
-                        Ok(save1.into())
-                    } else {
-                        Err(anyhow::anyhow!("Unable to read and validate save file"))
-                    }
-                }
+    let data = match load_from_save(file_path) {
+        Result::Ok((save_version, buffer)) => match save_version {
+            SAVE2_VERSION => pot::from_reader::<SaveData2, _>(buffer)?,
+            SAVE1_VERSION => pot::from_reader::<SaveData1, _>(buffer)?.into(),
+            _ => {
+                error!("invalid save file version {save_version}");
+                return Err(anyhow!("invalid save file version {save_version}"));
             }
-            Err(_) => {
-                // try 1
-                let save1: SaveData1 = load_from_pot(file_path)?;
-                if save1.validate() {
-                    Ok(save1.into())
-                } else {
-                    Err(anyhow::anyhow!("Unable to read and validate save file"))
-                }
-            }
-        }
-    }?;
+        },
 
-    // load save data 1
-    // let data = load_from_pot::<SaveData1>(file_path)?;
-    // if data.validate() {
-    // convert to AppData
-    let mut ret: AppData = data.into();
-    ret.loaded_from = Some(file_path.to_path_buf());
-    Ok(ret)
-    // } else {
-    //     Err(anyhow!("unable to validate save data"))
-    // }
+        Err(e) => {
+            error!("unable to read save file header: {e}");
+            return Err(e);
+        }
+    };
+
+    if data.validate() {
+        // todo: should we validate the loaded savedata, rather than the data to convert?
+        let mut ret: AppData = data.into();
+        ret.loaded_from = Some(file_path.to_path_buf());
+        Ok(ret)
+    } else {
+        error!("unable to validate loaded save data");
+        Err(anyhow!("unable to validate save data"))
+    }
 }
 
 // Save data
 const SAVE_SCHEMA: &str = "BladesFactionsData";
+
+// TODO: can we have one struct that remains consistent, and has the conversion to app data
+// and a set of save data formats that do the loading?
+//
 
 // ====================
 // SaveData2

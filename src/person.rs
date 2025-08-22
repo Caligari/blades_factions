@@ -7,7 +7,7 @@ use crate::{
     app_data::DataIndex,
     app_display::{
         DESCRIPTION_ROWS, FIELD_HORIZONTAL_SPACE, FIELD_VERTICAL_SPACE, NOTES_ROWS, ShowEdit,
-        ShowEditInfo, show_edit_frame, show_edit_stringlist_italics,
+        ShowEditInfo, show_edit_frame, show_edit_item, show_edit_stringlist_italics,
     },
     localize::fl,
     managed_list::{DistrictRef, Named, StringList},
@@ -104,11 +104,26 @@ impl ShowEdit for Person {
                 );
 
                 ui.add_space(FIELD_VERTICAL_SPACE);
-                ui.label(RichText::new(fl!("personality_heading")).small().weak());
                 ui.horizontal(|ui| {
-                    ui.label(RichText::new("(").italics());
-                    show_edit_stringlist_italics("personality", &mut self.personality, ui);
-                    ui.label(RichText::new(")").italics());
+                    ui.vertical(|ui| {
+                        ui.label(RichText::new(fl!("found_in_heading")).small().weak());
+                        show_edit_item(
+                            "found_in",
+                            &mut self.found_in,
+                            item_info.app_data().district_list(),
+                            ui,
+                        );
+                    });
+
+                    ui.add_space(FIELD_HORIZONTAL_SPACE);
+                    ui.vertical(|ui| {
+                        ui.label(RichText::new(fl!("personality_heading")).small().weak());
+                        ui.horizontal(|ui| {
+                            ui.label(RichText::new("(").italics());
+                            show_edit_stringlist_italics("personality", &mut self.personality, ui);
+                            ui.label(RichText::new(")").italics());
+                        });
+                    });
                 });
 
                 ui.add_space(FIELD_VERTICAL_SPACE * 2.0);

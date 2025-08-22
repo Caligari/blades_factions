@@ -10,6 +10,7 @@ use std::{
 };
 
 use anyhow::anyhow;
+use bytes_cast::{BytesCast, unaligned};
 use directories_next::ProjectDirs;
 use eframe::egui::FontFamily::Proportional;
 use eframe::egui::FontId;
@@ -978,9 +979,9 @@ fn configure_fonts(ctx: &CreationContext, zoom: f32) {
 
 // ---------------------------
 // Load and Save to POT files
-const SAVE_FILE_ID: &[u8] = &[0x2b, 0x4a]; // magic number
+const SAVE_FILE_ID: &[u8] = &[0x2b, 0x4a]; // magic number - is this endian neutral?
 
-#[allow(dead_code)]
+// used in Settings
 pub fn save_to_pot<T>(file_path: &Path, data: &T) -> anyhow::Result<()>
 where
     T: Serialize,
@@ -1014,7 +1015,7 @@ where
     Ok(())
 }
 
-#[allow(dead_code)]
+// used in Settings
 pub fn load_from_pot<T>(file_path: &Path) -> anyhow::Result<T>
 where
     T: DeserializeOwned,
@@ -1038,24 +1039,79 @@ where
     Ok(data)
 }
 
-// NEEDS WORK
-pub fn load_data_from_file(file_handle: &File) -> anyhow::Result<(u16, BufReader<&File>)> {
+pub fn save_to_save(
+    file_path: &Path,
+    save_version: u16,
+    mut buffer: Vec<u8>,
+) -> anyhow::Result<()> {
+    use anyhow::Context;
+
+    if let Some(dir_path) = file_path.parent() {
+        create_dir_all(dir_path)?
+    }
+
+    if file_path.exists() {
+        fs::remove_file(file_path)?;
+    }
+
+    let file_handler = OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(file_path)
+        .with_context(|| {
+            format!(
+                "Failed to create save file [{}]",
+                file_path.to_string_lossy()
+            )
+        })?;
+    let Ok((file_id, excess)) = unaligned::U16Le::from_bytes(SAVE_FILE_ID) else {
+        return Err(anyhow!("unable to convert header bytes"));
+    };
+    assert!(excess.is_empty());
+    let save_header = SaveFileHeader {
+        file_id: *file_id,
+        save_version: save_version.into(),
+    };
+    buffer.splice(0..0, save_header.as_bytes().iter().cloned());
+    let mut buf_writer = BufWriter::new(&file_handler);
+    buf_writer.write_all(buffer.as_slice())?;
+    buf_writer.flush()?;
+
+    Ok(())
+}
+
+pub fn load_from_save(file_path: &Path) -> anyhow::Result<(u16, BufReader<File>)> {
+    use anyhow::Context;
+
+    let file_handle = OpenOptions::new()
+        .read(true)
+        .open(file_path)
+        .with_context(|| format!("Failed to open save file [{}]", file_path.to_string_lossy()))?;
+
     let mut buf_reader = BufReader::new(file_handle);
-    let mut check_id = [0u8, 0u8];
-    buf_reader.read_exact(&mut check_id)?;
-    if check_id != SAVE_FILE_ID {
+    let mut check_header = [0u8, 0u8, 0u8, 0u8];
+    buf_reader.read_exact(&mut check_header)?;
+    let Ok((header, excess)) = SaveFileHeader::from_bytes(&check_header) else {
+        return Err(anyhow!("unable to convert header bytes"));
+    };
+    if header.file_id.as_bytes() != SAVE_FILE_ID {
         return Err(anyhow!("File does not have expected SAVE_FILE_ID")); // file name? pass up?
     }
-    let mut check_save_version = [0u8, 0u8];
-    buf_reader.read_exact(&mut check_save_version);
-    let save_version = 1; // check save version, converted
-    // validate save version
-    // pass remaining data and save version (back?) to app data
+    assert!(excess.is_empty());
+    let save_version = header.save_version.into();
     Ok((save_version, buf_reader))
 }
 
+// ------
+#[derive(Debug, BytesCast)]
+#[repr(C)]
+struct SaveFileHeader {
+    file_id: unaligned::U16Le,
+    save_version: unaligned::U16Le,
+}
+
 // ---------------------------
-// Load and Save to POT files
+// Load and Save to JSON files
 
 #[allow(dead_code)]
 pub fn save_to_json<T>(file_path: &Path, data: &T) -> anyhow::Result<()>

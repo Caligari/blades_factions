@@ -43,6 +43,7 @@ allies_heading = Allies
 enemies_heading = Enemies
 personality_heading = Personality
 summary_heading = Summary
+found_in_heading = Found In
 edit_save = Save
 acknowledge_error = Dismiss
 default_export_file = export

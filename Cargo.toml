@@ -18,6 +18,10 @@ pot = "3.0"
 # binrw = "0.15"
 fluent-templates = "0.13"
 i18n-embed-fl = "0.10"
-i18n-embed = { version = "0.16", features = ["fluent-system", "desktop-requester"]}
+i18n-embed = { version = "0.16", features = [
+    "fluent-system",
+    "desktop-requester",
+] }
 rust-embed = "8.2"
 enum-iterator = "2.1"
+bytes-cast = "0.3"
