@@ -23,7 +23,7 @@ use eframe::{
         Ui, ViewportCommand,
     },
 };
-use egui_extras::{Column, TableBuilder};
+use egui_extras::TableBuilder;
 use enum_iterator::{Sequence, all, cardinality};
 use log::{debug, error, info};
 use serde::{Serialize, de::DeserializeOwned};
@@ -339,19 +339,7 @@ impl eframe::App for App {
                                                 .resizable(true)
                                                 .auto_shrink([false, true]);
 
-                                            // todo: move this into DisplayTable - return column definitions
-                                            for f in 0..display_table.number_columns() {
-                                                const MIN_COL_WIDTH: f32 = 40.0;
-                                                const NAME_COL_WIDTH: f32 = 120.0;
-
-                                                let col = if f == 0 {  // first column
-                                                    Column::auto().at_least(NAME_COL_WIDTH)
-                                                } else {
-                                                    Column::auto().at_least(MIN_COL_WIDTH)
-                                                };
-                                                // for use with extended field, if used
-                                                // Column::remainder(),
-
+                                            for col in display_table.column_definitions_iter() {
                                                 table = table.column(col);
                                             }
 

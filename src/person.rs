@@ -63,12 +63,24 @@ impl Named for Person {
         }
     }
 
+    // MUST agree with display_headings
     fn display_fields(&self) -> Vec<String> {
-        vec![self.name.clone()]
+        vec![
+            self.name.clone(),
+            self.found_in
+                .clone()
+                .map_or(String::new(), |d| d.name().map_or(String::new(), |s| s)),
+            self.summary.clone(),
+        ]
     }
 
+    // MUST agree with display_fields
     fn display_headings() -> Vec<RichText> {
-        vec![RichText::new(fl!("name_heading"))]
+        vec![
+            RichText::new(fl!("name_heading")),
+            RichText::new(fl!("found_in_heading")),
+            RichText::new(fl!("summary_heading")),
+        ]
     }
 }
 

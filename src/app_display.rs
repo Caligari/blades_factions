@@ -3,6 +3,7 @@ use std::slice::Iter;
 use eframe::egui::{
     Color32, ComboBox, Frame, Key, Label, Margin, Modifiers, RichText, Sense, Stroke, Ui,
 };
+use egui_extras::Column;
 use log::{debug, info};
 
 use crate::{
@@ -54,7 +55,7 @@ fn displayline_from_item_ref<T: Named + Clone>(item: &T, index: &GenericRef<T>) 
 #[derive(Clone)]
 pub struct DisplayTable {
     lines: Vec<DisplayLine>,
-    headings: Vec<RichText>,
+    columns: Vec<ColumnInfo>,
     sorting: Sorting,
 }
 
@@ -73,9 +74,19 @@ impl DisplayTable {
         self.lines.len()
     }
 
+    pub fn column_definitions_iter(&self) -> impl Iterator<Item = Column> {
+        self.columns.iter().map(|i| {
+            use ColumnWidth::*;
+            match i.width {
+                Extended => Column::remainder(),
+                Standard(width) => Column::auto().at_least(width),
+            }
+        })
+    }
+
     pub fn headings_iter(&self) -> impl Iterator<Item = RichText> {
-        self.headings.iter().enumerate().map(|(i, h)| {
-            let heading_text = h.clone();
+        self.columns.iter().enumerate().map(|(i, c)| {
+            let heading_text = c.heading.clone();
             if i == self.sorting.sort_field() {
                 heading_text.underline()
             } else {
@@ -85,13 +96,16 @@ impl DisplayTable {
     }
 
     pub fn number_columns(&self) -> usize {
-        self.headings.len()
+        self.columns.len()
     }
 
     pub fn sorting(&self) -> &Sorting {
         &self.sorting
     }
 }
+
+const MIN_COL_WIDTH: f32 = 40.0;
+const NAME_COL_WIDTH: f32 = 120.0;
 
 impl<T: Named + Clone> From<&ManagedList<T>> for DisplayTable {
     fn from(list: &ManagedList<T>) -> Self {
@@ -108,9 +122,29 @@ impl<T: Named + Clone> From<&ManagedList<T>> for DisplayTable {
         if sorting.sort_reversed() {
             lines.reverse();
         }
+        let headings = T::display_headings();
+        assert!(!headings.is_empty());
+        let last_heading = headings.len() - 1;
+        let columns = headings
+            .into_iter()
+            .enumerate()
+            .map(|(i, h)| {
+                use ColumnWidth::*;
+                ColumnInfo {
+                    width: if i == last_heading {
+                        Extended
+                    } else if i == 0 {
+                        Standard(NAME_COL_WIDTH)
+                    } else {
+                        Standard(MIN_COL_WIDTH)
+                    },
+                    heading: h,
+                }
+            })
+            .collect();
         DisplayTable {
             lines,
-            headings: T::display_headings(),
+            columns,
             sorting,
         }
     }
@@ -471,4 +505,20 @@ pub enum NewStringStatus {
     NoItem,
     Requested, // could include a timer here of some sort
     Showing(String),
+}
+
+// -----------------------
+// Column Width
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum ColumnWidth {
+    Extended,
+    Standard(f32),
+}
+
+// -----------------------
+// Column Info
+#[derive(Debug, Clone)]
+pub struct ColumnInfo {
+    width: ColumnWidth,
+    heading: RichText,
 }

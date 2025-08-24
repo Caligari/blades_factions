@@ -56,6 +56,7 @@ impl Named for Faction {
         }
     }
 
+    // MUST agree with display_headings
     fn display_fields(&self) -> Vec<String> {
         vec![
             self.name.clone(),
@@ -80,6 +81,7 @@ impl Named for Faction {
         ]
     }
 
+    // MUST agree with display_fields
     fn display_headings() -> Vec<RichText> {
         vec![
             RichText::new(fl!("name_heading")),

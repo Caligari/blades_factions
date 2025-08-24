@@ -65,12 +65,26 @@ impl Named for District {
         }
     }
 
+    // MUST agree with display_headings
     fn display_fields(&self) -> Vec<String> {
-        vec![self.name.clone()]
+        vec![
+            self.name.clone(),
+            self.wealth.to_string(),
+            self.safety.to_string(),
+            self.crime.to_string(),
+            self.occult.to_string(),
+        ]
     }
 
+    // MUST agree with display_fields
     fn display_headings() -> Vec<RichText> {
-        vec![RichText::new(fl!("name_heading"))]
+        vec![
+            RichText::new(fl!("name_heading")),
+            RichText::new(fl!("wealth_heading")),
+            RichText::new(fl!("safety_heading")),
+            RichText::new(fl!("crime_heading")),
+            RichText::new(fl!("occult_heading")),
+        ]
     }
 }
 
@@ -184,10 +198,10 @@ impl From<&DistrictStore> for District {
             description: from_store.description.clone(),
             notable: PersonRefList::default(), // added after creation
             notes: from_store.notes.clone(),
-            wealth: Dots::default(),
-            safety: Dots::default(),
-            crime: Dots::default(),
-            occult: Dots::default(),
+            wealth: from_store.wealth,
+            safety: from_store.safety,
+            crime: from_store.crime,
+            occult: from_store.occult,
         }
     }
 }
