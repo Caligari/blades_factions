@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     action::{Action, ActionNode},
-    app::{load_from_json, load_from_save, save_to_json, save_to_save},
+    app::{MainView, load_from_json, load_from_save, save_to_json, save_to_save},
     app_display::DisplayTable,
     district::{District, DistrictStore},
     faction::{Faction, FactionStore},
@@ -190,6 +190,14 @@ impl AppData {
 
     pub fn clone_faction(&self, index: &FactionRef) -> Option<Faction> {
         self.factions.fetch(index).cloned()
+    }
+
+    pub fn view_size(&self, view: MainView) -> usize {
+        match view {
+            MainView::Factions => self.factions.len(),
+            MainView::Persons => self.persons.len(),
+            MainView::Districts => self.districts.len(),
+        }
     }
 
     /// This saves all data to a save file

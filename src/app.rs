@@ -766,7 +766,8 @@ impl App {
         let mut new_request = ViewRequest::None;
         ui.horizontal(|ui| {
             for (num, view) in all::<MainView>().enumerate() {
-                let mut v_text = RichText::new(view.to_string()).heading();
+                let mut v_text =
+                    RichText::new(format!("{} ({})", view, self.data.view_size(view))).heading();
                 if self.main_view == view {
                     v_text = v_text.color(select_color).underline();
                 }
@@ -905,7 +906,7 @@ impl Display for AppStatus {
 
 #[allow(dead_code)]
 #[derive(Debug, Default, Clone, Copy, Sequence, PartialEq, Eq)]
-enum MainView {
+pub enum MainView {
     #[default]
     Factions,
     Persons,
