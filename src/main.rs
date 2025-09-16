@@ -18,6 +18,7 @@ mod district;
 mod clock;
 mod tier;
 mod managed_list;
+mod relationship;
 mod action;
 mod todo;
 mod app_display;
