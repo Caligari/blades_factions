@@ -630,7 +630,7 @@ impl From<&AppData> for SaveData1 {
 
 // ----------------------------------------
 
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum DataIndex {
     Nothing,
     FactionIndex(usize),
