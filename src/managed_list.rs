@@ -227,29 +227,6 @@ impl<T: Clone + Named> ManagedList<T> {
             ind.name = "<Removed>".to_owned();
 
             ret
-            // process the list index, changing the indexes for the entries after this one
-            // for (s, i) in self.list_index.iter() {
-            //     info!("looking at [{s}]");
-            //     let mut ind = i.0.write();
-            //     if let Some(cur_i) = ind.index.index() {
-            //         info!("processing index for {cur_i}");
-            //         if cur_i > index {
-            //             info!("decrementing");
-            //             ind.index = T::make_data_index(cur_i - 1);
-            //         } else if cur_i == index {
-            //             info!("will remove");
-            //             ind.index = DataIndex::Nothing;
-            //             ind.name = "<Removed>".to_owned();
-            //         } else {
-            //             info!("ignoring");
-            //         } // else it will not need to change
-            //     } // else we do not need to change somethning which points to no data
-            // }
-
-            // remove the element
-            // return the removed element
-            // info!("removing now");
-            // Some(self.list.remove(index))  // DO WE HAVE TO DO THIS?? Convert to Vec needs filter, otherwise
         } else {
             warn!("asked to remove empty index");
             None
@@ -323,10 +300,7 @@ impl<T: Clone + Named> ManagedList<T> {
     /// Returns a reference to the existing item, if it is present
     pub fn fetch(&self, index: &GenericRef<T>) -> Option<&T> {
         let index = index.index()?;
-        let Some(ret) = self.list.get(index) else {
-            unreachable!("trying to access indexed item that is not present");
-        };
-        ret.as_ref()
+        self.fetch_with_index(index)
     }
 
     pub fn item_ref_list(&self) -> Vec<(GenericRef<T>, &T)> {
@@ -355,6 +329,14 @@ impl<T: Clone + Named> ManagedList<T> {
         list_copy.sort(); // ?? do we need a more sophisticated sort? For People Names, for example
         list_copy
     }
+
+    /// Use care with this
+    pub fn fetch_with_index(&self, index: usize) -> Option<&T> {
+        let Some(ret) = self.list.get(index) else {
+            unreachable!("trying to access indexed item that is not present");
+        };
+        ret.as_ref()
+    }
 }
 
 impl From<&ManagedList<Person>> for Vec<PersonStore2> {
@@ -362,9 +344,7 @@ impl From<&ManagedList<Person>> for Vec<PersonStore2> {
         value
             .list
             .iter()
-            .filter_map(|maybe_p| {
-                maybe_p.as_ref().map(PersonStore2::from)
-            })
+            .filter_map(|maybe_p| maybe_p.as_ref().map(PersonStore2::from))
             .collect()
     }
 }
@@ -374,9 +354,7 @@ impl From<&ManagedList<Person>> for Vec<PersonStore1> {
         value
             .list
             .iter()
-            .filter_map(|maybe_p| {
-                maybe_p.as_ref().map(PersonStore1::from)
-            })
+            .filter_map(|maybe_p| maybe_p.as_ref().map(PersonStore1::from))
             .collect()
     }
 }
@@ -386,9 +364,7 @@ impl From<&ManagedList<District>> for Vec<DistrictStore> {
         value
             .list
             .iter()
-            .filter_map(|maybe_p| {
-                maybe_p.as_ref().map(DistrictStore::from)
-            })
+            .filter_map(|maybe_p| maybe_p.as_ref().map(DistrictStore::from))
             .collect()
     }
 }
@@ -398,9 +374,7 @@ impl From<&ManagedList<Faction>> for Vec<FactionStore> {
         value
             .list
             .iter()
-            .filter_map(|maybe_p| {
-                maybe_p.as_ref().map(FactionStore::from)
-            })
+            .filter_map(|maybe_p| maybe_p.as_ref().map(FactionStore::from))
             .collect()
     }
 }

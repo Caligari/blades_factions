@@ -200,6 +200,15 @@ impl AppData {
         }
     }
 
+    pub fn data_index_valid(&self, index: DataIndex) -> bool {
+        match index {
+            DataIndex::Nothing => false,
+            DataIndex::DistrictIndex(i) => self.district_list().fetch_with_index(i).is_some(),
+            DataIndex::PersonIndex(i) => self.person_list().fetch_with_index(i).is_some(),
+            DataIndex::FactionIndex(i) => self.faction_list().fetch_with_index(i).is_some(),
+        }
+    }
+
     /// This saves all data to a save file
     pub fn save_to_file(&mut self, file_path: &Path) -> Result<()> {
         save_data_to_file(file_path, self)
@@ -632,6 +641,7 @@ impl From<&AppData> for SaveData1 {
 
 // Is it true that while the index can change, the relative order will remain the same?
 // !! Assuming: even if index changed, relative order will remain the same
+// BUT you cannot assume the indexed item is valid - you must check it before using it
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum DataIndex {
     Nothing,
