@@ -363,11 +363,7 @@ impl From<&ManagedList<Person>> for Vec<PersonStore2> {
             .list
             .iter()
             .filter_map(|maybe_p| {
-                if let Some(p) = maybe_p {
-                    Some(PersonStore2::from(p))
-                } else {
-                    None
-                }
+                maybe_p.as_ref().map(PersonStore2::from)
             })
             .collect()
     }
@@ -379,11 +375,7 @@ impl From<&ManagedList<Person>> for Vec<PersonStore1> {
             .list
             .iter()
             .filter_map(|maybe_p| {
-                if let Some(p) = maybe_p {
-                    Some(PersonStore1::from(p))
-                } else {
-                    None
-                }
+                maybe_p.as_ref().map(PersonStore1::from)
             })
             .collect()
     }
@@ -395,11 +387,7 @@ impl From<&ManagedList<District>> for Vec<DistrictStore> {
             .list
             .iter()
             .filter_map(|maybe_p| {
-                if let Some(p) = maybe_p {
-                    Some(DistrictStore::from(p))
-                } else {
-                    None
-                }
+                maybe_p.as_ref().map(DistrictStore::from)
             })
             .collect()
     }
@@ -411,11 +399,7 @@ impl From<&ManagedList<Faction>> for Vec<FactionStore> {
             .list
             .iter()
             .filter_map(|maybe_p| {
-                if let Some(p) = maybe_p {
-                    Some(FactionStore::from(p))
-                } else {
-                    None
-                }
+                maybe_p.as_ref().map(FactionStore::from)
             })
             .collect()
     }
