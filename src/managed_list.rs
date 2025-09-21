@@ -168,7 +168,7 @@ impl<T: Clone + Named> NamedIndex<T> {
 #[allow(dead_code)]
 #[derive(Clone, Default)]
 pub struct ManagedList<T: Clone + Named> {
-    list: Vec<T>,
+    list: Vec<Option<T>>,
     list_index: BTreeMap<String, GenericRef<T>>,
     sorting: Sorting,
 }
@@ -176,11 +176,11 @@ pub struct ManagedList<T: Clone + Named> {
 #[allow(dead_code)]
 impl<T: Clone + Named> ManagedList<T> {
     pub fn len(&self) -> usize {
-        self.list.len()
+        self.list.len() // includes removed items
     }
 
     pub fn is_empty(&self) -> bool {
-        self.list.is_empty()
+        self.list.is_empty() // includes removed items
     }
 
     /// Returns the reference to the new item
@@ -189,7 +189,7 @@ impl<T: Clone + Named> ManagedList<T> {
         let display_name = item.display_name();
         if !self.list_index.contains_key(&name) {
             let index = T::make_data_index(self.list.len());
-            self.list.push(item.clone());
+            self.list.push(Some(item.clone()));
             let named_index = GenericRef(Arc::new(RwLock::new(NamedIndex {
                 name: name.clone(),
                 display_name,
@@ -206,35 +206,50 @@ impl<T: Clone + Named> ManagedList<T> {
 
     // Should the list have a lock on it??
     /// Returns the old item which was removed, if it was present
-    pub fn remove(&mut self, named_index: &GenericRef<T>) -> Option<T> {
+    pub fn remove(&mut self, named_index: &mut GenericRef<T>) -> Option<T> {
         if named_index.has_index() {
             let Some(index) = named_index.index() else {
                 panic!("asked to remove incorrect index from managed list");
             };
 
+            info!("(not) removing {:?}", named_index.data_index());
+
+            let ret = if let Some(Some(val)) = self.list.get(index) {
+                Some(val.clone())
+            } else {
+                None
+            };
+            self.list[index] = None; // void the item
+
+            // update the reference
+            let mut ind = named_index.0.write();
+            ind.index = DataIndex::Nothing;
+            ind.name = "<Removed>".to_owned();
+
+            ret
             // process the list index, changing the indexes for the entries after this one
-            for (s, i) in self.list_index.iter() {
-                info!("looking at [{s}]");
-                let mut ind = i.0.write();
-                if let Some(cur_i) = ind.index.index() {
-                    info!("processing index for {cur_i}");
-                    if cur_i > index {
-                        info!("decrementing");
-                        ind.index = T::make_data_index(cur_i - 1);
-                    } else if cur_i == index {
-                        info!("will remove");
-                        ind.index = DataIndex::Nothing;
-                        ind.name = "<Removed>".to_owned();
-                    } else {
-                        info!("ignoring");
-                    } // else it will not need to change
-                } // else we do not need to change somethning which points to no data
-            }
+            // for (s, i) in self.list_index.iter() {
+            //     info!("looking at [{s}]");
+            //     let mut ind = i.0.write();
+            //     if let Some(cur_i) = ind.index.index() {
+            //         info!("processing index for {cur_i}");
+            //         if cur_i > index {
+            //             info!("decrementing");
+            //             ind.index = T::make_data_index(cur_i - 1);
+            //         } else if cur_i == index {
+            //             info!("will remove");
+            //             ind.index = DataIndex::Nothing;
+            //             ind.name = "<Removed>".to_owned();
+            //         } else {
+            //             info!("ignoring");
+            //         } // else it will not need to change
+            //     } // else we do not need to change somethning which points to no data
+            // }
 
             // remove the element
             // return the removed element
-            info!("removing now");
-            Some(self.list.remove(index))
+            // info!("removing now");
+            // Some(self.list.remove(index))  // DO WE HAVE TO DO THIS?? Convert to Vec needs filter, otherwise
         } else {
             warn!("asked to remove empty index");
             None
@@ -248,7 +263,7 @@ impl<T: Clone + Named> ManagedList<T> {
             let Some(ind) = index.index() else {
                 unreachable!("no index found despite having an index (in replace)");
             };
-            let Some(old_item) = self.list.get(ind).cloned()
+            let Some(Some(old_item)) = self.list.get(ind).cloned()
             // technically this should always return Some
             else {
                 unreachable!("unable to find managed_list item with functioning index");
@@ -289,7 +304,7 @@ impl<T: Clone + Named> ManagedList<T> {
                 }
 
                 // replace content
-                self.list[ind] = new_item;
+                self.list[ind] = Some(new_item);
 
                 // return old item
                 Some(old_item)
@@ -308,7 +323,10 @@ impl<T: Clone + Named> ManagedList<T> {
     /// Returns a reference to the existing item, if it is present
     pub fn fetch(&self, index: &GenericRef<T>) -> Option<&T> {
         let index = index.index()?;
-        self.list.get(index)
+        let Some(ret) = self.list.get(index) else {
+            unreachable!("trying to access indexed item that is not present");
+        };
+        ret.as_ref()
     }
 
     pub fn item_ref_list(&self) -> Vec<(GenericRef<T>, &T)> {
@@ -341,25 +359,65 @@ impl<T: Clone + Named> ManagedList<T> {
 
 impl From<&ManagedList<Person>> for Vec<PersonStore2> {
     fn from(value: &ManagedList<Person>) -> Self {
-        value.list.iter().map(PersonStore2::from).collect()
+        value
+            .list
+            .iter()
+            .filter_map(|maybe_p| {
+                if let Some(p) = maybe_p {
+                    Some(PersonStore2::from(p))
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
 }
 
 impl From<&ManagedList<Person>> for Vec<PersonStore1> {
     fn from(value: &ManagedList<Person>) -> Self {
-        value.list.iter().map(PersonStore1::from).collect()
+        value
+            .list
+            .iter()
+            .filter_map(|maybe_p| {
+                if let Some(p) = maybe_p {
+                    Some(PersonStore1::from(p))
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
 }
 
 impl From<&ManagedList<District>> for Vec<DistrictStore> {
     fn from(value: &ManagedList<District>) -> Self {
-        value.list.iter().map(DistrictStore::from).collect()
+        value
+            .list
+            .iter()
+            .filter_map(|maybe_p| {
+                if let Some(p) = maybe_p {
+                    Some(DistrictStore::from(p))
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
 }
 
 impl From<&ManagedList<Faction>> for Vec<FactionStore> {
     fn from(value: &ManagedList<Faction>) -> Self {
-        value.list.iter().map(FactionStore::from).collect()
+        value
+            .list
+            .iter()
+            .filter_map(|maybe_p| {
+                if let Some(p) = maybe_p {
+                    Some(FactionStore::from(p))
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
 }
 
@@ -503,7 +561,7 @@ mod tests {
         assert_eq!(m_list.len(), 1);
 
         let item2 = District::new("Test2");
-        let Some(item2_ref) = m_list.add(&item2) else {
+        let Some(mut item2_ref) = m_list.add(&item2) else {
             panic!("error on add item2");
         };
         assert_eq!(m_list.len(), 2);
@@ -514,14 +572,14 @@ mod tests {
         };
         assert_eq!(m_list.len(), 3);
 
-        let remove1 = m_list.remove(&item2_ref);
+        let remove1 = m_list.remove(&mut item2_ref);
         assert!(remove1.is_some());
         assert_eq!(remove1.unwrap().name(), "Test2");
-        assert_eq!(m_list.len(), 2);
+        assert_eq!(m_list.len(), 3); // !! used to be 2
 
-        let remove2 = m_list.remove(&item2_ref);
+        let remove2 = m_list.remove(&mut item2_ref);
         assert!(remove2.is_none());
-        assert_eq!(m_list.len(), 2);
+        assert_eq!(m_list.len(), 3); // !! used to be 2
 
         let found1 = m_list.fetch(&item1_ref);
         assert!(found1.is_some(), "found item 1 is empty");

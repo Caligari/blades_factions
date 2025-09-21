@@ -33,7 +33,7 @@ pub struct AppData {
 #[allow(dead_code)]
 impl AppData {
     /// Takes a node, and creates the node that will reverse the actions taken
-    pub fn do_action(&mut self, actions: &ActionNode) -> Result<ActionNode> {
+    pub fn do_action(&mut self, actions: &mut ActionNode) -> Result<ActionNode> {
         use Action::*;
 
         let mut return_node = ActionNode::default();
@@ -268,7 +268,7 @@ impl AppData {
         // !! Not using return??
         let save_data: SaveData2 = save_data.into();
         let mut post_districts: Vec<(String, Vec<String>)> = Vec::new();
-        let district_add = save_data
+        let mut district_add = save_data
             .districts
             .into_iter()
             .map(|d| {
@@ -278,11 +278,11 @@ impl AppData {
             })
             .collect();
 
-        if let Err(err) = self.do_action(&district_add) {
+        if let Err(err) = self.do_action(&mut district_add) {
             error!("unable to add districts: {err}");
         }
 
-        let person_add = save_data
+        let mut person_add = save_data
             .persons
             .into_iter()
             .map(|p| {
@@ -291,12 +291,12 @@ impl AppData {
             })
             .collect();
 
-        if let Err(err) = self.do_action(&person_add) {
+        if let Err(err) = self.do_action(&mut person_add) {
             error!("unable to add persons: {err}");
         }
 
         // do district references to persons; no undo
-        let district_replace: ActionNode = post_districts.into_iter().filter_map(|(district_name, notable)| {
+        let mut district_replace: ActionNode = post_districts.into_iter().filter_map(|(district_name, notable)| {
             if let Some(dist_ref) = self.districts.find(&district_name) {
                 if let Some(dist) = self.districts.fetch(&dist_ref) {
                     let notables: Vec<PersonRef> = notable.into_iter().filter_map(|p| {
@@ -314,12 +314,12 @@ impl AppData {
             } else { None }
         }).collect();
 
-        if let Err(err) = self.do_action(&district_replace) {
+        if let Err(err) = self.do_action(&mut district_replace) {
             error!("unable to replace districts with notables: {err}");
         }
 
         let mut post_factions: Vec<(String, Vec<String>, Vec<String>)> = Vec::new();
-        let faction_add = save_data
+        let mut faction_add = save_data
             .factions
             .into_iter()
             .map(|f| {
@@ -329,13 +329,13 @@ impl AppData {
             })
             .collect();
 
-        if let Err(err) = self.do_action(&faction_add) {
+        if let Err(err) = self.do_action(&mut faction_add) {
             error!("unable to add factions: {err}");
         }
 
         // do faction references to factions
         // note these do not have undo
-        let faction_replace: ActionNode = post_factions.into_iter().filter_map(|(faction_name, allies, enemies)| {
+        let mut faction_replace: ActionNode = post_factions.into_iter().filter_map(|(faction_name, allies, enemies)| {
             if let Some(fac_ref) = self.factions.find(&faction_name) {
                 if let Some(fac) = self.factions.fetch(&fac_ref) {
                     let allies: Vec<FactionRef> = allies.into_iter().filter_map(|f| {
@@ -358,7 +358,7 @@ impl AppData {
             } else { None }
         }).collect();
 
-        if let Err(err) = self.do_action(&faction_replace) {
+        if let Err(err) = self.do_action(&mut faction_replace) {
             error!("unable to replace factions with allies and enemies: {err}");
         }
 
@@ -630,12 +630,14 @@ impl From<&AppData> for SaveData1 {
 
 // ----------------------------------------
 
+// Is it true that while the index can change, the relative order will remain the same?
+// !! Assuming: even if index changed, relative order will remain the same
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum DataIndex {
     Nothing,
-    FactionIndex(usize),
-    PersonIndex(usize),
     DistrictIndex(usize),
+    PersonIndex(usize),
+    FactionIndex(usize),
 }
 
 impl DataIndex {

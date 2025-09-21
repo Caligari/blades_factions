@@ -1,7 +1,11 @@
 use std::collections::VecDeque;
 
-use crate::{district::District, faction::Faction, managed_list::{DistrictRef, FactionRef, PersonRef}, person::Person};
-
+use crate::{
+    district::District,
+    faction::Faction,
+    managed_list::{DistrictRef, FactionRef, PersonRef},
+    person::Person,
+};
 
 pub type ActionNode = VecDeque<Action>;
 
@@ -17,26 +21,25 @@ impl From<Action> for ActionNode {
 #[derive(Clone)]
 pub enum Action {
     // Add district
-    DistrictAdd (District),
+    DistrictAdd(District),
     // Remove district
-    DistrictRemove (DistrictRef),
+    DistrictRemove(DistrictRef),
     // Replace district
-    DistrictReplace (DistrictRef, District),
+    DistrictReplace(DistrictRef, District),
 
     // Add person
-    PersonAdd (Person),
+    PersonAdd(Person),
     // Remove person
-    PersonRemove (PersonRef),
+    PersonRemove(PersonRef),
     // Replace person
-    PersonReplace (PersonRef, Person),
+    PersonReplace(PersonRef, Person),
 
     // Add faction
-    FactionAdd (Faction),
+    FactionAdd(Faction),
     // Remove faction
-    FactionRemove (FactionRef),
+    FactionRemove(FactionRef),
     // Replace faction
-    FactionReplace (FactionRef, Faction),
-
+    FactionReplace(FactionRef, Faction),
     // Clear all
     // ClearAll,
 }

@@ -786,9 +786,9 @@ impl App {
     }
 
     fn run_todo(&mut self) {
-        if let Some(todo) = self.todo_undo.todo() {
+        if let Some(mut todo) = self.todo_undo.todo() {
             info!("carrying out todo");
-            let result = self.data.do_action(&todo);
+            let result = self.data.do_action(&mut todo);
             match result {
                 Ok(undo) => {
                     info!("todo complete");
