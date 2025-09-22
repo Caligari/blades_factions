@@ -175,12 +175,17 @@ pub struct ManagedList<T: Clone + Named> {
 
 #[allow(dead_code)]
 impl<T: Clone + Named> ManagedList<T> {
-    pub fn len(&self) -> usize {
-        self.list.len() // includes removed items
+    pub fn item_count(&self) -> usize {
+        // count items not None
+        self.list.iter().flatten().count()
     }
 
-    pub fn is_empty(&self) -> bool {
-        self.list.is_empty() // includes removed items
+    pub fn next_index(&self) -> usize {
+        self.list.len()
+    }
+
+    pub fn no_items(&self) -> bool {
+        self.item_count() == 0
     }
 
     /// Returns the reference to the new item
@@ -479,13 +484,15 @@ mod tests {
         let Some(item1_ref) = m_list.add(&item1) else {
             panic!("error on add item1");
         };
-        assert_eq!(m_list.len(), 1);
+        assert_eq!(m_list.item_count(), 1);
+        assert_eq!(m_list.next_index(), 1);
 
         let item2 = District::new("Test2");
         let Some(_item2_ref) = m_list.add(&item2) else {
             panic!("error on add item2");
         };
-        assert_eq!(m_list.len(), 2);
+        assert_eq!(m_list.item_count(), 2);
+        assert_eq!(m_list.next_index(), 2);
 
         let found1 = m_list.fetch(&item1_ref);
         assert!(found1.is_some(), "found item 1 is empty");
@@ -516,28 +523,28 @@ mod tests {
         let Some(item1_ref) = m_list.add(&item1) else {
             panic!("error on add item1");
         };
-        assert_eq!(m_list.len(), 1);
+        assert_eq!(m_list.item_count(), 1);
 
         let item2 = District::new("Test2");
         let Some(mut item2_ref) = m_list.add(&item2) else {
             panic!("error on add item2");
         };
-        assert_eq!(m_list.len(), 2);
+        assert_eq!(m_list.item_count(), 2);
 
         let item3 = District::new("Test3");
         let Some(item3_ref) = m_list.add(&item3) else {
             panic!("error on add item3");
         };
-        assert_eq!(m_list.len(), 3);
+        assert_eq!(m_list.item_count(), 3);
 
         let remove1 = m_list.remove(&mut item2_ref);
         assert!(remove1.is_some());
         assert_eq!(remove1.unwrap().name(), "Test2");
-        assert_eq!(m_list.len(), 3); // !! used to be 2
+        assert_eq!(m_list.item_count(), 2);
 
         let remove2 = m_list.remove(&mut item2_ref);
         assert!(remove2.is_none());
-        assert_eq!(m_list.len(), 3); // !! used to be 2
+        assert_eq!(m_list.item_count(), 2);
 
         let found1 = m_list.fetch(&item1_ref);
         assert!(found1.is_some(), "found item 1 is empty");

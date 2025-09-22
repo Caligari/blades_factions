@@ -114,7 +114,7 @@ impl App {
                 ui.with_layout(Layout::left_to_right(Align::Center), |ui| {
                     // when can we save/load?
                     let load_enabled = matches!(self.status, AppStatus::Ready(_)); // only save from main list
-                    let save_as_enabled = load_enabled && !self.data.is_empty();
+                    let save_as_enabled = load_enabled && !self.data.no_items();
 
                     ui.menu_button(fl!("menu"), |ui| {
                         if ui.button(fl!("menu_restart")).clicked() {

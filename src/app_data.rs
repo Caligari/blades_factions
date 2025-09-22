@@ -105,8 +105,8 @@ impl AppData {
         Ok(return_node)
     }
 
-    pub fn is_empty(&self) -> bool {
-        self.districts.is_empty() && self.persons.is_empty() && self.factions.is_empty()
+    pub fn no_items(&self) -> bool {
+        self.districts.no_items() && self.persons.no_items() && self.factions.no_items()
     }
 
     // todo: precalc and cache this?
@@ -194,9 +194,9 @@ impl AppData {
 
     pub fn view_size(&self, view: MainView) -> usize {
         match view {
-            MainView::Factions => self.factions.len(),
-            MainView::Persons => self.persons.len(),
-            MainView::Districts => self.districts.len(),
+            MainView::Factions => self.factions.item_count(),
+            MainView::Persons => self.persons.item_count(),
+            MainView::Districts => self.districts.item_count(),
         }
     }
 
