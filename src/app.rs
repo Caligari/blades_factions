@@ -942,8 +942,10 @@ fn configure_fonts(ctx: &CreationContext, zoom: f32) {
     );
     fonts
         .families
-        .get_mut(&FontFamily::Proportional)
-        .unwrap()
+        .entry(FontFamily::Proportional)
+        .or_default()
+        // .get_mut(&FontFamily::Proportional)
+        // .unwrap()
         .insert(0, "dihjauti".to_owned());
     ctx.egui_ctx.set_fonts(fonts);
 

@@ -240,7 +240,7 @@ impl FileDialogControl {
                 Some(Some(path))
             } else {
                 use DialogState::*;
-                if self.dialog.state() == Cancelled {
+                if *self.dialog.state() == Cancelled {
                     *self.show_dialog.write() = false;
                     self.current_mode = None;
                     Some(Some(PathBuf::new()))

@@ -4,9 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-eframe = "0.32"
-egui_extras = "0.32"
-egui-file-dialog = "0.11"
+eframe = "0.33"
+egui_extras = "0.33"
+egui-file-dialog = "0.12"
 anyhow = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
